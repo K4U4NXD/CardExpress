@@ -49,3 +49,50 @@ export type Product = {
   created_at: string;
   updated_at: string;
 };
+
+/** Status operacional do pedido. */
+export type OrderStatus =
+  | "aguardando_aceite"
+  | "em_preparo"
+  | "pronto_para_retirada"
+  | "finalizado"
+  | "recusado";
+
+/** Status separado para reembolso (não mistura com o status operacional). */
+export type RefundStatus = "none" | "pendente" | "reembolsado" | "falhou";
+
+/** Pedido (public.orders). */
+export type Order = {
+  id: string;
+  store_id: string;
+  order_number: number | null;
+  display_code: string | null;
+  public_token: string;
+  status: OrderStatus;
+  refund_status: RefundStatus;
+  total_amount: number;
+  note: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  placed_at: string;
+  accepted_at: string | null;
+  ready_at: string | null;
+  finalized_at: string | null;
+  rejected_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Item do pedido (public.order_items). */
+export type OrderItem = {
+  id: number;
+  order_id: string;
+  product_id: string | null;
+  name: string;
+  price: number;
+  quantity: number;
+  total_amount: number;
+  created_at: string;
+};
+
+export type OrderWithItems = Order & { items?: OrderItem[] };

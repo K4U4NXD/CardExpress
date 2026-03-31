@@ -8,6 +8,11 @@ import { redirect } from "next/navigation";
 
 const PATH = "/dashboard/categorias";
 
+function revalidateStoreViews(storeSlug: string) {
+  revalidatePath(PATH);
+  revalidatePath(`/${storeSlug}`);
+}
+
 export type CategoryFormState = {
   error?: string;
 };
@@ -67,7 +72,7 @@ export async function createCategoryAction(
     return { error: formatPostgrestError(error) };
   }
 
-  revalidatePath(PATH);
+  revalidateStoreViews(store.slug);
   redirectWithNotice("criada");
 }
 
@@ -99,7 +104,7 @@ export async function updateCategoryNameAction(formData: FormData) {
     redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(error))}`);
   }
 
-  revalidatePath(PATH);
+  revalidateStoreViews(store.slug);
   redirectWithNotice("nome-atualizado");
 }
 
@@ -129,7 +134,7 @@ export async function toggleCategoryActiveAction(formData: FormData) {
     redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(error))}`);
   }
 
-  revalidatePath(PATH);
+  revalidateStoreViews(store.slug);
   redirectWithNotice("estado-alterado");
 }
 
@@ -169,7 +174,7 @@ export async function moveCategoryAction(formData: FormData) {
 
   const swapIdx = direction === "up" ? idx - 1 : idx + 1;
   if (swapIdx < 0 || swapIdx >= list.length) {
-    revalidatePath(PATH);
+    revalidateStoreViews(store.slug);
     redirect(PATH);
   }
 
@@ -195,7 +200,7 @@ export async function moveCategoryAction(formData: FormData) {
     redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(e3))}`);
   }
 
-  revalidatePath(PATH);
+  revalidateStoreViews(store.slug);
   redirectWithNotice("reordenada");
 }
 
@@ -243,6 +248,6 @@ export async function deleteCategoryAction(formData: FormData) {
     redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(error))}`);
   }
 
-  revalidatePath(PATH);
+  revalidateStoreViews(store.slug);
   redirectWithNotice("excluida");
 }

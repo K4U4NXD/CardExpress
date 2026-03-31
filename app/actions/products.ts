@@ -9,6 +9,11 @@ import { redirect } from "next/navigation";
 
 const PATH = "/dashboard/produtos";
 
+function revalidateStoreViews(storeSlug: string) {
+  revalidatePath(PATH);
+  revalidatePath(`/${storeSlug}`);
+}
+
 export type ProductFormState = {
   error?: string;
 };
@@ -157,7 +162,7 @@ export async function createProductAction(
     return { error: formatPostgrestError(error) };
   }
 
-  revalidatePath(PATH);
+  revalidateStoreViews(store.slug);
   redirectWithNotice("criado");
 }
 
@@ -221,7 +226,7 @@ export async function updateProductAction(formData: FormData) {
     redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(error))}`);
   }
 
-  revalidatePath(PATH);
+  revalidateStoreViews(store.slug);
   redirectWithNotice("atualizado");
 }
 
@@ -251,7 +256,7 @@ export async function toggleProductActiveAction(formData: FormData) {
     redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(error))}`);
   }
 
-  revalidatePath(PATH);
+  revalidateStoreViews(store.slug);
   redirectWithNotice("estado-alterado");
 }
 
@@ -291,7 +296,7 @@ export async function moveProductAction(formData: FormData) {
 
   const swapIdx = direction === "up" ? idx - 1 : idx + 1;
   if (swapIdx < 0 || swapIdx >= list.length) {
-    revalidatePath(PATH);
+    revalidateStoreViews(store.slug);
     redirect(PATH);
   }
 
@@ -317,7 +322,7 @@ export async function moveProductAction(formData: FormData) {
     redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(e3))}`);
   }
 
-  revalidatePath(PATH);
+  revalidateStoreViews(store.slug);
   redirectWithNotice("reordenado");
 }
 
@@ -347,6 +352,6 @@ export async function deleteProductAction(formData: FormData) {
     redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(error))}`);
   }
 
-  revalidatePath(PATH);
+  revalidateStoreViews(store.slug);
   redirectWithNotice("excluido");
 }

@@ -4,15 +4,9 @@
 
 O **CardExpress** é um sistema web de **cardápio digital com retirada no balcão**, pensado para estabelecimentos de venda rápida, como lanchonetes, barracas, quiosques e pontos de alimentação em feiras e eventos.
 
-A proposta do projeto é permitir que o cliente acesse o cardápio por **QR Code** ou **link**, visualize os produtos, monte o pedido e acompanhe seu status. No fluxo planejado do produto, o pedido só deve ser efetivamente confirmado no sistema **após a aprovação do pagamento** por uma plataforma externa.
+O cliente acessa a loja por **QR Code** ou **link público**, visualiza o cardápio, monta o carrinho, inicia o checkout e acompanha o pedido. No estado atual do projeto, o fluxo de pagamento está implementado em **modo de demonstração**: o checkout cria uma sessão intermediária e o pagamento pode ser **simulado** para converter a sessão em pedido real.
 
-Além da experiência do cliente, o sistema possui um **painel administrativo do comerciante**, onde a loja pode:
-
-- cadastrar e organizar categorias;
-- cadastrar e gerenciar produtos;
-- acompanhar pedidos;
-- alterar o status operacional do atendimento;
-- exibir um painel público de retirada.
+Além da experiência do cliente, o sistema possui um **painel administrativo do comerciante** para gerenciar categorias, produtos, pedidos e operação da loja.
 
 Este repositório corresponde ao desenvolvimento do projeto acadêmico **CardExpress**, realizado em grupo.
 
@@ -28,9 +22,21 @@ Este repositório corresponde ao desenvolvimento do projeto acadêmico **CardExp
 
 ## Status atual do projeto
 
-O projeto já possui uma base funcional importante, com autenticação, painel administrativo e parte do fluxo operacional de pedidos implementados.
+O projeto já possui uma base funcional relevante, com:
 
-### Funcionalidades já implementadas
+- autenticação do comerciante;
+- dashboard protegido;
+- gerenciamento de categorias e produtos;
+- fluxo operacional de pedidos;
+- cardápio público dinâmico por `slug`;
+- carrinho público com persistência local;
+- checkout público com criação de `checkout_sessions`;
+- simulação de pagamento aprovado para desenvolvimento/demo;
+- conversão de checkout em pedido real;
+- acompanhamento público do pedido por `token`;
+- painel público de retirada.
+
+### O que já está implementado
 
 #### Autenticação e estrutura da loja
 
@@ -42,7 +48,7 @@ O projeto já possui uma base funcional importante, com autenticação, painel a
 
 #### Painel administrativo
 
-- tela inicial do painel com resumo da loja;
+- tela inicial do painel;
 - navegação lateral do dashboard;
 - gerenciamento de categorias;
 - gerenciamento de produtos;
@@ -66,8 +72,30 @@ O projeto já possui uma base funcional importante, com autenticação, painel a
 - reordenar;
 - excluir produto.
 
+#### Área pública da loja
+
+- rota pública `/{slug}` carregando loja real via RPC;
+- exibição de categorias e produtos disponíveis;
+- filtro automático de produtos inativos, indisponíveis ou sem estoque quando aplicável;
+- carrinho público com `localStorage` separado por loja;
+- resumo sticky do carrinho;
+- navegação para checkout.
+
+#### Checkout público
+
+- rota pública `/{slug}/checkout`;
+- leitura do carrinho por loja;
+- formulário com nome e telefone obrigatórios;
+- validação básica de telefone;
+- criação de `checkout_sessions` e `checkout_session_items` via RPC;
+- limpeza do carrinho somente após sucesso real da criação da sessão;
+- tela de sucesso com dados da sessão criada;
+- botão temporário para **simular pagamento aprovado** em ambiente de desenvolvimento/demo.
+
 #### Pedidos
 
+- conversão de `checkout_session` paga em pedido real;
+- criação de `orders` e `order_items` a partir do checkout;
 - listagem de pedidos da loja;
 - transições operacionais com regras de status;
 - ações de:
@@ -78,53 +106,33 @@ O projeto já possui uma base funcional importante, com autenticação, painel a
 - atualização de timestamps operacionais (`accepted_at`, `ready_at`, `finalized_at`, `rejected_at`);
 - separação entre **status operacional** e **status de reembolso**.
 
-#### Área pública
+#### Acompanhamento público
 
-- página pública por `slug` da loja;
-- página pública de checkout preparada como placeholder;
-- página pública de acompanhamento do pedido por token;
-- painel público de retirada exibindo o último pedido pronto.
+- página pública `/{slug}/pedido/[id]?token=...` funcionando com validação por:
+  - `slug` da loja;
+  - `id` do pedido;
+  - `public_token` do pedido;
+- painel público `/{slug}/painel` exibindo o último pedido pronto para retirada.
 
 #### Banco de dados
 
 - projeto integrado ao **Supabase**;
-- schema remoto já versionado localmente em `supabase/migrations/`;
-- histórico de migrations alinhado com o banco remoto.
+- uso de Auth, Database, RPC e RLS;
+- schema versionado localmente em `supabase/migrations/`;
+- fluxo público de checkout e conversão para pedido já migrado e validado.
 
 ---
 
 ## O que ainda falta desenvolver
 
-As funcionalidades abaixo ainda estão pendentes, parciais ou em evolução:
+As principais frentes restantes são:
 
-### Cardápio público
-
-- carregar categorias e produtos reais do banco em `/{slug}`;
-- exibir somente produtos ativos e disponíveis;
-- organizar visualmente o cardápio por categoria;
-- montar carrinho no fluxo público.
-
-### Checkout e pedido do cliente
-
-- carrinho funcional;
-- cálculo de totais;
-- coleta de dados básicos do cliente;
-- geração do pedido no fluxo correto;
-- integração com plataforma de pagamento externa;
-- confirmação do pedido somente após pagamento aprovado.
-
-### Painel e operação
-
-- tela de configurações da loja;
-- ajustes de UX do dashboard;
+- integração com **gateway de pagamento real**;
+- substituição da simulação de pagamento por confirmação real de pagamento;
+- tela de **configurações da loja**;
+- refinamentos de UX no dashboard e nas páginas públicas;
 - possíveis melhorias no painel público de retirada;
-- refinamento do fluxo de pedidos para operação real.
-
-### Infraestrutura e organização
-
-- ampliar documentação técnica;
-- revisar README conforme novas features forem entrando;
-- continuar versionando toda mudança de banco por migration.
+- documentação técnica contínua e evolução do versionamento do banco.
 
 ---
 
@@ -141,7 +149,7 @@ As funcionalidades abaixo ainda estão pendentes, parciais ou em evolução:
 
 - **Supabase**
   - Auth
-  - Database
+  - Postgres
   - RPC
   - RLS
 
@@ -150,7 +158,7 @@ As funcionalidades abaixo ainda estão pendentes, parciais ou em evolução:
 - **ESLint**
 - **npm**
 - **Supabase CLI**
-- **Docker Desktop** (necessário para alguns comandos da CLI, como `db pull`)
+- **Docker Desktop**
 
 ---
 
@@ -167,7 +175,7 @@ As funcionalidades abaixo ainda estão pendentes, parciais ou em evolução:
 - **VS Code**
 - **Docker Desktop**
 
-> O projeto pode rodar localmente sem usar Docker no dia a dia. Porém, alguns comandos do Supabase CLI, como o resgate do schema remoto com `db pull`, exigem Docker funcionando.
+> O projeto pode rodar localmente sem Docker no dia a dia, mas comandos da Supabase CLI como `db diff` e `db pull` dependem do Docker Desktop funcionando.
 
 ---
 
@@ -175,18 +183,14 @@ As funcionalidades abaixo ainda estão pendentes, parciais ou em evolução:
 
 Crie um arquivo `.env.local` na raiz do projeto com base no `.env.local.example`.
 
-### Arquivo `.env.local.example`
+### `.env.local.example`
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-### Arquivo `.env.local`
-
-Preencha com os valores reais do seu projeto Supabase.
-
-Exemplo de fluxo:
+### Criando o `.env.local`
 
 #### Windows
 
@@ -200,9 +204,9 @@ copy .env.local.example .env.local
 cp .env.local.example .env.local
 ```
 
-Depois disso, abra o `.env.local` e adicione os valores reais do Supabase.
+Depois, preencha com os dados reais do seu projeto Supabase.
 
-### Onde pegar esses dados no Supabase
+### Onde encontrar os valores
 
 No painel do Supabase:
 
@@ -212,7 +216,7 @@ No painel do Supabase:
   - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
   - **anon public key** → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-> Atualmente, o projeto usa apenas variáveis públicas no front. Mesmo assim, o arquivo `.env.local` **não deve ser commitado**.
+> O arquivo `.env.local` não deve ser commitado.
 
 ---
 
@@ -232,8 +236,6 @@ npm run dev
 
 ### 3. Abrir no navegador
 
-Abra:
-
 ```text
 http://localhost:3000
 ```
@@ -242,53 +244,25 @@ http://localhost:3000
 
 ## Scripts do projeto
 
-O arquivo `package.json` atualmente possui os seguintes scripts:
-
 ### `npm run dev`
-
-```bash
-next dev --turbopack
-```
 
 Inicia o ambiente de desenvolvimento com hot reload.
 
-Use este comando no dia a dia para programar e testar o projeto localmente.
-
 ### `npm run build`
 
-```bash
-next build
-```
-
-Gera a build de produção do projeto.
-
-Use para validar se a aplicação compila corretamente antes de publicar ou entregar uma versão mais estável.
+Gera a build de produção.
 
 ### `npm run start`
 
-```bash
-next start
-```
-
 Inicia a aplicação já compilada em modo de produção.
-
-Esse comando normalmente é usado depois de executar `npm run build`.
 
 ### `npm run lint`
 
-```bash
-next lint
-```
-
-Executa a checagem estática de código com ESLint.
-
-Use este comando para identificar problemas de qualidade, estilo ou possíveis erros antes de commitar.
+Executa a checagem estática com ESLint.
 
 ---
 
 ## Estrutura do projeto
-
-Abaixo está uma visão geral das principais pastas e arquivos:
 
 ```text
 cardexpress/
@@ -314,10 +288,12 @@ cardexpress/
 ├─ components/
 │  ├─ auth/
 │  ├─ dashboard/
-│  └─ layout/
+│  ├─ layout/
+│  └─ public/
 ├─ lib/
 │  ├─ auth/
 │  ├─ orders/
+│  ├─ public/
 │  ├─ supabase/
 │  ├─ validation/
 │  └─ db-errors.ts
@@ -333,261 +309,96 @@ cardexpress/
 
 ---
 
-## Explicação das principais áreas do código
+## Principais rotas
 
-### `app/`
+### Área administrativa
 
-Contém as rotas da aplicação seguindo o App Router do Next.js.
-
-#### `app/(dashboard)/`
-
-Agrupa as telas internas do comerciante.
-
-- `/cadastro` → criação de conta e loja;
+- `/cadastro` → cadastro de comerciante e loja;
 - `/login` → autenticação;
 - `/dashboard` → área protegida;
-- `/dashboard/categorias` → CRUD de categorias;
-- `/dashboard/produtos` → CRUD de produtos;
-- `/dashboard/pedidos` → gerenciamento de pedidos;
-- `/dashboard/configuracoes` → área ainda pendente.
+- `/dashboard/categorias` → gerenciamento de categorias;
+- `/dashboard/produtos` → gerenciamento de produtos;
+- `/dashboard/pedidos` → operação de pedidos;
+- `/dashboard/configuracoes` → tela ainda pendente de evolução.
 
-#### `app/(public)/[slug]/`
+### Área pública
 
-Agrupa as rotas públicas da loja.
-
-- `/{slug}` → cardápio público;
-- `/{slug}/checkout` → fluxo futuro de checkout;
-- `/{slug}/painel` → painel público de retirada;
-- `/{slug}/pedido/[id]?token=...` → acompanhamento público do pedido.
-
-#### `app/actions/`
-
-Contém as **Server Actions** da aplicação.
-
-Arquivos principais:
-
-- `auth.ts` → cadastro, login e logout;
-- `categories.ts` → criar, editar, ativar/desativar, reordenar e excluir categorias;
-- `products.ts` → criar, editar, ativar/desativar, controlar disponibilidade/estoque, reordenar e excluir produtos;
-- `orders.ts` → transições operacionais dos pedidos.
-
-### `components/`
-
-Componentes reutilizáveis da interface.
-
-- `components/auth/` → formulários de login, cadastro e botão de logout;
-- `components/dashboard/` → linhas, formulários e ações das telas administrativas;
-- `components/layout/` → header, body e componentes estruturais.
-
-### `lib/`
-
-Helpers, validações e integração com Supabase.
-
-#### `lib/auth/`
-
-Responsável por regras relacionadas ao comerciante autenticado e à resolução da loja atual.
-
-#### `lib/supabase/`
-
-Clientes do Supabase para browser, servidor e middleware.
-
-#### `lib/orders/`
-
-Funções auxiliares para exibição de pedidos, labels e formatação.
-
-#### `lib/validation/`
-
-Validações auxiliares, incluindo parsing e formatação de preço.
-
-### `types/`
-
-Tipos TypeScript compartilhados do domínio do sistema.
-
-Inclui:
-
-- `Profile`
-- `Store`
-- `Category`
-- `Product`
-- `Order`
-- `OrderItem`
-- `OrderStatus`
-- `RefundStatus`
-
-### `supabase/`
-
-Arquivos da integração e versionamento do banco.
-
-#### `supabase/config.toml`
-
-Arquivo de configuração local da Supabase CLI.
-
-#### `supabase/migrations/`
-
-Pasta onde ficam as migrations SQL versionadas do banco.
-
-Atualmente, o schema remoto do projeto já foi trazido para o repositório por meio do `supabase db pull`.
+- `/{slug}` → cardápio público da loja;
+- `/{slug}/checkout` → checkout público;
+- `/{slug}/pedido/[id]?token=...` → acompanhamento público do pedido;
+- `/{slug}/painel` → painel público de retirada.
 
 ---
 
-## Fluxo de autenticação
+## Fluxos principais
 
-O sistema utiliza **Supabase Auth** para autenticação do comerciante.
+### 1. Fluxo do cardápio público
 
-### Fluxo implementado
+1. o cliente acessa `/{slug}`;
+2. a aplicação busca dados públicos da loja via RPC;
+3. carrega categorias e produtos disponíveis via RPC;
+4. monta o carrinho no navegador com `localStorage` por loja;
+5. segue para `/{slug}/checkout`.
 
-1. o usuário acessa `/cadastro`;
-2. informa dados pessoais e da loja;
-3. a aplicação cria a conta no Supabase Auth;
-4. com sessão válida, cria/atualiza dados em `profiles`, `stores` e `store_settings`;
-5. o usuário autenticado acessa `/dashboard`.
+### 2. Fluxo do checkout
 
-### Rotas protegidas
+1. o checkout lê o carrinho salvo da loja;
+2. coleta nome e telefone do cliente;
+3. chama a RPC `create_checkout_session_by_slug(...)`;
+4. o servidor valida loja, itens, disponibilidade e estoque;
+5. cria `checkout_sessions` e `checkout_session_items`;
+6. a interface exibe a sessão criada como aguardando pagamento.
 
-As rotas em `/dashboard/*` são protegidas.
+### 3. Fluxo atual de pagamento (modo demo)
 
-Se o usuário não estiver autenticado, ele é redirecionado para `/login`.
+Enquanto a integração com gateway real não foi implementada, o projeto usa um fluxo temporário de demonstração:
 
-Essa proteção acontece por meio do `middleware.ts` da aplicação em conjunto com a integração do Supabase no middleware, garantindo a validação da sessão antes do acesso às rotas administrativas.
+1. após criar a `checkout_session`, a tela oferece o botão **Simular pagamento aprovado**;
+2. a RPC `simulate_checkout_payment_success(...)` marca a sessão como paga;
+3. a função `convert_paid_checkout_session_to_order(...)` converte a sessão em pedido real;
+4. o usuário é redirecionado para a página pública do pedido.
 
-### Observação importante sobre confirmação de e-mail
+### 4. Fluxo do pedido
 
-Se a confirmação de e-mail estiver habilitada no Supabase, pode não existir sessão imediatamente após o cadastro. Em ambiente de desenvolvimento, isso pode atrapalhar o fluxo de criação da loja no mesmo passo.
-
-Se necessário, ajuste isso no Supabase para facilitar os testes.
-
----
-
-## Fluxo de categorias
-
-Na tela `/dashboard/categorias`, o comerciante pode:
-
-- criar categoria;
-- editar nome;
-- ativar/desativar;
-- mudar ordem;
-- excluir categoria.
-
-### Regras importantes
-
-- a categoria pertence sempre a uma única loja;
-- não é possível excluir uma categoria que ainda tenha produtos vinculados;
-- a listagem considera apenas categorias da loja autenticada.
+1. o pedido entra em `orders` com status `aguardando_aceite`;
+2. aparece no painel administrativo da loja;
+3. o comerciante pode aceitar, recusar, marcar como pronto e finalizar;
+4. a página pública do pedido reflete os timestamps e o status operacional.
 
 ---
 
-## Fluxo de produtos
+## Regras importantes do domínio
 
-Na tela `/dashboard/produtos`, o comerciante pode:
+### 1 loja por conta
 
-- criar produto;
-- editar produto;
-- vincular a uma categoria da própria loja;
-- ativar/desativar;
-- controlar disponibilidade;
-- controlar estoque;
-- reordenar;
-- excluir produto.
+Nesta fase, a regra do projeto é:
 
-### Regra importante: `is_active` x `is_available`
+- **1 conta autenticada = 1 loja**
 
-O projeto separa dois conceitos:
+### `is_active` x `is_available`
 
-- `is_active` → produto ativo no cadastro da loja;
-- `is_available` → produto disponível para venda naquele momento.
+O projeto separa dois conceitos em produtos:
 
-Isso é importante porque um produto pode continuar cadastrado, mas estar indisponível temporariamente.
+- `is_active` → produto continua cadastrado e ativo no sistema;
+- `is_available` → produto está disponível para venda naquele momento.
 
 ### Estoque
 
-Quando `track_stock` está ativo:
+Quando `track_stock = true`:
 
-- o sistema exige `stock_quantity`;
-- disponibilidade passa a depender do estoque;
-- se o estoque for zero, o produto tende a ficar indisponível.
+- o sistema passa a considerar `stock_quantity`;
+- produtos sem estoque podem deixar de aparecer no cardápio público;
+- a conversão do checkout em pedido também valida estoque no servidor.
 
----
+### Pedido público seguro
 
-## Fluxo de pedidos
+O acesso à página pública do pedido depende de:
 
-Na tela `/dashboard/pedidos`, o comerciante acompanha pedidos ativos.
+- `slug` da loja;
+- `id` do pedido;
+- `token` público do pedido.
 
-### Status operacionais implementados
-
-- `aguardando_aceite`
-- `em_preparo`
-- `pronto_para_retirada`
-- `finalizado`
-- `recusado`
-
-### Regras de transição
-
-As transições permitidas atualmente são:
-
-- `aguardando_aceite` → `em_preparo`
-- `aguardando_aceite` → `recusado`
-- `em_preparo` → `pronto_para_retirada`
-- `pronto_para_retirada` → `finalizado`
-
-### Status de reembolso
-
-O projeto também separa o status de reembolso do status operacional do pedido.
-
-Valores atuais:
-
-- `none`
-- `pendente`
-- `reembolsado`
-- `falhou`
-
-Quando um pedido é recusado, o fluxo já prevê marcar o reembolso como `pendente`.
-
-### Revalidação das páginas públicas
-
-Sempre que uma transição importante de pedido é executada no painel administrativo, a aplicação revalida também as páginas públicas relacionadas.
-
-Isso é importante porque mantém sincronizados:
-
-- o painel público de retirada;
-- a página pública de acompanhamento do pedido.
-
-Na implementação atual, essa atualização é feita nas actions de pedidos com `revalidatePath`, o que ajuda a refletir mudanças operacionais sem depender de atualização manual da interface.
-
----
-
-## Área pública da loja
-
-### `/{slug}`
-
-É a rota pública principal da loja.
-
-No estágio atual, essa página ainda funciona como um **stub estrutural**, servindo como base inicial da experiência pública e renderizando apenas a estrutura principal da loja. Ela ainda não exibe o cardápio completo com categorias e produtos vindos do banco.
-
-A próxima evolução dessa rota é carregar:
-
-- categorias da loja;
-- produtos ativos;
-- produtos disponíveis;
-- organização visual por categoria;
-- base para montagem do carrinho.
-
-### `/{slug}/checkout`
-
-Página reservada para o fluxo de checkout.
-
-Ainda não implementa carrinho nem pagamento real.
-
-### `/{slug}/pedido/[id]?token=...`
-
-Página pública de acompanhamento de pedido.
-
-Ela usa uma RPC do Supabase para permitir acesso controlado ao pedido por token público.
-
-### `/{slug}/painel`
-
-Painel público de retirada.
-
-Atualmente exibe o último pedido pronto para retirada, usando uma RPC no Supabase.
+Isso evita exposição indevida de pedidos de outras lojas ou de outros clientes.
 
 ---
 
@@ -595,17 +406,7 @@ Atualmente exibe o último pedido pronto para retirada, usando uma RPC no Supaba
 
 O projeto utiliza Supabase como backend principal.
 
-### Recursos usados
-
-- autenticação do comerciante;
-- tabelas do domínio da aplicação;
-- políticas RLS;
-- funções RPC;
-- versionamento do schema com migrations.
-
-### Estrutura esperada no banco
-
-O projeto trabalha com entidades como:
+### Principais entidades
 
 - `profiles`
 - `stores`
@@ -614,103 +415,58 @@ O projeto trabalha com entidades como:
 - `products`
 - `orders`
 - `order_items`
+- `checkout_sessions`
+- `checkout_session_items`
 
-Além disso, já existem funções RPC usadas pela aplicação, como:
+### RPCs relevantes no estado atual
 
+- `get_public_store_by_slug`
+- `get_public_menu_by_slug`
 - `get_public_order`
 - `get_latest_ready_order_for_store`
+- `create_checkout_session_by_slug`
+- `convert_paid_checkout_session_to_order`
+- `simulate_checkout_payment_success`
 
-Essas funções já estão versionadas na migration atual do projeto:
+### Migrations importantes
 
-```text
-supabase/migrations/20260331203339_remote_schema.sql
+Atualmente o repositório contém pelo menos estas referências importantes:
+
+- `supabase/migrations/20260331203339_remote_schema.sql`
+- `supabase/migrations/20260403001920_public_checkout_order_flow.sql`
+
+A primeira representa o snapshot/versionamento inicial do schema remoto. A segunda registra a evolução do fluxo público de cardápio, checkout e conversão para pedido.
 
 ---
 
-## Como o schema do Supabase foi versionado
+## Versionamento do banco com Supabase CLI
 
-Como o banco já existia no painel do Supabase e os SQLs antigos não estavam mais salvos, o schema remoto foi trazido para o repositório usando a **Supabase CLI**.
+### Fluxo usado no projeto
 
-### Fluxo usado
-
-1. inicializar a estrutura local do Supabase:
+Inicialização e vínculo com o projeto remoto:
 
 ```bash
 npx supabase init
-```
-
-2. autenticar a CLI:
-
-```bash
 npx supabase login
-```
-
-3. vincular o projeto local ao projeto remoto:
-
-```bash
 npx supabase link --project-ref SEU_PROJECT_REF
 ```
 
-4. puxar o schema remoto para migrations locais:
+Para trazer o schema remoto ou gerar diferenças:
 
 ```bash
 npx supabase db pull
+npx supabase db diff --linked --schema public -f nome_da_migration
 ```
 
 ### Observações importantes
 
-- `db pull` exige **Docker Desktop** funcionando;
-- se houver divergência no histórico de migrations, pode ser necessário usar:
-
-```bash
-npx supabase migration list
-npx supabase migration repair --status applied <timestamp>
-npx supabase migration repair --status reverted <timestamp>
-```
-
-### Boas práticas daqui para frente
-
-- evitar mudanças importantes no banco sem versionamento;
-- registrar novas alterações por migration;
-- commitar a pasta `supabase/migrations/` no GitHub.
+- `db pull` e `db diff` exigem Docker Desktop funcionando;
+- sempre que o banco mudar, o ideal é gerar ou revisar uma migration antes de commitar;
+- evitar alterações no Supabase remoto sem refletir isso no repositório.
 
 ---
 
-## GitHub e colaboração em grupo
-
-O projeto já foi preparado para versionamento em grupo no GitHub.
-
-### Recomendações de uso
-
-- manter a `main` sempre funcional;
-- usar commits com mensagens claras;
-- revisar mudanças antes de subir;
-- não commitar arquivos sensíveis;
-- manter o banco alinhado com as migrations do repositório.
-
-### Arquivos que não devem ser versionados
-
-Exemplos:
-
-- `.env.local`
-- `node_modules/`
-- `.next/`
-- logs e arquivos temporários
-
-### Arquivos que devem ser versionados
-
-Exemplos:
-
-- código-fonte;
-- `README.md`;
-- `.env.local.example`;
-- `supabase/config.toml`;
-- `supabase/migrations/`;
-- documentação do projeto.
-
----
-
-## Convenções úteis para o time
+## Git e colaboração
 
 ### Antes de começar a programar
 
@@ -724,50 +480,27 @@ npm run dev
 
 ```bash
 npm run lint
-npm run build
 ```
 
-### Depois de alterar o banco
+Se a mudança envolver banco:
 
-Garanta que a mudança esteja versionada corretamente no repositório.
+- confirme se a migration foi criada ou atualizada;
+- revise `supabase/migrations/` antes do commit.
 
----
+### Arquivos que não devem ser versionados
 
-## Possíveis melhorias futuras
+- `.env.local`
+- `.next/`
+- `node_modules/`
+- logs e temporários
 
-Alguns pontos que já fazem sentido para as próximas etapas do projeto:
+### Arquivos que devem ser versionados
 
-- implementação completa do cardápio público;
-- carrinho funcional;
-- integração real de pagamento;
-- atualização automática e mais robusta do painel público de retirada;
-- melhorias na tela de configurações da loja;
-- geração de tipos do Supabase para fortalecer a tipagem do projeto;
-- testes automatizados;
-- ajustes para preparação de uso em ambiente real.
-
----
-
-## Observações importantes de desenvolvimento
-
-### 1 loja por conta
-
-Nesta fase do projeto, a lógica está orientada para **uma conta de comerciante = uma loja**.
-
-### Rotas e dados sempre filtrados pela loja
-
-A aplicação foi organizada para que categorias, produtos e pedidos consultados no painel pertençam apenas à loja autenticada.
-
-### Público x administrativo
-
-O projeto separa claramente:
-
-- área pública do cliente;
-- área administrativa do comerciante.
-
-### Pedido e pagamento
-
-O comportamento desejado do produto é que o pedido seja confirmado apenas após pagamento aprovado. Parte desse fluxo ainda está em construção.
+- código-fonte;
+- `README.md`;
+- `.env.local.example`;
+- `supabase/config.toml`;
+- `supabase/migrations/`.
 
 ---
 
@@ -775,38 +508,42 @@ O comportamento desejado do produto é que o pedido seja confirmado apenas após
 
 ### Concluído
 
-- base do projeto em Next.js;
 - autenticação do comerciante;
 - dashboard protegido;
 - CRUD de categorias;
 - CRUD de produtos;
 - fluxo operacional de pedidos;
-- página pública de pedido;
+- cardápio público por `slug`;
+- carrinho público;
+- checkout com `checkout_sessions`;
+- simulação de pagamento aprovado;
+- conversão para pedido real;
+- acompanhamento público do pedido;
 - painel público de retirada;
-- schema do Supabase versionado.
+- migration do fluxo público/checkout versionada no repositório.
 
 ### Em andamento / pendente
 
-- cardápio público real;
-- carrinho;
-- checkout;
-- integração de pagamento;
-- configurações da loja;
-- refinamentos de UX e operação.
+- integração com pagamento real;
+- remoção da simulação de pagamento quando houver gateway;
+- tela de configurações da loja;
+- refinamentos de UX;
+- melhorias operacionais para uso real.
 
 ---
 
-## Como contribuir no projeto
+## Como contribuir
 
 1. atualize sua cópia local do repositório;
 2. configure o `.env.local`;
 3. instale as dependências;
 4. rode o projeto localmente;
 5. faça sua alteração;
-6. teste localmente;
-7. valide lint e build;
-8. commite com mensagem clara;
-9. envie para o GitHub.
+6. valide a interface e o fluxo afetado;
+7. rode `npm run lint`;
+8. se alterar banco, registre a migration;
+9. faça commit com mensagem clara;
+10. envie para o GitHub.
 
 ---
 
@@ -814,7 +551,7 @@ O comportamento desejado do produto é que o pedido seja confirmado apenas após
 
 Este projeto foi desenvolvido para fins acadêmicos no contexto do projeto **CardExpress**.
 
-Caso a equipe deseje, a licença pode ser definida posteriormente.
+A licença pode ser definida posteriormente pela equipe.
 
 ---
 
@@ -828,7 +565,6 @@ Responsável principal no contexto atual do desenvolvimento:
 
 ## Resumo final
 
-O CardExpress já possui uma base sólida de autenticação, painel administrativo, gerenciamento de cardápio e fluxo operacional de pedidos.
+O CardExpress já possui uma base sólida para operação de uma loja com cardápio digital e retirada no balcão. O projeto evoluiu de um painel administrativo inicial para um fluxo público completo em modo demo, incluindo cardápio, carrinho, checkout, conversão para pedido real e acompanhamento público do pedido.
 
-A próxima grande etapa do desenvolvimento é transformar essa base em uma experiência pública completa para o cliente, com cardápio funcional, carrinho, checkout e integração de pagamento, mantendo o banco e o código sempre versionados no GitHub.
-
+A próxima etapa mais importante é substituir a simulação de pagamento por uma integração real com gateway e concluir a tela de configurações da loja, mantendo o banco e o código versionados no repositório.

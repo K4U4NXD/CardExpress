@@ -96,3 +96,70 @@ export type OrderItem = {
 };
 
 export type OrderWithItems = Order & { items?: OrderItem[] };
+
+/** Retorno da RPC public.get_public_store_by_slug. */
+export type PublicStoreRpcRow = {
+  store_id: string;
+  name: string;
+  slug: string;
+  phone: string | null;
+  accepts_orders: boolean;
+  public_message: string | null;
+};
+
+/** Retorno da RPC public.get_public_menu_by_slug. */
+export type PublicMenuRpcRow = {
+  category_id: string;
+  category_name: string;
+  category_sort_order: number;
+  product_id: string | null;
+  product_name: string | null;
+  product_description: string | null;
+  product_price: number | string | null;
+  product_image_url: string | null;
+};
+
+/** Item persistido no carrinho público (localStorage). */
+export type PublicCartItem = {
+  product_id: string;
+  name: string;
+  unit_price: number;
+  quantity: number;
+};
+
+/** Item de checkout enviado para a RPC create_checkout_session_by_slug. */
+export type CheckoutRpcItemInput = {
+  product_id: string;
+  quantity: number;
+};
+
+/** Item de carrinho usado na tela de checkout. */
+export type PublicCheckoutCartItem = {
+  product_id: string;
+  name: string;
+  unit_price: number;
+  quantity: number;
+};
+
+/** Retorno da RPC public.create_checkout_session_by_slug. */
+export type CreateCheckoutSessionRpcRow = {
+  checkout_session_id: string;
+  public_token: string;
+  store_id: string;
+  status: string;
+  total_amount: number | string;
+  expires_at: string | null;
+};
+
+/** Retorno da RPC public.simulate_checkout_payment_success. */
+export type SimulateCheckoutPaymentSuccessRpcRow = {
+  checkout_session_id: string;
+  checkout_public_token: string;
+  checkout_status: string;
+  paid_at: string | null;
+  order_id: string | null;
+  order_public_token: string | null;
+  order_number: number | null;
+  display_code: string | null;
+  order_status: string | null;
+};

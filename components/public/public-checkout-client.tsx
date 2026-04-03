@@ -1,0 +1,376 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import {
+  clearPublicCartFromStorage,
+  getPublicCartStorageKey,
+  readPublicCartFromStorage,
+} from "@/lib/public/cart";
+import { formatDateTime } from "@/lib/orders/presenter";
+import { formatBRL } from "@/lib/validation/price";
+import type {
+  CheckoutRpcItemInput,
+  CreateCheckoutSessionRpcRow,
+  PublicCheckoutCartItem,
+  SimulateCheckoutPaymentSuccessRpcRow,
+} from "@/types";
+
+type PublicCheckoutClientProps = {
+  slug: string;
+  storeName: string;
+  acceptsOrders: boolean;
+};
+
+export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicCheckoutClientProps) {
+  const router = useRouter();
+  const cartStorageKey = getPublicCartStorageKey(slug);
+
+  const [cartItems, setCartItems] = useState<PublicCheckoutCartItem[]>([]);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [notes, setNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [simulationErrorMessage, setSimulationErrorMessage] = useState<string | null>(null);
+  const [success, setSuccess] = useState<CreateCheckoutSessionRpcRow | null>(null);
+
+  useEffect(() => {
+    setCartItems(normalizeCheckoutItems(readPublicCartFromStorage(cartStorageKey)));
+  }, [cartStorageKey]);
+
+  const totalItems = useMemo(
+    () => cartItems.reduce((acc, item) => acc + item.quantity, 0),
+    [cartItems]
+  );
+
+  const localTotalAmount = useMemo(
+    () => cartItems.reduce((acc, item) => acc + item.unit_price * item.quantity, 0),
+    [cartItems]
+  );
+
+  const customerNameTrimmed = customerName.trim();
+  const customerPhoneTrimmed = customerPhone.trim();
+  const phoneDigits = customerPhoneTrimmed.replace(/\D/g, "");
+  const hasPhoneInput = phoneDigits.length > 0;
+  const phoneIsValid = phoneDigits.length === 10 || phoneDigits.length === 11;
+  const canSubmit =
+    acceptsOrders &&
+    totalItems > 0 &&
+    customerNameTrimmed.length > 0 &&
+    hasPhoneInput &&
+    phoneIsValid &&
+    !isSubmitting;
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErrorMessage(null);
+
+    if (!acceptsOrders) {
+      setErrorMessage("Esta loja nao esta aceitando pedidos no momento.");
+      return;
+    }
+
+    if (totalItems <= 0) {
+      setErrorMessage("Seu carrinho esta vazio.");
+      return;
+    }
+
+    if (!customerNameTrimmed) {
+      setErrorMessage("Informe seu nome para continuar.");
+      return;
+    }
+
+    if (!hasPhoneInput) {
+      setErrorMessage("Informe um telefone para continuar.");
+      return;
+    }
+
+    if (!phoneIsValid) {
+      setErrorMessage("Telefone invalido. Informe um numero brasileiro com 10 ou 11 digitos.");
+      return;
+    }
+
+    const rpcItems: CheckoutRpcItemInput[] = cartItems.map((item) => ({
+      product_id: item.product_id,
+      quantity: item.quantity,
+    }));
+
+    setIsSubmitting(true);
+
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { data, error } = await supabase
+        .rpc("create_checkout_session_by_slug", {
+          p_slug: slug,
+          p_customer_name: customerNameTrimmed,
+          p_customer_phone: phoneDigits,
+          p_notes: notes.trim() || null,
+          p_items: rpcItems,
+        })
+        .maybeSingle<CreateCheckoutSessionRpcRow>();
+
+      if (error || !data) {
+        setErrorMessage(error?.message ?? "Nao foi possivel iniciar o checkout. Tente novamente.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      clearPublicCartFromStorage(cartStorageKey);
+      setCartItems([]);
+      setSuccess(data);
+      setSimulationErrorMessage(null);
+      setIsSubmitting(false);
+    } catch {
+      setErrorMessage("Erro inesperado ao iniciar checkout. Tente novamente em instantes.");
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleSimulatePaymentApproved() {
+    if (!success || isSimulatingPayment) {
+      return;
+    }
+
+    setSimulationErrorMessage(null);
+    setIsSimulatingPayment(true);
+
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { data, error } = await supabase
+        .rpc("simulate_checkout_payment_success", {
+          p_checkout_session_id: success.checkout_session_id,
+          p_public_token: success.public_token,
+        })
+        .maybeSingle<SimulateCheckoutPaymentSuccessRpcRow>();
+
+      if (error || !data) {
+        setSimulationErrorMessage("Nao foi possivel simular o pagamento agora. Tente novamente em instantes.");
+        return;
+      }
+
+      if (!data.order_id || !data.order_public_token) {
+        setSimulationErrorMessage(
+          "Pagamento simulado, mas os dados do pedido ainda nao foram disponibilizados."
+        );
+        return;
+      }
+
+      const token = encodeURIComponent(data.order_public_token);
+      router.push(`/${slug}/pedido/${data.order_id}?token=${token}`);
+    } catch {
+      setSimulationErrorMessage("Erro inesperado ao simular pagamento. Tente novamente.");
+    } finally {
+      setIsSimulatingPayment(false);
+    }
+  }
+
+  if (success) {
+    return (
+      <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-emerald-900">Checkout criado - aguardando pagamento</h2>
+        <p className="mt-2 text-sm text-emerald-800">
+          Sessao criada para {storeName}. Nesta fase de desenvolvimento, o pagamento pode ser simulado.
+        </p>
+
+        <dl className="mt-4 grid gap-3 text-sm text-emerald-900">
+          <div>
+            <dt className="font-medium">Sessao de checkout</dt>
+            <dd>{success.checkout_session_id}</dd>
+          </div>
+          <div>
+            <dt className="font-medium">Token publico</dt>
+            <dd>{success.public_token}</dd>
+          </div>
+          <div>
+            <dt className="font-medium">Status</dt>
+            <dd>{success.status} (aguardando pagamento)</dd>
+          </div>
+          <div>
+            <dt className="font-medium">Total confirmado</dt>
+            <dd>{formatBRL(Number(success.total_amount ?? 0))}</dd>
+          </div>
+          <div>
+            <dt className="font-medium">Expira em</dt>
+            <dd>{formatDateTime(success.expires_at)}</dd>
+          </div>
+        </dl>
+
+        <p className="mt-4 text-xs text-emerald-700">
+          Botao temporario de simulacao para desenvolvimento/demo, ate a integracao real com gateway.
+        </p>
+
+        {simulationErrorMessage ? (
+          <p className="mt-3 text-sm text-red-700" role="alert">
+            {simulationErrorMessage}
+          </p>
+        ) : null}
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleSimulatePaymentApproved}
+            disabled={isSimulatingPayment}
+            className="inline-flex items-center rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSimulatingPayment ? "Simulando pagamento..." : "Simular pagamento aprovado"}
+          </button>
+
+          <Link
+            href={`/${slug}`}
+            className="inline-flex items-center rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
+          >
+            Voltar ao cardapio
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-zinc-900">Resumo do pedido</h2>
+          <span className="text-sm text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</span>
+        </div>
+
+        {cartItems.length > 0 ? (
+          <div className="mt-4 space-y-3">
+            {cartItems.map((item) => (
+              <div
+                key={item.product_id}
+                className="flex items-start justify-between gap-3 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2"
+              >
+                <div>
+                  <p className="text-sm font-medium text-zinc-900">{item.name}</p>
+                  <p className="text-xs text-zinc-600">{item.quantity} x {formatBRL(item.unit_price)}</p>
+                </div>
+                <p className="text-sm font-semibold text-zinc-900">{formatBRL(item.unit_price * item.quantity)}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-4 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
+            Seu carrinho esta vazio. Adicione produtos para continuar.
+          </div>
+        )}
+
+        <div className="mt-4 border-t border-zinc-200 pt-4">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-zinc-600">Total local (estimativa)</span>
+            <span className="font-semibold text-zinc-900">{formatBRL(localTotalAmount)}</span>
+          </div>
+          <p className="mt-1 text-xs text-zinc-500">
+            O valor oficial e recalculado no servidor ao criar a sessao de checkout.
+          </p>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <h2 className="text-lg font-semibold text-zinc-900">Dados do cliente</h2>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div>
+            <label htmlFor="checkout-customer-name" className="block text-sm font-medium text-zinc-800">
+              Nome
+            </label>
+            <input
+              id="checkout-customer-name"
+              type="text"
+              required
+              value={customerName}
+              onChange={(event) => setCustomerName(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              placeholder="Ex.: Maria Silva"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="checkout-customer-phone" className="block text-sm font-medium text-zinc-800">
+              Telefone
+            </label>
+            <input
+              id="checkout-customer-phone"
+              type="tel"
+              required
+              value={customerPhone}
+              onChange={(event) => setCustomerPhone(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              placeholder="(11) 99999-9999"
+            />
+            {customerPhoneTrimmed.length > 0 && !phoneIsValid ? (
+              <p className="mt-1 text-xs text-red-700">
+                Telefone invalido. Informe um numero brasileiro com 10 ou 11 digitos.
+              </p>
+            ) : null}
+          </div>
+
+          <div>
+            <label htmlFor="checkout-notes" className="block text-sm font-medium text-zinc-800">
+              Observacoes do pedido (opcional)
+            </label>
+            <textarea
+              id="checkout-notes"
+              rows={3}
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              placeholder="Ex.: sem cebola, retirar no balcao"
+            />
+          </div>
+
+          {!acceptsOrders ? (
+            <p className="text-sm text-amber-800">A loja nao esta aceitando pedidos no momento.</p>
+          ) : null}
+
+          {errorMessage ? (
+            <p className="text-sm text-red-700" role="alert">
+              {errorMessage}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting ? "Finalizando checkout..." : "Finalizar checkout"}
+          </button>
+        </form>
+
+        <p className="mt-3 text-xs text-zinc-500">
+          Ao continuar, uma sessao de checkout sera criada e os itens serao registrados no servidor.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+function normalizeCheckoutItems(items: PublicCheckoutCartItem[]) {
+  const map = new Map<string, PublicCheckoutCartItem>();
+
+  for (const item of items) {
+    const current = map.get(item.product_id);
+
+    if (!current) {
+      map.set(item.product_id, {
+        product_id: item.product_id,
+        name: item.name,
+        unit_price: item.unit_price,
+        quantity: Math.max(1, Math.floor(item.quantity)),
+      });
+      continue;
+    }
+
+    map.set(item.product_id, {
+      ...current,
+      quantity: current.quantity + Math.max(1, Math.floor(item.quantity)),
+    });
+  }
+
+  return Array.from(map.values());
+}

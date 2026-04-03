@@ -8,12 +8,27 @@ import {
 } from "@/lib/orders/presenter";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { formatBRL } from "@/lib/validation/price";
-import type { Order } from "@/types";
+import type { OrderStatus, RefundStatus } from "@/types";
 import { notFound } from "next/navigation";
 
 type OrderStatusPageProps = {
   params: Promise<{ slug: string; id: string }>;
   searchParams: Promise<{ token?: string }>;
+};
+
+type PublicOrderRow = {
+  id: string;
+  display_code: string | null;
+  status: OrderStatus;
+  refund_status: RefundStatus;
+  customer_name: string | null;
+  placed_at: string;
+  accepted_at: string | null;
+  ready_at: string | null;
+  finalized_at: string | null;
+  rejected_at: string | null;
+  total_amount: number;
+  note: string | null;
 };
 
 export default async function OrderStatusPage({ params, searchParams }: OrderStatusPageProps) {
@@ -32,19 +47,20 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
       .eq("slug", slug)
       .maybeSingle(),
     supabase
-      .rpc("get_public_order", { store_slug: slug, order_id: id, public_token: token })
-      .maybeSingle(),
+      .rpc("get_public_order", { p_slug: slug, p_order_id: id, p_public_token: token })
+      .maybeSingle<PublicOrderRow>(),
   ]);
 
-  const store = storeResult.data;
-  if (!store) {
+  if (storeResult.error || !storeResult.data) {
     notFound();
   }
 
-  const order = orderResult.error ? null : (orderResult.data as Order | null);
-  if (!order) {
+  if (orderResult.error || !orderResult.data) {
     notFound();
   }
+
+  const store = storeResult.data;
+  const order = orderResult.data;
 
   const statusLabel = ORDER_STATUS_LABELS[order.status];
   const statusBadge = ORDER_STATUS_BADGE[order.status];
@@ -66,7 +82,7 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
             <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>{statusLabel}</span>
             {order.refund_status && order.refund_status !== "none" ? (
               <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-900">
-                Reembolso: {order.refund_status}
+                Reembolso: {refundLabel}
               </span>
             ) : null}
           </div>

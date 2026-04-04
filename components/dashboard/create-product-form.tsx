@@ -7,11 +7,12 @@ export type CategoryOption = { id: string; name: string };
 
 type CreateProductFormProps = {
   categories: CategoryOption[];
+  onCancel?: () => void;
 };
 
 const initial: ProductFormState = {};
 
-export function CreateProductForm({ categories }: CreateProductFormProps) {
+export function CreateProductForm({ categories, onCancel }: CreateProductFormProps) {
   const [state, formAction, pending] = useActionState(createProductAction, initial);
   const [trackStock, setTrackStock] = useState(false);
   const disabled = categories.length === 0;
@@ -155,13 +156,24 @@ export function CreateProductForm({ categories }: CreateProductFormProps) {
           {state.error}
         </p>
       ) : null}
-      <button
-        type="submit"
-        disabled={pending || disabled}
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
-      >
-        {pending ? "Salvando…" : "Adicionar produto"}
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="submit"
+          disabled={pending || disabled}
+          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+        >
+          {pending ? "Salvando…" : "Adicionar produto"}
+        </button>
+        {onCancel ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+          >
+            Cancelar
+          </button>
+        ) : null}
+      </div>
     </form>
   );
 }

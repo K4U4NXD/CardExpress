@@ -27,10 +27,13 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
         description="Revise seus itens e confirme os dados para criar a sessao de checkout."
         backHref={`/${store.slug}`}
         backLabel="Voltar ao cardápio"
+        sticky
+        compact
+        bottomContent={<p className="text-xs text-zinc-500">Etapa atual: revisão e confirmação dos dados.</p>}
       />
 
-      <div className="mx-auto max-w-4xl space-y-6 px-6 py-8">
-        <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <div className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1">
               <p className="text-sm font-medium text-zinc-700">Estabelecimento</p>

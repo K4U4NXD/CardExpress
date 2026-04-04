@@ -1,5 +1,4 @@
-import { CreateProductForm } from "@/components/dashboard/create-product-form";
-import { ProductRow } from "@/components/dashboard/product-row";
+import { DashboardProductsView } from "@/components/dashboard/dashboard-products-view";
 import { PageHeader } from "@/components/layout/page-header";
 import { getUserStore } from "@/lib/auth/store";
 import type { Category, Product } from "@/types";
@@ -51,85 +50,47 @@ export default async function DashboardProductsPage({ searchParams }: PageProps)
     categories = (catData ?? []) as Category[];
   }
 
-  const categoryNameById = Object.fromEntries(categories.map((c) => [c.id, c.name]));
-  const categoriesForCreate = categories.filter((c) => c.is_active).map((c) => ({ id: c.id, name: c.name }));
-
   const avisoText = q.aviso ? AVISOS[q.aviso] : null;
   const erroText = q.erro ? decodeURIComponent(q.erro) : null;
 
-  return (
-    <>
-      <PageHeader
-        title="Produtos"
-        description="Itens do cardápio da sua loja. Apenas produtos e categorias desta loja."
-      />
+  if (!store) {
+    return (
+      <>
+        <PageHeader
+          title="Produtos"
+          description="Itens do cardápio da sua loja."
+          sticky
+          compact
+          stickyTopClassName="top-14 md:top-0"
+        />
 
-      <div className="mx-auto max-w-4xl px-6 py-8">
-        {erroText ? (
-          <p
-            className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-            role="alert"
-          >
-            {erroText}
-          </p>
-        ) : null}
-        {avisoText ? (
-          <p
-            className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
-            role="status"
-          >
-            {avisoText}
-          </p>
-        ) : null}
+        <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+          {erroText ? (
+            <p
+              className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              role="alert"
+            >
+              {erroText}
+            </p>
+          ) : null}
+          {avisoText ? (
+            <p
+              className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+              role="status"
+            >
+              {avisoText}
+            </p>
+          ) : null}
 
-        {!store ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
             Nenhuma loja vinculada à sua conta. Conclua o cadastro antes de gerenciar produtos.
           </div>
-        ) : (
-          <div className="space-y-8">
-            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-sm font-semibold text-zinc-900">Novo produto</h2>
-              <CreateProductForm categories={categoriesForCreate} />
-            </div>
+        </div>
+      </>
+    );
+  }
 
-            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <h2 className="text-sm font-semibold text-zinc-900">Seus produtos</h2>
-              {products.length === 0 ? (
-                <p className="mt-4 text-sm text-zinc-600">Nenhum produto ainda. Adicione um acima.</p>
-              ) : (
-                <div className="mt-2">
-                  {products.map((p, i) => {
-                    const base = categories
-                      .filter((c) => c.is_active || c.id === p.category_id)
-                      .map((c) => ({ id: c.id, name: c.name }));
-                    const hasCurrent = base.some((o) => o.id === p.category_id);
-                    const options = hasCurrent
-                      ? base
-                      : [
-                          {
-                            id: p.category_id,
-                            name: categoryNameById[p.category_id] ?? "Categoria",
-                          },
-                          ...base,
-                        ];
-                    return (
-                      <ProductRow
-                        key={p.id}
-                        product={p}
-                        categoryName={categoryNameById[p.category_id] ?? "—"}
-                        categoryOptions={options}
-                        isFirst={i === 0}
-                        isLast={i === products.length - 1}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </>
+  return (
+    <DashboardProductsView categories={categories} products={products} avisoText={avisoText} erroText={erroText} />
   );
 }

@@ -28,6 +28,7 @@ type PublicCheckoutClientProps = {
 export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicCheckoutClientProps) {
   const router = useRouter();
   const cartStorageKey = getPublicCartStorageKey(slug);
+  const customerStorageKey = `${cartStorageKey}:customer`;
 
   const [cartItems, setCartItems] = useState<PublicCheckoutCartItem[]>([]);
   const [customerName, setCustomerName] = useState("");
@@ -42,6 +43,37 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
   useEffect(() => {
     setCartItems(normalizeCheckoutItems(readPublicCartFromStorage(cartStorageKey)));
   }, [cartStorageKey]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(customerStorageKey);
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw) as { name?: string; phone?: string };
+      if (parsed.name) {
+        setCustomerName(parsed.name);
+      }
+      if (parsed.phone) {
+        setCustomerPhone(parsed.phone);
+      }
+    } catch {
+      // Ignora falhas de leitura local para não interromper o checkout.
+    }
+  }, [customerStorageKey]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        customerStorageKey,
+        JSON.stringify({
+          name: customerName,
+          phone: customerPhone,
+        })
+      );
+    } catch {
+      // Ignora falhas de escrita local para manter o fluxo.
+    }
+  }, [customerName, customerPhone, customerStorageKey]);
 
   const totalItems = useMemo(
     () => cartItems.reduce((acc, item) => acc + item.quantity, 0),
@@ -233,7 +265,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-zinc-900">Resumo do pedido</h2>
           <span className="text-sm text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</span>
@@ -271,7 +303,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
         </div>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
         <h2 className="text-lg font-semibold text-zinc-900">Dados do cliente</h2>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
@@ -307,6 +339,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
                 Telefone invalido. Informe um numero brasileiro com 10 ou 11 digitos.
               </p>
             ) : null}
+            <p className="mt-1 text-xs text-zinc-500">Nome e telefone ficam salvos neste aparelho para próximos pedidos.</p>
           </div>
 
           <div>

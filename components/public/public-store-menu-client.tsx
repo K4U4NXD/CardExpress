@@ -38,6 +38,8 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
 
   const sections = useMemo(() => groupMenuByCategory(menuRows), [menuRows]);
   const hasProducts = sections.length > 0;
+  const [activeCategory, setActiveCategory] = useState<string>("todos");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const productById = useMemo(() => {
     const map = new Map<string, MenuProduct>();
@@ -53,6 +55,34 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
 
   const [cartItems, setCartItems] = useState<PublicCartItem[]>([]);
   const [hasHydratedCart, setHasHydratedCart] = useState(false);
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
+
+  const categoryFilters = useMemo(
+    () => [{ value: "todos", label: "Todos" }, ...sections.map((section) => ({ value: section.category_id, label: section.category_name }))],
+    [sections]
+  );
+
+  const filteredSections = useMemo(() => {
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+
+    return sections
+      .filter((section) => activeCategory === "todos" || section.category_id === activeCategory)
+      .map((section) => ({
+        ...section,
+        products: section.products.filter((product) => {
+          if (!normalizedSearch) return true;
+          const name = product.name.toLowerCase();
+          const description = (product.description ?? "").toLowerCase();
+          return name.includes(normalizedSearch) || description.includes(normalizedSearch);
+        }),
+      }))
+      .filter((section) => section.products.length > 0);
+  }, [activeCategory, searchQuery, sections]);
+
+  const visibleProductsCount = useMemo(
+    () => filteredSections.reduce((acc, section) => acc + section.products.length, 0),
+    [filteredSections]
+  );
 
   useEffect(() => {
     setHasHydratedCart(false);
@@ -158,11 +188,62 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
     setCartItems([]);
   }
 
+  function toggleDescription(productId: string) {
+    setExpandedDescriptions((current) => ({
+      ...current,
+      [productId]: !current[productId],
+    }));
+  }
+
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 pb-28 sm:pb-24">
       {hasProducts ? (
-        sections.map((section) => (
-          <section key={section.category_id} className="space-y-4">
+        <section className="sticky top-[4.5rem] z-10 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Buscar produto"
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                >
+                  Limpar
+                </button>
+              ) : null}
+            </div>
+
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {categoryFilters.map((filter) => {
+                const active = activeCategory === filter.value;
+                return (
+                  <button
+                    key={filter.value}
+                    type="button"
+                    onClick={() => setActiveCategory(filter.value)}
+                    className={active ? "cx-chip-active" : "cx-chip"}
+                  >
+                    {filter.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="text-xs text-zinc-500">{visibleProductsCount} produto(s) exibido(s)</p>
+          </div>
+        </section>
+      ) : null}
+
+      {hasProducts ? (
+        filteredSections.length > 0 ? (
+          filteredSections.map((section) => (
+          <section key={section.category_id} className="space-y-4 scroll-mt-24">
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">{section.category_name}</h2>
               <p className="text-sm text-zinc-500">Escolha seus itens e ajuste quantidades no carrinho.</p>
@@ -175,7 +256,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
 
                 return (
                   <article key={product.id} className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-                    <div className="flex gap-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                       {product.image_url ? (
                         <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md bg-zinc-50">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -189,9 +270,33 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
                             <h3 className="text-base font-medium text-zinc-900">{product.name}</h3>
                             <span className="text-sm font-semibold text-zinc-900">{formatBRL(product.price)}</span>
                           </div>
-                          {product.description ? (
-                            <p className="mt-2 text-sm text-zinc-600">{product.description}</p>
-                          ) : null}
+                          {product.description ? (() => {
+                            const isExpanded = Boolean(expandedDescriptions[product.id]);
+                            const isLong = product.description.length > 120;
+
+                            return (
+                              <div className="mt-2">
+                                <p
+                                  className={`text-sm text-zinc-600 ${
+                                    !isExpanded
+                                      ? "overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]"
+                                      : ""
+                                  }`}
+                                >
+                                  {product.description}
+                                </p>
+                                {isLong ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleDescription(product.id)}
+                                    className="mt-1 text-xs font-medium text-zinc-700 underline underline-offset-2"
+                                  >
+                                    {isExpanded ? "Ver menos" : "Ver mais"}
+                                  </button>
+                                ) : null}
+                              </div>
+                            );
+                          })() : null}
                         </div>
 
                         {quantity > 0 ? (
@@ -228,41 +333,47 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
               })}
             </div>
           </section>
-        ))
+          ))
+        ) : (
+          <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-8 text-center">
+            <p className="text-sm text-zinc-600">Nenhum produto encontrado para o filtro atual.</p>
+            <p className="mt-1 text-xs text-zinc-500">Tente limpar a busca ou selecionar outra categoria.</p>
+          </div>
+        )
       ) : (
         <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-8 text-center">
           <p className="text-sm text-zinc-600">Nenhum produto disponivel no momento.</p>
         </div>
       )}
 
-      <div className="sticky bottom-0 z-20 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-lg backdrop-blur">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</p>
-            <p className="text-lg font-semibold text-zinc-900">{formatBRL(totalAmount)}</p>
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200 bg-white/98 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+          <div className="min-w-0">
+            <p className="text-xs text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</p>
+            <p className="text-sm font-semibold text-zinc-900">{formatBRL(totalAmount)}</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={clearCart}
               disabled={totalItems === 0}
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="text-xs font-medium text-zinc-500 hover:text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Limpar carrinho
+              Limpar
             </button>
 
             {isCheckoutDisabled ? (
               <span
                 aria-disabled
-                className="inline-flex cursor-not-allowed items-center rounded-md bg-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-600"
+                className="inline-flex cursor-not-allowed items-center rounded-md bg-zinc-300 px-3 py-2 text-xs font-semibold text-zinc-600 sm:px-4 sm:text-sm"
               >
                 Ir para checkout
               </span>
             ) : (
               <Link
                 href={`/${slug}/checkout`}
-                className="inline-flex items-center rounded-md bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700"
+                className="cx-btn-primary rounded-md px-3 py-2 text-xs sm:px-4 sm:text-sm"
               >
                 Ir para checkout
               </Link>
@@ -271,7 +382,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
         </div>
 
         {!acceptsOrders ? (
-          <p className="mt-2 text-xs text-amber-700">A loja está com pedidos pausados no momento.</p>
+          <p className="mx-auto max-w-4xl px-4 pb-2 text-[11px] text-amber-700 sm:px-6">A loja está com pedidos pausados no momento.</p>
         ) : null}
       </div>
     </div>

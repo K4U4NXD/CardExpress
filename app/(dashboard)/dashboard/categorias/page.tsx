@@ -1,5 +1,4 @@
-import { CreateCategoryForm } from "@/components/dashboard/create-category-form";
-import { CategoryRow } from "@/components/dashboard/category-row";
+import { DashboardCategoriesView } from "@/components/dashboard/dashboard-categories-view";
 import { PageHeader } from "@/components/layout/page-header";
 import { getUserStore } from "@/lib/auth/store";
 import type { Category } from "@/types";
@@ -39,58 +38,43 @@ export default async function DashboardCategoriesPage({ searchParams }: PageProp
   const avisoText = q.aviso ? AVISOS[q.aviso] : null;
   const erroText = q.erro ? decodeURIComponent(q.erro) : null;
 
-  return (
-    <>
-      <PageHeader title="Categorias" description="Organize o cardápio por seções. Apenas categorias da sua loja." />
+  if (!store) {
+    return (
+      <>
+        <PageHeader
+          title="Categorias"
+          description="Organize o cardápio por seções."
+          sticky
+          compact
+          stickyTopClassName="top-14 md:top-0"
+          maxWidthClassName="max-w-6xl"
+        />
 
-      <div className="mx-auto max-w-4xl px-6 py-8">
-        {erroText ? (
-          <p
-            className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-            role="alert"
-          >
-            {erroText}
-          </p>
-        ) : null}
-        {avisoText ? (
-          <p
-            className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
-            role="status"
-          >
-            {avisoText}
-          </p>
-        ) : null}
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+          {erroText ? (
+            <p
+              className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              role="alert"
+            >
+              {erroText}
+            </p>
+          ) : null}
+          {avisoText ? (
+            <p
+              className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+              role="status"
+            >
+              {avisoText}
+            </p>
+          ) : null}
 
-        {!store ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
             Nenhuma loja vinculada à sua conta. Conclua o cadastro antes de gerenciar categorias.
           </div>
-        ) : (
-          <div className="space-y-8">
-            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <CreateCategoryForm />
-            </div>
+        </div>
+      </>
+    );
+  }
 
-            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <h2 className="text-sm font-semibold text-zinc-900">Suas categorias</h2>
-              {categories.length === 0 ? (
-                <p className="mt-4 text-sm text-zinc-600">Nenhuma categoria ainda. Adicione uma acima.</p>
-              ) : (
-                <div className="mt-2">
-                  {categories.map((cat, i) => (
-                    <CategoryRow
-                      key={cat.id}
-                      category={cat}
-                      isFirst={i === 0}
-                      isLast={i === categories.length - 1}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </>
-  );
+  return <DashboardCategoriesView categories={categories} avisoText={avisoText} erroText={erroText} />;
 }

@@ -4,6 +4,7 @@ import { getUserStore } from "@/lib/auth/store";
 import { formatPostgrestError } from "@/lib/db-errors";
 import { calculateStoreReadiness, type StoreReadinessResult } from "@/lib/store-readiness";
 import { headers } from "next/headers";
+import Link from "next/link";
 
 function resolvePublicStoreUrl(slug: string, requestHeaders: Headers) {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
@@ -66,9 +67,35 @@ export default async function DashboardSettingsPage() {
       <PageHeader
         title="Configurações"
         description="Dados básicos da loja e operação de pedidos."
+        sticky
+        compact
+        stickyTopClassName="top-14 md:top-0"
+        maxWidthClassName="max-w-6xl"
+        actions={
+          store ? (
+            <Link
+              href={`/${store.slug}`}
+              className="hidden items-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 sm:inline-flex"
+            >
+              Ver cardápio público
+            </Link>
+          ) : null
+        }
+        bottomContent={
+          store ? (
+            <div className="flex sm:hidden">
+              <Link
+                href={`/${store.slug}`}
+                className="inline-flex w-full items-center justify-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 sm:w-auto"
+              >
+                Ver cardápio público
+              </Link>
+            </div>
+          ) : null
+        }
       />
 
-      <div className="mx-auto max-w-4xl px-6 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         {errorMessage ? (
           <p
             className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"

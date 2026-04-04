@@ -1,7 +1,8 @@
 import { OrderRow } from "@/components/dashboard/order-row";
 import { PageHeader } from "@/components/layout/page-header";
 import { getUserStore } from "@/lib/auth/store";
-import type { Order, OrderStatus } from "@/types";
+import type { Order, OrderItem, OrderStatus } from "@/types";
+import Link from "next/link";
 
 const AVISOS: Record<string, string> = {
   em_preparo: "Pedido aceito: movido para preparo.",
@@ -12,49 +13,159 @@ const AVISOS: Record<string, string> = {
   "erro-pedido": "Pedido não encontrado ou sem permissão.",
 };
 
-const DASHBOARD_STATUSES: OrderStatus[] = [
-  "aguardando_aceite",
-  "em_preparo",
-  "pronto_para_retirada",
-  "recusado",
+const ACTIVE_STATUSES: OrderStatus[] = ["aguardando_aceite", "em_preparo", "pronto_para_retirada"];
+const HISTORICAL_STATUSES: OrderStatus[] = ["finalizado", "recusado"];
+const ALL_DASHBOARD_STATUSES: OrderStatus[] = [...ACTIVE_STATUSES, ...HISTORICAL_STATUSES];
+
+type OrdersScopeFilter = "ativos" | "finalizados" | "recusados" | "todos";
+
+const SCOPE_FILTERS: Array<{ value: OrdersScopeFilter; label: string }> = [
+  { value: "ativos", label: "Ativos" },
+  { value: "finalizados", label: "Finalizados" },
+  { value: "recusados", label: "Recusados" },
+  { value: "todos", label: "Todos" },
 ];
 
+const SCOPE_LABELS: Record<OrdersScopeFilter, string> = {
+  ativos: "fila operacional",
+  finalizados: "histórico de finalizados",
+  recusados: "histórico de recusados",
+  todos: "todos os pedidos",
+};
+
+function parseScopeFilter(value: string | undefined): OrdersScopeFilter {
+  if (value === "finalizados" || value === "recusados" || value === "todos") {
+    return value;
+  }
+  return "ativos";
+}
+
+function statusesForScope(scope: OrdersScopeFilter): OrderStatus[] {
+  if (scope === "finalizados") return ["finalizado"];
+  if (scope === "recusados") return ["recusado"];
+  if (scope === "todos") return ALL_DASHBOARD_STATUSES;
+  return ACTIVE_STATUSES;
+}
+
+type OrderableQuery<T> = {
+  order: (column: string, options?: { ascending?: boolean; nullsFirst?: boolean }) => T;
+};
+
+function applyScopeOrdering<T extends OrderableQuery<T>>(query: T, scope: OrdersScopeFilter) {
+  if (scope === "ativos") {
+    return query.order("placed_at", { ascending: true, nullsFirst: true }).order("created_at", { ascending: true });
+  }
+
+  if (scope === "finalizados") {
+    return query
+      .order("finalized_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false });
+  }
+
+  if (scope === "recusados") {
+    return query
+      .order("rejected_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false });
+  }
+
+  return query.order("created_at", { ascending: false }).order("placed_at", { ascending: false });
+}
+
 type PageProps = {
-  searchParams: Promise<{ aviso?: string; erro?: string }>;
+  searchParams: Promise<{ aviso?: string; erro?: string; escopo?: string }>;
+};
+
+type DashboardOrder = Order & {
+  order_items?: Array<Pick<OrderItem, "name" | "quantity">> | null;
 };
 
 export default async function DashboardOrdersPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const { supabase, store } = await getUserStore();
+  const selectedScope = parseScopeFilter(params.escopo);
+  const selectedStatuses = statusesForScope(selectedScope);
 
-  let orders: Order[] = [];
+  let orders: DashboardOrder[] = [];
   let loadError: string | null = null;
+  let itemsUnavailable = false;
 
   if (store) {
-    const { data, error } = await supabase
-      .from("orders")
-      .select(
-        "id, store_id, order_number, display_code, status, refund_status, total_amount, note, customer_name, customer_phone, placed_at, accepted_at, ready_at, finalized_at, rejected_at, created_at, updated_at"
-      )
-      .eq("store_id", store.id)
-      .in("status", DASHBOARD_STATUSES)
-      .order("placed_at", { ascending: false })
-      .limit(50);
+    const baseSelect =
+      "id, store_id, order_number, display_code, status, refund_status, total_amount, note, customer_name, customer_phone, placed_at, accepted_at, ready_at, finalized_at, rejected_at, created_at, updated_at";
 
-    if (error) {
-      loadError = error.message;
+    const withItemsQuery = applyScopeOrdering(
+      supabase
+      .from("orders")
+      .select(`${baseSelect}, order_items(name, quantity)`)
+      .eq("store_id", store.id)
+      .in("status", selectedStatuses),
+      selectedScope,
+    ).limit(50);
+
+    const withItemsResult = await withItemsQuery;
+
+    if (withItemsResult.error) {
+      const fallbackQuery = applyScopeOrdering(
+        supabase
+        .from("orders")
+        .select(baseSelect)
+        .eq("store_id", store.id)
+        .in("status", selectedStatuses),
+        selectedScope,
+      ).limit(50);
+
+      const fallbackResult = await fallbackQuery;
+
+      if (fallbackResult.error) {
+        loadError = fallbackResult.error.message;
+      } else {
+        orders = (fallbackResult.data ?? []) as DashboardOrder[];
+        itemsUnavailable = true;
+      }
+    } else {
+      orders = (withItemsResult.data ?? []) as DashboardOrder[];
     }
-    orders = (data ?? []) as Order[];
   }
 
   const avisoText = params.aviso ? AVISOS[params.aviso] : null;
-  const erroText = params.erro ? decodeURIComponent(params.erro) : loadError;
+  const erroText = params.erro ? decodeURIComponent(params.erro) : null;
+  const selectedScopeLabel = SCOPE_LABELS[selectedScope];
+  const isOperationalView = selectedScope === "ativos";
 
   return (
     <>
-      <PageHeader title="Pedidos" description="Fila de pedidos ativos e prontos para retirada." />
+      <PageHeader
+        title="Pedidos"
+        description={isOperationalView ? "Fila operacional de pedidos em andamento." : "Consulta de pedidos no histórico."}
+        sticky
+        compact
+        stickyTopClassName="top-14 md:top-0"
+        maxWidthClassName="max-w-6xl"
+        bottomContent={
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 pt-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {SCOPE_FILTERS.map((filter) => {
+              const isActive = filter.value === selectedScope;
+              const href =
+                filter.value === "ativos"
+                  ? "/dashboard/pedidos"
+                  : `/dashboard/pedidos?escopo=${encodeURIComponent(filter.value)}`;
 
-      <div className="mx-auto max-w-4xl px-6 py-8">
+              return (
+                <Link
+                  key={filter.value}
+                  href={href}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`${isActive ? "cx-chip-active" : "cx-chip"} px-3.5 py-1.5`}
+                >
+                  {filter.label}
+                </Link>
+              );
+            })}
+          </div>
+        }
+      />
+
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         {erroText ? (
           <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
             {erroText}
@@ -68,27 +179,54 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
             {avisoText}
           </p>
         ) : null}
+        {itemsUnavailable ? (
+          <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+            Itens do pedido não estão acessíveis na consulta atual. Exibindo apenas dados gerais do pedido.
+          </p>
+        ) : null}
 
         {!store ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
             Nenhuma loja vinculada à sua conta. Conclua o cadastro antes de gerenciar pedidos.
           </div>
-        ) : orders.length === 0 ? (
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <p className="text-sm text-zinc-600">Nenhum pedido ativo no momento.</p>
-            <p className="mt-2 text-xs text-zinc-500">Novos pedidos aparecerão aqui após pagamento aprovado.</p>
-          </div>
         ) : (
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-zinc-900">Pedidos em andamento</h2>
-              <p className="text-xs text-zinc-500">Mostrando até 50 mais recentes.</p>
-            </div>
-            <div className="mt-3">
-              {orders.map((order, idx) => (
-                <OrderRow key={order.id} order={order} isLast={idx === orders.length - 1} />
-              ))}
-            </div>
+          <div className="space-y-4">
+            {loadError ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-6 shadow-sm">
+                <h2 className="text-sm font-semibold text-red-900">Erro ao carregar pedidos</h2>
+                <p className="mt-2 text-sm text-red-800">
+                  Não foi possível buscar os pedidos agora. Atualize a página para tentar novamente.
+                </p>
+                <p className="mt-2 text-xs text-red-700">Detalhe técnico: {loadError}</p>
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+                <p className="text-sm text-zinc-600">
+                  Nenhum pedido encontrado em <span className="font-medium">{selectedScopeLabel}</span>.
+                </p>
+                <p className="mt-2 text-xs text-zinc-500">
+                  {isOperationalView
+                    ? "Novos pedidos pagos aparecerão automaticamente aqui."
+                    : "Use os filtros para alternar entre visão operacional e histórico."}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <h2 className="text-sm font-semibold text-zinc-900">
+                    {isOperationalView ? "Pedidos em andamento" : "Histórico de pedidos"}
+                  </h2>
+                  <p className="text-xs text-zinc-500">
+                    {orders.length} pedido(s) em {selectedScopeLabel}. Mostrando até 50 pedidos.
+                  </p>
+                </div>
+                <div className="mt-3">
+                  {orders.map((order, idx) => (
+                    <OrderRow key={order.id} order={order} isLast={idx === orders.length - 1} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

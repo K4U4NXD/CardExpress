@@ -31,16 +31,17 @@ export function ProductRow({
   const [trackStock, setTrackStock] = useState(product.track_stock);
   const isVisibleOnPublicMenu =
     product.is_active && product.is_available && (!product.track_stock || product.stock_quantity > 0);
+  const isLowStock = product.track_stock && product.stock_quantity > 0 && product.stock_quantity <= 5;
 
   return (
-    <div className="flex flex-col gap-3 border-b border-zinc-100 py-4 last:border-b-0">
+    <div className="flex flex-col gap-2.5 border-b border-zinc-100 py-4 last:border-b-0">
       {!editing ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1 space-y-2">
             <p className="font-medium text-zinc-900">{product.name}</p>
             <p className="text-sm text-zinc-500">{categoryName}</p>
             <p className="text-sm font-semibold text-zinc-800">{formatBRL(product.price)}</p>
-            <div className="space-y-1.5 text-xs">
+            <div className="space-y-1 text-[11px]">
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 font-medium text-zinc-700">
                   {product.track_stock ? "Controla estoque" : "Sem controle de estoque"}
@@ -53,6 +54,10 @@ export function ProductRow({
                     {product.stock_quantity <= 0 ? (
                       <span className="rounded-full bg-amber-100 px-2.5 py-0.5 font-medium text-amber-900">
                         Estoque zerado
+                      </span>
+                    ) : isLowStock ? (
+                      <span className="rounded-full bg-orange-100 px-2.5 py-0.5 font-medium text-orange-900">
+                        Estoque baixo
                       </span>
                     ) : null}
                   </>
@@ -67,7 +72,7 @@ export function ProductRow({
                       : "bg-zinc-200 text-zinc-700"
                   }`}
                 >
-                  {product.is_active ? "Produto ativo" : "Produto desativado"}
+                  {product.is_active ? "Ativo" : "Inativo"}
                 </span>
                 {product.is_active ? (
                   <span
@@ -87,12 +92,12 @@ export function ProductRow({
                       : "bg-amber-100 text-amber-900"
                   }`}
                 >
-                  {isVisibleOnPublicMenu ? "Aparece no cardápio público" : "Não aparece no cardápio público"}
+                  {isVisibleOnPublicMenu ? "Visível no cardápio" : "Oculto no cardápio"}
                 </span>
               </div>
             </div>
             {product.description ? (
-              <p className="text-sm text-zinc-600 overflow-hidden [display:-webkit-box] [-webkit-line-clamp:3] [-webkit-box-orient:vertical]">
+              <p className="overflow-hidden text-sm text-zinc-600 [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
                 {product.description}
               </p>
             ) : null}

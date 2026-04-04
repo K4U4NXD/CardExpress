@@ -135,7 +135,7 @@ export function StoreSettingsForm({
   return (
     <form
       action={formAction}
-      className="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+      className="space-y-6 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6"
       onSubmit={() => setHideServerFeedback(false)}
     >
       <div>

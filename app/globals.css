@@ -6,6 +6,54 @@
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
+:root {
+  --cx-primary: 24 24 27;
+  --cx-primary-hover: 39 39 42;
+  --cx-surface: 255 255 255;
+  --cx-border: 228 228 231;
+  --cx-text: 39 39 42;
+}
+
+@layer components {
+  .cx-btn-primary {
+    @apply inline-flex items-center rounded-lg px-3 py-2 text-sm font-semibold text-white transition;
+    background-color: rgb(var(--cx-primary));
+  }
+
+  .cx-btn-primary:hover {
+    background-color: rgb(var(--cx-primary-hover));
+  }
+
+  .cx-btn-secondary {
+    @apply inline-flex items-center rounded-lg border px-3 py-2 text-sm font-medium transition;
+    border-color: rgb(var(--cx-border));
+    background-color: rgb(var(--cx-surface));
+    color: rgb(var(--cx-text));
+  }
+
+  .cx-btn-secondary:hover {
+    background-color: rgb(244 244 245);
+  }
+
+  .cx-chip {
+    @apply shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition;
+    border-color: rgb(var(--cx-border));
+    background-color: rgb(var(--cx-surface));
+    color: rgb(82 82 91);
+  }
+
+  .cx-chip:hover {
+    background-color: rgb(244 244 245);
+  }
+
+  .cx-chip-active {
+    @apply shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium;
+    border-color: rgb(var(--cx-primary));
+    background-color: rgb(var(--cx-primary));
+    color: rgb(255 255 255);
+  }
+}
+
 body {
   @apply bg-zinc-50 text-zinc-900 antialiased;
 }

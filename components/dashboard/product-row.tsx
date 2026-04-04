@@ -4,6 +4,7 @@ import {
   deleteProductAction,
   moveProductAction,
   toggleProductActiveAction,
+  toggleProductAvailabilityAction,
   updateProductAction,
 } from "@/app/actions/products";
 import { formatBRL, formatPriceForInput } from "@/lib/validation/price";
@@ -28,6 +29,8 @@ export function ProductRow({
 }: ProductRowProps) {
   const [editing, setEditing] = useState(false);
   const [trackStock, setTrackStock] = useState(product.track_stock);
+  const isVisibleOnPublicMenu =
+    product.is_active && product.is_available && (!product.track_stock || product.stock_quantity > 0);
 
   return (
     <div className="flex flex-col gap-3 border-b border-zinc-100 py-4 last:border-b-0">
@@ -36,38 +39,63 @@ export function ProductRow({
           <div className="min-w-0 flex-1 space-y-2">
             <p className="font-medium text-zinc-900">{product.name}</p>
             <p className="text-sm text-zinc-500">{categoryName}</p>
-            {product.description ? (
-              <p className="text-sm text-zinc-600">{product.description}</p>
-            ) : null}
             <p className="text-sm font-semibold text-zinc-800">{formatBRL(product.price)}</p>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <span
-                className={`rounded-full px-2.5 py-0.5 font-medium ${
-                  product.is_active
-                    ? "bg-sky-100 text-sky-900"
-                    : "bg-zinc-200 text-zinc-700"
-                }`}
-              >
-                {product.is_active ? "Visível no cardápio" : "Oculto no cardápio"}
-              </span>
-              <span
-                className={`rounded-full px-2.5 py-0.5 font-medium ${
-                  product.is_available
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-amber-100 text-amber-900"
-                }`}
-              >
-                {product.is_available ? "Disponível p/ compra" : "Indisponível p/ compra"}
-              </span>
-              <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 font-medium text-zinc-700">
-                {product.track_stock ? "Controla estoque" : "Sem controle de estoque"}
-              </span>
-              {product.track_stock ? (
+            <div className="space-y-1.5 text-xs">
+              <div className="flex flex-wrap gap-2">
                 <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 font-medium text-zinc-700">
-                  Estoque: {product.stock_quantity}
+                  {product.track_stock ? "Controla estoque" : "Sem controle de estoque"}
                 </span>
-              ) : null}
+                {product.track_stock ? (
+                  <>
+                    <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 font-medium text-zinc-700">
+                      Estoque: {product.stock_quantity}
+                    </span>
+                    {product.stock_quantity <= 0 ? (
+                      <span className="rounded-full bg-amber-100 px-2.5 py-0.5 font-medium text-amber-900">
+                        Estoque zerado
+                      </span>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <span
+                  className={`rounded-full px-2.5 py-0.5 font-medium ${
+                    product.is_active
+                      ? "bg-sky-100 text-sky-900"
+                      : "bg-zinc-200 text-zinc-700"
+                  }`}
+                >
+                  {product.is_active ? "Produto ativo" : "Produto desativado"}
+                </span>
+                {product.is_active ? (
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 font-medium ${
+                      product.is_available
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-amber-100 text-amber-900"
+                    }`}
+                  >
+                    {product.is_available ? "Venda liberada" : "Venda pausada"}
+                  </span>
+                ) : null}
+                <span
+                  className={`rounded-full px-2.5 py-0.5 font-medium ${
+                    isVisibleOnPublicMenu
+                      ? "bg-emerald-100 text-emerald-900"
+                      : "bg-amber-100 text-amber-900"
+                  }`}
+                >
+                  {isVisibleOnPublicMenu ? "Aparece no cardápio público" : "Não aparece no cardápio público"}
+                </span>
+              </div>
             </div>
+            {product.description ? (
+              <p className="text-sm text-zinc-600 overflow-hidden [display:-webkit-box] [-webkit-line-clamp:3] [-webkit-box-orient:vertical]">
+                {product.description}
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -80,13 +108,24 @@ export function ProductRow({
             >
               Editar
             </button>
+            {product.is_active ? (
+              <form action={toggleProductAvailabilityAction} className="inline">
+                <input type="hidden" name="product_id" value={product.id} />
+                <button
+                  type="submit"
+                  className="rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-sm text-emerald-800 hover:bg-emerald-50"
+                >
+                  {product.is_available ? "Pausar venda" : "Disponibilizar"}
+                </button>
+              </form>
+            ) : null}
             <form action={toggleProductActiveAction} className="inline">
               <input type="hidden" name="product_id" value={product.id} />
               <button
                 type="submit"
                 className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-800 hover:bg-zinc-50"
               >
-                {product.is_active ? "Ocultar do cardápio" : "Mostrar no cardápio"}
+                {product.is_active ? "Desativar" : "Ativar"}
               </button>
             </form>
             <form action={moveProductAction} className="inline">
@@ -202,6 +241,10 @@ export function ProductRow({
                   defaultValue={product.stock_quantity}
                   className="mt-1 w-full max-w-xs rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
                 />
+                <p className="mt-1 text-xs text-zinc-500">
+                  Com controle de estoque, a visibilidade pública depende da quantidade. A pausa/liberação manual da
+                  venda é feita no botão da listagem de produtos.
+                </p>
               </div>
             ) : (
               <>
@@ -214,7 +257,7 @@ export function ProductRow({
                     defaultChecked={product.is_available}
                     className="rounded border-zinc-300"
                   />
-                  Disponível para compra agora
+                  Venda liberada agora
                 </label>
               </>
             )}

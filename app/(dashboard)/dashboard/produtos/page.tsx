@@ -7,7 +7,10 @@ import type { Category, Product } from "@/types";
 const AVISOS: Record<string, string> = {
   criado: "Produto criado com sucesso.",
   atualizado: "Produto atualizado.",
-  "estado-alterado": "Status do produto atualizado.",
+  desativado: "Produto desativado.",
+  ativado: "Produto ativado.",
+  "venda-pausada": "Venda do produto pausada.",
+  "venda-liberada": "Produto disponibilizado para venda.",
   reordenado: "Ordem dos produtos atualizada.",
   excluido: "Produto excluído com sucesso.",
   "erro-campos": "Preencha nome, preço e categoria.",

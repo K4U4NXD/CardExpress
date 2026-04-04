@@ -1,0 +1,153 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+
+import { getUserStore } from "@/lib/auth/store";
+import { formatPostgrestError } from "@/lib/db-errors";
+import { calculateStoreReadiness, type StoreReadinessResult } from "@/lib/store-readiness";
+import {
+  validateStoreSettingsInput,
+  type StoreSettingsFieldErrors,
+} from "@/lib/validation/store-settings";
+
+export type StoreSettingsFormValues = {
+  name: string;
+  phone: string;
+  accepts_orders: boolean;
+  public_message: string;
+};
+
+export type StoreSettingsActionState = {
+  error?: string;
+  success?: string;
+  fieldErrors?: StoreSettingsFieldErrors;
+  values?: StoreSettingsFormValues;
+  readiness?: StoreReadinessResult;
+};
+
+function toFormValues(values: {
+  name: string;
+  phone: string;
+  acceptsOrders: boolean;
+  publicMessage: string | null;
+}): StoreSettingsFormValues {
+  return {
+    name: values.name,
+    phone: values.phone,
+    accepts_orders: values.acceptsOrders,
+    public_message: values.publicMessage ?? "",
+  };
+}
+
+function mapUnknownError(error: unknown): string {
+  if (error && typeof error === "object" && "message" in error) {
+    return formatPostgrestError(error as { message?: string; code?: string; details?: string });
+  }
+  return "Não foi possível salvar as configurações da loja.";
+}
+
+export async function saveStoreSettingsAction(
+  _prev: StoreSettingsActionState | null,
+  formData: FormData
+): Promise<StoreSettingsActionState> {
+  const rawName = String(formData.get("name") ?? "");
+  const rawPhone = String(formData.get("phone") ?? "");
+  const rawPublicMessage = String(formData.get("public_message") ?? "");
+  const rawAcceptsOrders = formData.get("accepts_orders") === "on";
+
+  const validation = validateStoreSettingsInput({
+    name: rawName,
+    phone: rawPhone,
+    publicMessage: rawPublicMessage,
+    acceptsOrders: rawAcceptsOrders,
+  });
+
+  if (validation.hasErrors) {
+    return {
+      fieldErrors: validation.fieldErrors,
+      values: toFormValues(validation.values),
+    };
+  }
+
+  const { supabase, store } = await getUserStore();
+
+  if (!store) {
+    return {
+      error: "Nenhuma loja vinculada à sua conta.",
+      values: toFormValues(validation.values),
+    };
+  }
+
+  let readiness: StoreReadinessResult;
+
+  try {
+    readiness = await calculateStoreReadiness(supabase, {
+      storeId: store.id,
+      storeName: validation.values.name,
+      storePhone: validation.values.phone,
+      storeSlug: store.slug,
+    });
+  } catch (error) {
+    return {
+      error: mapUnknownError(error),
+      values: toFormValues(validation.values),
+    };
+  }
+
+  const nextAcceptsOrders = readiness.isReady ? validation.values.acceptsOrders : false;
+  const fieldErrors: StoreSettingsFieldErrors = {};
+
+  if (!readiness.isReady && validation.values.acceptsOrders) {
+    fieldErrors.accepts_orders = "A loja ainda não está pronta para operar. Resolva as pendências para ativar pedidos.";
+  }
+
+  const { error: storeError } = await supabase
+    .from("stores")
+    .update({
+      name: validation.values.name,
+      phone: validation.values.phone,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", store.id);
+
+  if (storeError) {
+    return {
+      error: formatPostgrestError(storeError),
+      fieldErrors,
+      values: toFormValues({ ...validation.values, acceptsOrders: nextAcceptsOrders }),
+      readiness,
+    };
+  }
+
+  const { error: settingsError } = await supabase.from("store_settings").upsert(
+    {
+      store_id: store.id,
+      accepts_orders: nextAcceptsOrders,
+      public_message: validation.values.publicMessage,
+    },
+    { onConflict: "store_id" }
+  );
+
+  if (settingsError) {
+    return {
+      error: formatPostgrestError(settingsError),
+      fieldErrors,
+      values: toFormValues({ ...validation.values, acceptsOrders: nextAcceptsOrders }),
+      readiness,
+    };
+  }
+
+  revalidatePath("/dashboard/configuracoes");
+  revalidatePath(`/${store.slug}`);
+  revalidatePath(`/${store.slug}/checkout`);
+
+  return {
+    success:
+      !readiness.isReady && validation.values.acceptsOrders
+        ? "Configurações salvas. A loja continua sem aceitar pedidos até ficar pronta para operar."
+        : "Configurações salvas com sucesso.",
+    fieldErrors: Object.keys(fieldErrors).length > 0 ? fieldErrors : undefined,
+    values: toFormValues({ ...validation.values, acceptsOrders: nextAcceptsOrders }),
+    readiness,
+  };
+}

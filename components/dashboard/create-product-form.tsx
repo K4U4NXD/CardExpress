@@ -106,7 +106,8 @@ export function CreateProductForm({ categories }: CreateProductFormProps) {
                 className="mt-1 w-full max-w-xs rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 disabled:bg-zinc-100"
               />
               <p className="mt-1 text-xs text-zinc-500">
-                Com quantidade zero o produto fica indisponível para compra, mas pode continuar visível no cardápio.
+                Com controle de estoque, a visibilidade pública depende da quantidade. A pausa/liberação manual da
+                venda pode ser feita na listagem de produtos.
               </p>
             </div>
           ) : (
@@ -121,10 +122,10 @@ export function CreateProductForm({ categories }: CreateProductFormProps) {
                   disabled={disabled}
                   className="rounded border-zinc-300"
                 />
-                Disponível para compra agora
+                Venda liberada agora
               </label>
               <p className="text-xs text-zinc-500">
-                Sem controle de estoque, a disponibilidade não depende da quantidade.
+                Sem controle de estoque, esta opção controla diretamente a venda do produto.
               </p>
             </>
           )}

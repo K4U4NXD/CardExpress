@@ -1,34 +1,37 @@
-drop trigger if exists "trg_checkout_totals_delete" on "public"."checkout_session_items";
+do $$
+begin
+  if to_regclass('public.checkout_session_items') is not null then
+    execute 'drop trigger if exists "trg_checkout_totals_delete" on "public"."checkout_session_items"';
+    execute 'drop trigger if exists "trg_checkout_totals_insert" on "public"."checkout_session_items"';
+    execute 'drop trigger if exists "trg_checkout_totals_update" on "public"."checkout_session_items"';
+    execute 'drop policy if exists "checkout_session_items_public_insert" on "public"."checkout_session_items"';
+    execute 'drop policy if exists "checkout_session_items_public_insert" on "public"."checkout_session_items"';
+  end if;
 
-drop trigger if exists "trg_checkout_totals_insert" on "public"."checkout_session_items";
+  if to_regclass('public.checkout_sessions') is not null then
+    execute 'drop trigger if exists "trg_checkout_sessions_updated_at" on "public"."checkout_sessions"';
+  end if;
+end $$;
 
-drop trigger if exists "trg_checkout_totals_update" on "public"."checkout_session_items";
+alter table if exists "public"."checkout_session_items" drop constraint if exists "checkout_session_items_line_total_non_negative";
 
-drop trigger if exists "trg_checkout_sessions_updated_at" on "public"."checkout_sessions";
+alter table if exists "public"."checkout_session_items" drop constraint if exists "checkout_session_items_name_not_empty";
 
-drop policy "checkout_session_items_public_insert" on "public"."checkout_session_items";
+alter table if exists "public"."checkout_session_items" drop constraint if exists "checkout_session_items_quantity_positive";
 
-drop policy "checkout_sessions_public_insert" on "public"."checkout_sessions";
+alter table if exists "public"."checkout_session_items" drop constraint if exists "checkout_session_items_unit_price_non_negative";
 
-alter table "public"."checkout_session_items" drop constraint "checkout_session_items_line_total_non_negative";
+alter table if exists "public"."checkout_sessions" drop constraint if exists "checkout_sessions_customer_name_not_empty";
 
-alter table "public"."checkout_session_items" drop constraint "checkout_session_items_name_not_empty";
+alter table if exists "public"."checkout_sessions" drop constraint if exists "checkout_sessions_customer_phone_not_empty";
 
-alter table "public"."checkout_session_items" drop constraint "checkout_session_items_quantity_positive";
+alter table if exists "public"."checkout_sessions" drop constraint if exists "checkout_sessions_public_reference_key";
 
-alter table "public"."checkout_session_items" drop constraint "checkout_session_items_unit_price_non_negative";
+alter table if exists "public"."checkout_sessions" drop constraint if exists "checkout_sessions_subtotal_non_negative";
 
-alter table "public"."checkout_sessions" drop constraint "checkout_sessions_customer_name_not_empty";
+alter table if exists "public"."checkout_sessions" drop constraint if exists "checkout_sessions_total_non_negative";
 
-alter table "public"."checkout_sessions" drop constraint "checkout_sessions_customer_phone_not_empty";
-
-alter table "public"."checkout_sessions" drop constraint "checkout_sessions_public_reference_key";
-
-alter table "public"."checkout_sessions" drop constraint "checkout_sessions_subtotal_non_negative";
-
-alter table "public"."checkout_sessions" drop constraint "checkout_sessions_total_non_negative";
-
-alter table "public"."checkout_session_items" drop constraint "checkout_session_items_product_id_fkey";
+alter table if exists "public"."checkout_session_items" drop constraint if exists "checkout_session_items_product_id_fkey";
 
 drop index if exists "public"."checkout_sessions_public_reference_key";
 
@@ -40,9 +43,9 @@ drop index if exists "public"."idx_checkout_sessions_payment_status";
 
 drop index if exists "public"."idx_checkout_sessions_store_id";
 
-alter table "public"."checkout_session_items" drop column "product_name_snapshot";
+alter table if exists "public"."checkout_session_items" drop column if exists "product_name_snapshot";
 
-alter table "public"."checkout_session_items" add column "product_name" text not null;
+alter table if exists "public"."checkout_session_items" add column if not exists "product_name" text not null;
 
 alter table "public"."checkout_session_items" alter column "line_total" set data type numeric(12,2) using "line_total"::numeric(12,2);
 
@@ -50,47 +53,47 @@ alter table "public"."checkout_session_items" alter column "product_id" set not 
 
 alter table "public"."checkout_session_items" alter column "unit_price" set data type numeric(12,2) using "unit_price"::numeric(12,2);
 
-alter table "public"."checkout_sessions" drop column "approved_at";
+alter table if exists "public"."checkout_sessions" drop column if exists "approved_at";
 
-alter table "public"."checkout_sessions" drop column "external_payment_id";
+alter table if exists "public"."checkout_sessions" drop column if exists "external_payment_id";
 
-alter table "public"."checkout_sessions" drop column "external_preference_id";
+alter table if exists "public"."checkout_sessions" drop column if exists "external_preference_id";
 
-alter table "public"."checkout_sessions" drop column "order_notes";
+alter table if exists "public"."checkout_sessions" drop column if exists "order_notes";
 
-alter table "public"."checkout_sessions" drop column "payment_gateway";
+alter table if exists "public"."checkout_sessions" drop column if exists "payment_gateway";
 
-alter table "public"."checkout_sessions" drop column "payment_method";
+alter table if exists "public"."checkout_sessions" drop column if exists "payment_method";
 
-alter table "public"."checkout_sessions" drop column "payment_status";
+alter table if exists "public"."checkout_sessions" drop column if exists "payment_status";
 
-alter table "public"."checkout_sessions" drop column "public_reference";
+alter table if exists "public"."checkout_sessions" drop column if exists "public_reference";
 
-alter table "public"."checkout_sessions" drop column "service_mode";
+alter table if exists "public"."checkout_sessions" drop column if exists "service_mode";
 
-alter table "public"."checkout_sessions" drop column "subtotal_amount";
+alter table if exists "public"."checkout_sessions" drop column if exists "subtotal_amount";
 
-alter table "public"."checkout_sessions" add column "cancelled_at" timestamp with time zone;
+alter table if exists "public"."checkout_sessions" add column if not exists "cancelled_at" timestamp with time zone;
 
-alter table "public"."checkout_sessions" add column "converted_at" timestamp with time zone;
+alter table if exists "public"."checkout_sessions" add column if not exists "converted_at" timestamp with time zone;
 
-alter table "public"."checkout_sessions" add column "expired_at" timestamp with time zone;
+alter table if exists "public"."checkout_sessions" add column if not exists "expired_at" timestamp with time zone;
 
-alter table "public"."checkout_sessions" add column "notes" text;
+alter table if exists "public"."checkout_sessions" add column if not exists "notes" text;
 
-alter table "public"."checkout_sessions" add column "paid_at" timestamp with time zone;
+alter table if exists "public"."checkout_sessions" add column if not exists "paid_at" timestamp with time zone;
 
-alter table "public"."checkout_sessions" add column "payment_provider" text;
+alter table if exists "public"."checkout_sessions" add column if not exists "payment_provider" text;
 
-alter table "public"."checkout_sessions" add column "payment_reference" text;
+alter table if exists "public"."checkout_sessions" add column if not exists "payment_reference" text;
 
-alter table "public"."checkout_sessions" add column "payment_url" text;
+alter table if exists "public"."checkout_sessions" add column if not exists "payment_url" text;
 
-alter table "public"."checkout_sessions" add column "public_token" text not null default encode(extensions.gen_random_bytes(16), 'hex'::text);
+alter table if exists "public"."checkout_sessions" add column if not exists "public_token" text not null default encode(extensions.gen_random_bytes(16), 'hex'::text);
 
-alter table "public"."checkout_sessions" add column "status" text not null default 'pending_payment'::text;
+alter table if exists "public"."checkout_sessions" add column if not exists "status" text not null default 'pending_payment'::text;
 
-alter table "public"."checkout_sessions" add column "subtotal" numeric(12,2) not null default 0;
+alter table if exists "public"."checkout_sessions" add column if not exists "subtotal" numeric(12,2) not null default 0;
 
 alter table "public"."checkout_sessions" alter column "customer_phone" drop not null;
 
@@ -100,53 +103,91 @@ alter table "public"."checkout_sessions" alter column "expires_at" set not null;
 
 alter table "public"."checkout_sessions" alter column "total_amount" set data type numeric(12,2) using "total_amount"::numeric(12,2);
 
-alter table "public"."orders" add column "checkout_session_id" uuid;
+alter table if exists "public"."orders" add column if not exists "checkout_session_id" uuid;
 
-CREATE UNIQUE INDEX checkout_sessions_public_token_key ON public.checkout_sessions USING btree (public_token);
+CREATE UNIQUE INDEX IF NOT EXISTS checkout_sessions_public_token_key ON public.checkout_sessions USING btree (public_token);
 
-CREATE INDEX idx_checkout_session_items_product_id ON public.checkout_session_items USING btree (product_id);
+CREATE INDEX IF NOT EXISTS idx_checkout_session_items_product_id ON public.checkout_session_items USING btree (product_id);
 
-CREATE INDEX idx_checkout_sessions_public_token ON public.checkout_sessions USING btree (public_token);
+CREATE INDEX IF NOT EXISTS idx_checkout_sessions_public_token ON public.checkout_sessions USING btree (public_token);
 
-CREATE INDEX idx_checkout_sessions_status_created_at ON public.checkout_sessions USING btree (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_checkout_sessions_status_created_at ON public.checkout_sessions USING btree (status, created_at DESC);
 
-CREATE INDEX idx_checkout_sessions_store_id_created_at ON public.checkout_sessions USING btree (store_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_checkout_sessions_store_id_created_at ON public.checkout_sessions USING btree (store_id, created_at DESC);
 
-CREATE INDEX idx_orders_checkout_session_id ON public.orders USING btree (checkout_session_id);
+CREATE INDEX IF NOT EXISTS idx_orders_checkout_session_id ON public.orders USING btree (checkout_session_id);
 
-CREATE UNIQUE INDEX orders_checkout_session_id_key ON public.orders USING btree (checkout_session_id);
+CREATE UNIQUE INDEX IF NOT EXISTS orders_checkout_session_id_key ON public.orders USING btree (checkout_session_id);
+
+alter table if exists "public"."checkout_session_items" drop constraint if exists "checkout_session_items_line_total_check";
 
 alter table "public"."checkout_session_items" add constraint "checkout_session_items_line_total_check" CHECK ((line_total >= (0)::numeric)) not valid;
 
 alter table "public"."checkout_session_items" validate constraint "checkout_session_items_line_total_check";
 
+alter table if exists "public"."checkout_session_items" drop constraint if exists "checkout_session_items_quantity_check";
+
 alter table "public"."checkout_session_items" add constraint "checkout_session_items_quantity_check" CHECK ((quantity > 0)) not valid;
 
 alter table "public"."checkout_session_items" validate constraint "checkout_session_items_quantity_check";
+
+alter table if exists "public"."checkout_session_items" drop constraint if exists "checkout_session_items_unit_price_check";
 
 alter table "public"."checkout_session_items" add constraint "checkout_session_items_unit_price_check" CHECK ((unit_price >= (0)::numeric)) not valid;
 
 alter table "public"."checkout_session_items" validate constraint "checkout_session_items_unit_price_check";
 
-alter table "public"."checkout_sessions" add constraint "checkout_sessions_public_token_key" UNIQUE using index "checkout_sessions_public_token_key";
+do $$
+begin
+  if to_regclass('public.checkout_sessions') is not null
+     and not exists (
+       select 1
+       from pg_constraint
+       where conname = 'checkout_sessions_public_token_key'
+         and conrelid = 'public.checkout_sessions'::regclass
+     ) then
+    execute 'alter table "public"."checkout_sessions" add constraint "checkout_sessions_public_token_key" UNIQUE using index "checkout_sessions_public_token_key"';
+  end if;
+end $$;
+
+alter table if exists "public"."checkout_sessions" drop constraint if exists "checkout_sessions_status_check";
 
 alter table "public"."checkout_sessions" add constraint "checkout_sessions_status_check" CHECK ((status = ANY (ARRAY['pending_payment'::text, 'paid'::text, 'expired'::text, 'cancelled'::text, 'converted'::text]))) not valid;
 
 alter table "public"."checkout_sessions" validate constraint "checkout_sessions_status_check";
 
+alter table if exists "public"."checkout_sessions" drop constraint if exists "checkout_sessions_subtotal_check";
+
 alter table "public"."checkout_sessions" add constraint "checkout_sessions_subtotal_check" CHECK ((subtotal >= (0)::numeric)) not valid;
 
 alter table "public"."checkout_sessions" validate constraint "checkout_sessions_subtotal_check";
+
+alter table if exists "public"."checkout_sessions" drop constraint if exists "checkout_sessions_total_amount_check";
 
 alter table "public"."checkout_sessions" add constraint "checkout_sessions_total_amount_check" CHECK ((total_amount >= (0)::numeric)) not valid;
 
 alter table "public"."checkout_sessions" validate constraint "checkout_sessions_total_amount_check";
 
+alter table if exists "public"."orders" drop constraint if exists "orders_checkout_session_id_fkey";
+
 alter table "public"."orders" add constraint "orders_checkout_session_id_fkey" FOREIGN KEY (checkout_session_id) REFERENCES public.checkout_sessions(id) ON DELETE SET NULL not valid;
 
 alter table "public"."orders" validate constraint "orders_checkout_session_id_fkey";
 
-alter table "public"."orders" add constraint "orders_checkout_session_id_key" UNIQUE using index "orders_checkout_session_id_key";
+do $$
+begin
+  if to_regclass('public.orders') is not null
+     and not exists (
+       select 1
+       from pg_constraint
+       where conname = 'orders_checkout_session_id_key'
+         and conrelid = 'public.orders'::regclass
+     ) then
+    execute 'alter table "public"."orders" add constraint "orders_checkout_session_id_key" UNIQUE using index "orders_checkout_session_id_key"';
+  end if;
+end $$;
+
+alter table if exists "public"."checkout_session_items" drop constraint if exists "checkout_session_items_product_id_fkey";
 
 alter table "public"."checkout_session_items" add constraint "checkout_session_items_product_id_fkey" FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE RESTRICT not valid;
 
@@ -695,6 +736,8 @@ end;
 $function$
 ;
 
+drop policy if exists "Owners can read checkout session items from own store" on "public"."checkout_session_items";
+
 
   create policy "Owners can read checkout session items from own store"
   on "public"."checkout_session_items"
@@ -707,6 +750,8 @@ using ((EXISTS ( SELECT 1
   WHERE ((cs.id = checkout_session_items.checkout_session_id) AND (s.owner_id = auth.uid())))));
 
 
+drop policy if exists "Owners can read checkout sessions from own store" on "public"."checkout_sessions";
+
 
   create policy "Owners can read checkout sessions from own store"
   on "public"."checkout_sessions"
@@ -718,6 +763,7 @@ using ((EXISTS ( SELECT 1
   WHERE ((s.id = checkout_sessions.store_id) AND (s.owner_id = auth.uid())))));
 
 
+drop trigger if exists trg_checkout_sessions_updated_at on public.checkout_sessions;
 CREATE TRIGGER trg_checkout_sessions_updated_at BEFORE UPDATE ON public.checkout_sessions FOR EACH ROW EXECUTE FUNCTION public.set_checkout_updated_at();
 
 grant execute on function public.get_public_store_by_slug(text) to anon, authenticated;

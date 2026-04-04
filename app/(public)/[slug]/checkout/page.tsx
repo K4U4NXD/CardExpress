@@ -56,6 +56,10 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
               Esta loja nao esta aceitando pedidos no momento.
             </p>
           ) : null}
+
+          {store.public_message ? (
+            <p className="mt-4 rounded-lg bg-zinc-50 p-3 text-sm text-zinc-700">{store.public_message}</p>
+          ) : null}
         </section>
 
         <PublicCheckoutClient slug={store.slug} storeName={store.name} acceptsOrders={store.accepts_orders} />

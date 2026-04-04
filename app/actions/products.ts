@@ -8,6 +8,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 const PATH = "/dashboard/produtos";
+const PRODUCT_HISTORY_BLOCK_MESSAGE =
+  "Este produto já possui histórico de checkout ou pedido e não pode ser excluído. Para removê-lo da operação, pause a venda ou desative o produto.";
 
 function revalidateStoreViews(storeSlug: string) {
   revalidatePath(PATH);
@@ -20,6 +22,15 @@ export type ProductFormState = {
 
 function redirectWithNotice(notice: string) {
   redirect(`${PATH}?aviso=${encodeURIComponent(notice)}`);
+}
+
+function isProductHistoryDeleteError(err: { code?: string; message?: string; details?: string }): boolean {
+  if (err.code !== "23503") {
+    return false;
+  }
+
+  const joined = `${err.message ?? ""} ${err.details ?? ""}`.toLowerCase();
+  return joined.includes("checkout_session_items_product_id_fkey") || joined.includes("order_items_product_id_fkey");
 }
 
 function resolveStockAndAvailability(formData: FormData):
@@ -43,7 +54,7 @@ function resolveStockAndAvailability(formData: FormData):
       ok: true,
       track_stock: true,
       stock_quantity: n,
-      is_available: n > 0,
+      is_available: true,
     };
   }
 
@@ -183,11 +194,6 @@ export async function updateProductAction(formData: FormData) {
     redirect(`${PATH}?erro=${encodeURIComponent(parsed.message)}`);
   }
 
-  const stock = resolveStockAndAvailability(formData);
-  if (!stock.ok) {
-    redirect(`${PATH}?erro=${encodeURIComponent(stock.message)}`);
-  }
-
   const { supabase, store } = await getUserStore();
   if (!store) {
     redirect(`${PATH}?aviso=erro-loja`);
@@ -196,6 +202,11 @@ export async function updateProductAction(formData: FormData) {
   const row = await productOwnedOrNull(supabase, store.id, productId);
   if (!row) {
     redirect(`${PATH}?aviso=erro-permissao`);
+  }
+
+  const stock = resolveStockAndAvailability(formData);
+  if (!stock.ok) {
+    redirect(`${PATH}?erro=${encodeURIComponent(stock.message)}`);
   }
 
   const catOk = await assertCategoryAllowedForProduct(supabase, store.id, categoryId, row.category_id);
@@ -214,7 +225,7 @@ export async function updateProductAction(formData: FormData) {
       price: parsed.value,
       category_id: categoryId,
       image_url,
-      is_available: stock.is_available,
+      is_available: stock.track_stock ? row.is_available : stock.is_available,
       track_stock: stock.track_stock,
       stock_quantity: stock.stock_quantity,
       updated_at: new Date().toISOString(),
@@ -248,7 +259,11 @@ export async function toggleProductActiveAction(formData: FormData) {
 
   const { error } = await supabase
     .from("products")
-    .update({ is_active: !row.is_active, updated_at: new Date().toISOString() })
+    .update({
+      is_active: !row.is_active,
+      is_available: false,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", productId)
     .eq("store_id", store.id);
 
@@ -257,7 +272,37 @@ export async function toggleProductActiveAction(formData: FormData) {
   }
 
   revalidateStoreViews(store.slug);
-  redirectWithNotice("estado-alterado");
+  redirectWithNotice(row.is_active ? "desativado" : "ativado");
+}
+
+export async function toggleProductAvailabilityAction(formData: FormData) {
+  const productId = String(formData.get("product_id") ?? "").trim();
+  if (!productId) {
+    redirect(PATH);
+  }
+
+  const { supabase, store } = await getUserStore();
+  if (!store) {
+    redirect(`${PATH}?aviso=erro-loja`);
+  }
+
+  const row = await productOwnedOrNull(supabase, store.id, productId);
+  if (!row) {
+    redirect(`${PATH}?aviso=erro-permissao`);
+  }
+
+  const { error } = await supabase
+    .from("products")
+    .update({ is_available: !row.is_available, updated_at: new Date().toISOString() })
+    .eq("id", productId)
+    .eq("store_id", store.id);
+
+  if (error) {
+    redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(error))}`);
+  }
+
+  revalidateStoreViews(store.slug);
+  redirectWithNotice(row.is_available ? "venda-pausada" : "venda-liberada");
 }
 
 export async function moveProductAction(formData: FormData) {
@@ -342,6 +387,19 @@ export async function deleteProductAction(formData: FormData) {
     redirect(`${PATH}?aviso=erro-permissao`);
   }
 
+  const { count: orderItemsHistoryCount, error: orderItemsHistoryError } = await supabase
+    .from("order_items")
+    .select("id", { count: "exact", head: true })
+    .eq("product_id", productId);
+
+  if (orderItemsHistoryError) {
+    redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(orderItemsHistoryError))}`);
+  }
+
+  if ((orderItemsHistoryCount ?? 0) > 0) {
+    redirect(`${PATH}?erro=${encodeURIComponent(PRODUCT_HISTORY_BLOCK_MESSAGE)}`);
+  }
+
   const { error } = await supabase
     .from("products")
     .delete()
@@ -349,6 +407,9 @@ export async function deleteProductAction(formData: FormData) {
     .eq("store_id", store.id);
 
   if (error) {
+    if (isProductHistoryDeleteError(error)) {
+      redirect(`${PATH}?erro=${encodeURIComponent(PRODUCT_HISTORY_BLOCK_MESSAGE)}`);
+    }
     redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(error))}`);
   }
 

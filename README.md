@@ -2,11 +2,11 @@
 
 ## Sobre o projeto
 
-O **CardExpress** é um sistema web de **cardápio digital com retirada no balcão**, pensado para estabelecimentos de venda rápida, como lanchonetes, barracas, quiosques e pontos de alimentação em feiras e eventos.
+O **CardExpress** é um sistema web de **cardápio digital com retirada no balcão**, voltado para estabelecimentos de venda rápida, como lanchonetes, barracas, quiosques e pontos de alimentação em feiras e eventos.
 
-O cliente acessa a loja por **QR Code** ou **link público**, visualiza o cardápio, monta o carrinho, inicia o checkout e acompanha o pedido. No estado atual do projeto, o fluxo de pagamento está implementado em **modo de demonstração**: o checkout cria uma sessão intermediária e o pagamento pode ser **simulado** para converter a sessão em pedido real.
+O cliente acessa a loja por **QR Code** ou **link público**, visualiza o cardápio, monta o carrinho, inicia o checkout e acompanha o pedido. No estado atual do projeto, o fluxo de pagamento está implementado em **modo de demonstração**: a aplicação cria uma sessão intermediária de checkout e permite **simular a aprovação do pagamento** para converter a sessão em pedido real.
 
-Além da experiência do cliente, o sistema possui um **painel administrativo do comerciante** para gerenciar categorias, produtos, pedidos e operação da loja.
+Além da experiência do cliente, o sistema possui um **painel administrativo do comerciante** para gerenciar categorias, produtos, pedidos e configurações da loja.
 
 Este repositório corresponde ao desenvolvimento do projeto acadêmico **CardExpress**, realizado em grupo.
 
@@ -22,23 +22,29 @@ Este repositório corresponde ao desenvolvimento do projeto acadêmico **CardExp
 
 ## Status atual do projeto
 
-O projeto já possui uma base funcional relevante, com:
+O projeto já possui uma base funcional sólida, com:
 
 - autenticação do comerciante;
 - dashboard protegido;
-- gerenciamento de categorias e produtos;
-- fluxo operacional de pedidos;
+- gerenciamento de categorias;
+- gerenciamento de produtos;
+- gerenciamento operacional de pedidos;
+- tela de configurações da loja;
 - cardápio público dinâmico por `slug`;
-- carrinho público com persistência local;
+- busca e navegação por categoria no cardápio público;
+- carrinho público com persistência local por loja;
 - checkout público com criação de `checkout_sessions`;
 - simulação de pagamento aprovado para desenvolvimento/demo;
 - conversão de checkout em pedido real;
 - acompanhamento público do pedido por `token`;
-- painel público de retirada.
+- painel público de retirada;
+- melhorias amplas de UX em desktop e mobile.
 
-### O que já está implementado
+---
 
-#### Autenticação e estrutura da loja
+## O que já está implementado
+
+### Autenticação e estrutura da loja
 
 - cadastro de comerciante;
 - login e logout;
@@ -46,42 +52,66 @@ O projeto já possui uma base funcional relevante, com:
 - criação e vínculo de uma loja por conta;
 - leitura da loja autenticada no dashboard.
 
-#### Painel administrativo
+### Painel administrativo
 
-- tela inicial do painel;
-- navegação lateral do dashboard;
+- tela inicial do dashboard com resumo operacional da loja;
+- navegação lateral no desktop;
+- menu lateral responsivo em mobile;
+- headers compactos/sticky em telas principais;
 - gerenciamento de categorias;
 - gerenciamento de produtos;
-- gerenciamento operacional de pedidos.
+- gerenciamento operacional de pedidos;
+- configurações da loja.
 
-#### Categorias
+### Categorias
 
 - criar categoria;
 - editar nome;
 - ativar e desativar;
 - reordenar;
-- excluir categoria quando não houver produtos vinculados.
+- excluir categoria quando não houver produtos vinculados;
+- criação com formulário recolhido por padrão para melhor organização da tela.
 
-#### Produtos
+### Produtos
 
 - criar produto;
 - editar produto;
 - ativar e desativar;
-- controlar disponibilidade separadamente de ativação;
-- suporte a controle de estoque (`track_stock` e `stock_quantity`);
+- controlar disponibilidade separadamente da ativação;
+- suporte a controle de estoque com `track_stock` e `stock_quantity`;
 - reordenar;
-- excluir produto.
+- excluir produto;
+- badges operacionais refinados;
+- exibição mais clara de estoque, disponibilidade e visibilidade pública;
+- formulário de criação recolhido por padrão.
 
-#### Área pública da loja
+### Configurações da loja
 
-- rota pública `/{slug}` carregando loja real via RPC;
+- edição de nome da loja;
+- edição de telefone;
+- exibição do `slug` em modo somente leitura;
+- exibição e cópia do link público da loja;
+- mensagem pública da loja;
+- controle de aceitação de pedidos;
+- resumo de prontidão operacional;
+- botão salvar habilitado apenas quando há alterações;
+- descarte de alterações;
+- validações coerentes de formulário.
+
+### Área pública da loja
+
+- rota pública `/{slug}` carregando dados reais da loja;
 - exibição de categorias e produtos disponíveis;
-- filtro automático de produtos inativos, indisponíveis ou sem estoque quando aplicável;
-- carrinho público com `localStorage` separado por loja;
-- resumo sticky do carrinho;
+- filtro automático de produtos inativos, indisponíveis ou sem estoque, quando aplicável;
+- busca local por nome/descrição;
+- chips de categoria com opção `Todos`;
+- rolagem horizontal de categorias no mobile;
+- busca e filtros fixos no topo do cardápio para facilitar a navegação;
+- carrinho por loja com `localStorage`;
+- mini barra compacta do carrinho fixa no rodapé;
 - navegação para checkout.
 
-#### Checkout público
+### Checkout público
 
 - rota pública `/{slug}/checkout`;
 - leitura do carrinho por loja;
@@ -89,14 +119,19 @@ O projeto já possui uma base funcional relevante, com:
 - validação básica de telefone;
 - criação de `checkout_sessions` e `checkout_session_items` via RPC;
 - limpeza do carrinho somente após sucesso real da criação da sessão;
-- tela de sucesso com dados da sessão criada;
-- botão temporário para **simular pagamento aprovado** em ambiente de desenvolvimento/demo.
+- botão temporário para **simular pagamento aprovado** em ambiente de desenvolvimento/demo;
+- persistência local de nome e telefone no navegador para facilitar compras futuras no mesmo dispositivo.
 
-#### Pedidos
+### Pedidos
 
 - conversão de `checkout_session` paga em pedido real;
 - criação de `orders` e `order_items` a partir do checkout;
 - listagem de pedidos da loja;
+- filtros por escopo:
+  - ativos;
+  - finalizados;
+  - recusados;
+  - todos;
 - transições operacionais com regras de status;
 - ações de:
   - aceitar pedido;
@@ -104,22 +139,31 @@ O projeto já possui uma base funcional relevante, com:
   - marcar como pronto para retirada;
   - finalizar pedido;
 - atualização de timestamps operacionais (`accepted_at`, `ready_at`, `finalized_at`, `rejected_at`);
-- separação entre **status operacional** e **status de reembolso**.
+- separação entre **status operacional** e **status de reembolso**;
+- itens do pedido visíveis na operação;
+- observação do pedido quando existir;
+- pedidos ativos ordenados do mais antigo para o mais novo;
+- histórico ordenado para facilitar consulta;
+- possibilidade de expandir/recolher os itens do pedido;
+- loading, vazio e erro dedicados na rota de pedidos;
+- melhor responsividade no mobile.
 
-#### Acompanhamento público
+### Acompanhamento público
 
-- página pública `/{slug}/pedido/[id]?token=...` funcionando com validação por:
+- página pública `/{slug}/pedido/[id]?token=...`;
+- validação por:
   - `slug` da loja;
   - `id` do pedido;
   - `public_token` do pedido;
+- exibição pública do status do pedido e timestamps relevantes;
 - painel público `/{slug}/painel` exibindo o último pedido pronto para retirada.
 
-#### Banco de dados
+### Banco de dados
 
 - projeto integrado ao **Supabase**;
 - uso de Auth, Database, RPC e RLS;
 - schema versionado localmente em `supabase/migrations/`;
-- fluxo público de checkout e conversão para pedido já migrado e validado.
+- fluxo público de checkout e conversão para pedido versionado no repositório.
 
 ---
 
@@ -129,10 +173,10 @@ As principais frentes restantes são:
 
 - integração com **gateway de pagamento real**;
 - substituição da simulação de pagamento por confirmação real de pagamento;
-- tela de **configurações da loja**;
-- refinamentos de UX no dashboard e nas páginas públicas;
-- possíveis melhorias no painel público de retirada;
-- documentação técnica contínua e evolução do versionamento do banco.
+- possíveis melhorias operacionais adicionais para uso real;
+- refinamentos visuais finais;
+- documentação técnica contínua;
+- evolução futura de métricas, relatórios e consultas mais avançadas, se necessário.
 
 ---
 
@@ -175,7 +219,7 @@ As principais frentes restantes são:
 - **VS Code**
 - **Docker Desktop**
 
-> O projeto pode rodar localmente sem Docker no dia a dia, mas comandos da Supabase CLI como `db diff` e `db pull` dependem do Docker Desktop funcionando.
+> O projeto pode rodar localmente sem Docker no dia a dia, mas comandos da Supabase CLI como `db pull` e `db diff` dependem do Docker Desktop funcionando.
 
 ---
 
@@ -315,11 +359,11 @@ cardexpress/
 
 - `/cadastro` → cadastro de comerciante e loja;
 - `/login` → autenticação;
-- `/dashboard` → área protegida;
+- `/dashboard` → visão geral da operação;
 - `/dashboard/categorias` → gerenciamento de categorias;
 - `/dashboard/produtos` → gerenciamento de produtos;
-- `/dashboard/pedidos` → operação de pedidos;
-- `/dashboard/configuracoes` → tela ainda pendente de evolução.
+- `/dashboard/pedidos` → operação e histórico de pedidos;
+- `/dashboard/configuracoes` → configurações da loja.
 
 ### Área pública
 
@@ -336,9 +380,10 @@ cardexpress/
 
 1. o cliente acessa `/{slug}`;
 2. a aplicação busca dados públicos da loja via RPC;
-3. carrega categorias e produtos disponíveis via RPC;
-4. monta o carrinho no navegador com `localStorage` por loja;
-5. segue para `/{slug}/checkout`.
+3. carrega categorias e produtos disponíveis;
+4. permite busca local e navegação por categoria;
+5. monta o carrinho no navegador com `localStorage` por loja;
+6. segue para `/{slug}/checkout`.
 
 ### 2. Fluxo do checkout
 
@@ -363,7 +408,8 @@ Enquanto a integração com gateway real não foi implementada, o projeto usa um
 1. o pedido entra em `orders` com status `aguardando_aceite`;
 2. aparece no painel administrativo da loja;
 3. o comerciante pode aceitar, recusar, marcar como pronto e finalizar;
-4. a página pública do pedido reflete os timestamps e o status operacional.
+4. os itens do pedido e a observação ficam visíveis na operação;
+5. a página pública do pedido reflete o status e os timestamps.
 
 ---
 
@@ -375,12 +421,20 @@ Nesta fase, a regra do projeto é:
 
 - **1 conta autenticada = 1 loja**
 
+### Cliente sem conta nesta fase
+
+Nesta versão do projeto:
+
+- o cliente **não** precisa criar conta;
+- a identificação do cliente é simples, com nome e telefone;
+- o histórico global do cliente entre dispositivos não faz parte do escopo atual.
+
 ### `is_active` x `is_available`
 
 O projeto separa dois conceitos em produtos:
 
 - `is_active` → produto continua cadastrado e ativo no sistema;
-- `is_available` → produto está disponível para venda naquele momento.
+- `is_available` → produto está com venda liberada naquele momento.
 
 ### Estoque
 
@@ -389,6 +443,14 @@ Quando `track_stock = true`:
 - o sistema passa a considerar `stock_quantity`;
 - produtos sem estoque podem deixar de aparecer no cardápio público;
 - a conversão do checkout em pedido também valida estoque no servidor.
+
+### Visibilidade pública do produto
+
+Um produto só aparece no cardápio público quando:
+
+- está ativo;
+- está com venda liberada;
+- e possui estoque positivo, quando houver controle de estoque.
 
 ### Pedido público seguro
 
@@ -399,6 +461,10 @@ O acesso à página pública do pedido depende de:
 - `token` público do pedido.
 
 Isso evita exposição indevida de pedidos de outras lojas ou de outros clientes.
+
+### Pagamento confirmado antes do pedido operacional
+
+A lógica do projeto mantém a regra de que o pedido só deve entrar no fluxo operacional após confirmação do pagamento. Na fase atual, essa confirmação é simulada em ambiente demo.
 
 ---
 
@@ -430,12 +496,12 @@ O projeto utiliza Supabase como backend principal.
 
 ### Migrations importantes
 
-Atualmente o repositório contém pelo menos estas referências importantes:
+Consulte a pasta `supabase/migrations/` para o histórico versionado do banco.
+
+Referências importantes já utilizadas no projeto:
 
 - `supabase/migrations/20260331203339_remote_schema.sql`
 - `supabase/migrations/20260403001920_public_checkout_order_flow.sql`
-
-A primeira representa o snapshot/versionamento inicial do schema remoto. A segunda registra a evolução do fluxo público de cardápio, checkout e conversão para pedido.
 
 ---
 
@@ -512,23 +578,26 @@ Se a mudança envolver banco:
 - dashboard protegido;
 - CRUD de categorias;
 - CRUD de produtos;
+- configurações da loja;
 - fluxo operacional de pedidos;
+- histórico e escopos de pedidos no dashboard;
 - cardápio público por `slug`;
-- carrinho público;
+- busca local e filtro por categoria;
+- carrinho público com persistência local;
+- mini carrinho fixo no cardápio;
 - checkout com `checkout_sessions`;
 - simulação de pagamento aprovado;
 - conversão para pedido real;
 - acompanhamento público do pedido;
 - painel público de retirada;
-- migration do fluxo público/checkout versionada no repositório.
+- melhorias amplas de responsividade e UX no dashboard e na área pública.
 
 ### Em andamento / pendente
 
 - integração com pagamento real;
 - remoção da simulação de pagamento quando houver gateway;
-- tela de configurações da loja;
-- refinamentos de UX;
-- melhorias operacionais para uso real.
+- refinamentos finais para uso real;
+- evolução futura de relatórios e métricas, se necessário.
 
 ---
 
@@ -565,6 +634,6 @@ Responsável principal no contexto atual do desenvolvimento:
 
 ## Resumo final
 
-O CardExpress já possui uma base sólida para operação de uma loja com cardápio digital e retirada no balcão. O projeto evoluiu de um painel administrativo inicial para um fluxo público completo em modo demo, incluindo cardápio, carrinho, checkout, conversão para pedido real e acompanhamento público do pedido.
+O CardExpress já possui uma base sólida para operação de uma loja com cardápio digital e retirada no balcão. O projeto evoluiu para um fluxo público funcional em modo demo, com cardápio, carrinho, checkout, conversão para pedido real, acompanhamento público do pedido e operação administrativa consistente.
 
-A próxima etapa mais importante é substituir a simulação de pagamento por uma integração real com gateway e concluir a tela de configurações da loja, mantendo o banco e o código versionados no repositório.
+A próxima etapa mais importante é substituir a simulação de pagamento por uma integração real com gateway, mantendo o banco e o código versionados no repositório.

@@ -83,7 +83,7 @@ O projeto já possui uma base funcional sólida, com:
 - excluir produto;
 - badges operacionais refinados;
 - exibição mais clara de estoque, disponibilidade e visibilidade pública;
-- formulário de criação recolhido por padrão.
+- criação com formulário recolhido por padrão.
 
 ### Configurações da loja
 
@@ -92,7 +92,7 @@ O projeto já possui uma base funcional sólida, com:
 - exibição do `slug` em modo somente leitura;
 - exibição e cópia do link público da loja;
 - mensagem pública da loja;
-- controle de aceitação de pedidos;
+- controle manual de aceitação de pedidos;
 - resumo de prontidão operacional;
 - botão salvar habilitado apenas quando há alterações;
 - descarte de alterações;
@@ -109,7 +109,8 @@ O projeto já possui uma base funcional sólida, com:
 - busca e filtros fixos no topo do cardápio para facilitar a navegação;
 - carrinho por loja com `localStorage`;
 - mini barra compacta do carrinho fixa no rodapé;
-- navegação para checkout.
+- navegação para checkout;
+- coerência entre status público da loja e cardápio efetivamente disponível.
 
 ### Checkout público
 
@@ -156,7 +157,7 @@ O projeto já possui uma base funcional sólida, com:
   - `id` do pedido;
   - `public_token` do pedido;
 - exibição pública do status do pedido e timestamps relevantes;
-- painel público `/{slug}/painel` exibindo o último pedido pronto para retirada.
+- painel público `/{slug}/painel` exibindo o pedido mais recente que ficou pronto para retirada.
 
 ### Banco de dados
 
@@ -174,7 +175,7 @@ As principais frentes restantes são:
 - integração com **gateway de pagamento real**;
 - substituição da simulação de pagamento por confirmação real de pagamento;
 - possíveis melhorias operacionais adicionais para uso real;
-- refinamentos visuais finais;
+- ajustes pontuais finais de apresentação;
 - documentação técnica contínua;
 - evolução futura de métricas, relatórios e consultas mais avançadas, se necessário.
 
@@ -232,7 +233,7 @@ Crie um arquivo `.env.local` na raiz do projeto com base no `.env.local.example`
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-```
+````
 
 ### Criando o `.env.local`
 
@@ -254,11 +255,12 @@ Depois, preencha com os dados reais do seu projeto Supabase.
 
 No painel do Supabase:
 
-- acesse o projeto;
-- vá em **Settings** → **API**;
-- copie:
-  - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
-  - **anon public key** → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+* acesse o projeto;
+* vá em **Settings** → **API**;
+* copie:
+
+  * **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
+  * **anon public key** → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 > O arquivo `.env.local` não deve ser commitado.
 
@@ -357,20 +359,20 @@ cardexpress/
 
 ### Área administrativa
 
-- `/cadastro` → cadastro de comerciante e loja;
-- `/login` → autenticação;
-- `/dashboard` → visão geral da operação;
-- `/dashboard/categorias` → gerenciamento de categorias;
-- `/dashboard/produtos` → gerenciamento de produtos;
-- `/dashboard/pedidos` → operação e histórico de pedidos;
-- `/dashboard/configuracoes` → configurações da loja.
+* `/cadastro` → cadastro de comerciante e loja;
+* `/login` → autenticação;
+* `/dashboard` → visão geral da operação;
+* `/dashboard/categorias` → gerenciamento de categorias;
+* `/dashboard/produtos` → gerenciamento de produtos;
+* `/dashboard/pedidos` → operação e histórico de pedidos;
+* `/dashboard/configuracoes` → configurações da loja.
 
 ### Área pública
 
-- `/{slug}` → cardápio público da loja;
-- `/{slug}/checkout` → checkout público;
-- `/{slug}/pedido/[id]?token=...` → acompanhamento público do pedido;
-- `/{slug}/painel` → painel público de retirada.
+* `/{slug}` → cardápio público da loja;
+* `/{slug}/checkout` → checkout público;
+* `/{slug}/pedido/[id]?token=...` → acompanhamento público do pedido;
+* `/{slug}/painel` → painel público de retirada.
 
 ---
 
@@ -419,46 +421,71 @@ Enquanto a integração com gateway real não foi implementada, o projeto usa um
 
 Nesta fase, a regra do projeto é:
 
-- **1 conta autenticada = 1 loja**
+* **1 conta autenticada = 1 loja**
 
 ### Cliente sem conta nesta fase
 
 Nesta versão do projeto:
 
-- o cliente **não** precisa criar conta;
-- a identificação do cliente é simples, com nome e telefone;
-- o histórico global do cliente entre dispositivos não faz parte do escopo atual.
+* o cliente **não** precisa criar conta;
+* a identificação do cliente é simples, com nome e telefone;
+* o histórico global do cliente entre dispositivos não faz parte do escopo atual.
+
+### Slug não editável nesta fase
+
+No estado atual do projeto:
+
+* o `slug` público da loja é tratado como identificador estável;
+* ele aparece em modo somente leitura nas configurações;
+* a edição do `slug` não faz parte desta fase.
+
+### Configurações separadas de pagamentos e conta
+
+Nesta fase:
+
+* as configurações da loja ficam em `/dashboard/configuracoes`;
+* uma futura integração de pagamentos deve ter área própria;
+* conta, senha e segurança não devem ser misturadas com configurações operacionais da loja.
 
 ### `is_active` x `is_available`
 
 O projeto separa dois conceitos em produtos:
 
-- `is_active` → produto continua cadastrado e ativo no sistema;
-- `is_available` → produto está com venda liberada naquele momento.
+* `is_active` → produto continua cadastrado e ativo no sistema;
+* `is_available` → produto está com venda liberada naquele momento.
 
 ### Estoque
 
 Quando `track_stock = true`:
 
-- o sistema passa a considerar `stock_quantity`;
-- produtos sem estoque podem deixar de aparecer no cardápio público;
-- a conversão do checkout em pedido também valida estoque no servidor.
+* o sistema passa a considerar `stock_quantity`;
+* produtos sem estoque podem deixar de aparecer no cardápio público;
+* a conversão do checkout em pedido também valida estoque no servidor.
 
 ### Visibilidade pública do produto
 
 Um produto só aparece no cardápio público quando:
 
-- está ativo;
-- está com venda liberada;
-- e possui estoque positivo, quando houver controle de estoque.
+* está ativo;
+* está com venda liberada;
+* e possui estoque positivo, quando houver controle de estoque.
+
+### Disponibilidade pública efetiva da loja
+
+Na área pública, a loja só deve aparecer como apta a receber pedidos quando:
+
+* `accepts_orders` está ativo;
+* e existe cardápio público efetivamente disponível para pedido.
+
+Em outras palavras, a aceitação pública de pedidos considera tanto a intenção manual da loja quanto a prontidão operacional refletida no cardápio.
 
 ### Pedido público seguro
 
 O acesso à página pública do pedido depende de:
 
-- `slug` da loja;
-- `id` do pedido;
-- `token` público do pedido.
+* `slug` da loja;
+* `id` do pedido;
+* `token` público do pedido.
 
 Isso evita exposição indevida de pedidos de outras lojas ou de outros clientes.
 
@@ -474,25 +501,25 @@ O projeto utiliza Supabase como backend principal.
 
 ### Principais entidades
 
-- `profiles`
-- `stores`
-- `store_settings`
-- `categories`
-- `products`
-- `orders`
-- `order_items`
-- `checkout_sessions`
-- `checkout_session_items`
+* `profiles`
+* `stores`
+* `store_settings`
+* `categories`
+* `products`
+* `orders`
+* `order_items`
+* `checkout_sessions`
+* `checkout_session_items`
 
 ### RPCs relevantes no estado atual
 
-- `get_public_store_by_slug`
-- `get_public_menu_by_slug`
-- `get_public_order`
-- `get_latest_ready_order_for_store`
-- `create_checkout_session_by_slug`
-- `convert_paid_checkout_session_to_order`
-- `simulate_checkout_payment_success`
+* `get_public_store_by_slug`
+* `get_public_menu_by_slug`
+* `get_public_order`
+* `get_latest_ready_order_for_store`
+* `create_checkout_session_by_slug`
+* `convert_paid_checkout_session_to_order`
+* `simulate_checkout_payment_success`
 
 ### Migrations importantes
 
@@ -500,8 +527,10 @@ Consulte a pasta `supabase/migrations/` para o histórico versionado do banco.
 
 Referências importantes já utilizadas no projeto:
 
-- `supabase/migrations/20260331203339_remote_schema.sql`
-- `supabase/migrations/20260403001920_public_checkout_order_flow.sql`
+* `supabase/migrations/20260331203339_remote_schema.sql`
+* `supabase/migrations/20260403001920_public_checkout_order_flow.sql`
+* `supabase/migrations/20260403120000_sync_product_availability_manual_control.sql`
+* `supabase/migrations/20260405162753_public_ready_panel_keep_last_called_order.sql`
 
 ---
 
@@ -526,9 +555,9 @@ npx supabase db diff --linked --schema public -f nome_da_migration
 
 ### Observações importantes
 
-- `db pull` e `db diff` exigem Docker Desktop funcionando;
-- sempre que o banco mudar, o ideal é gerar ou revisar uma migration antes de commitar;
-- evitar alterações no Supabase remoto sem refletir isso no repositório.
+* `db pull` e `db diff` exigem Docker Desktop funcionando;
+* sempre que o banco mudar, o ideal é gerar ou revisar uma migration antes de commitar;
+* evitar alterações no Supabase remoto sem refletir isso no repositório.
 
 ---
 
@@ -550,23 +579,23 @@ npm run lint
 
 Se a mudança envolver banco:
 
-- confirme se a migration foi criada ou atualizada;
-- revise `supabase/migrations/` antes do commit.
+* confirme se a migration foi criada ou atualizada;
+* revise `supabase/migrations/` antes do commit.
 
 ### Arquivos que não devem ser versionados
 
-- `.env.local`
-- `.next/`
-- `node_modules/`
-- logs e temporários
+* `.env.local`
+* `.next/`
+* `node_modules/`
+* logs e temporários
 
 ### Arquivos que devem ser versionados
 
-- código-fonte;
-- `README.md`;
-- `.env.local.example`;
-- `supabase/config.toml`;
-- `supabase/migrations/`.
+* código-fonte;
+* `README.md`;
+* `.env.local.example`;
+* `supabase/config.toml`;
+* `supabase/migrations/`.
 
 ---
 
@@ -574,30 +603,30 @@ Se a mudança envolver banco:
 
 ### Concluído
 
-- autenticação do comerciante;
-- dashboard protegido;
-- CRUD de categorias;
-- CRUD de produtos;
-- configurações da loja;
-- fluxo operacional de pedidos;
-- histórico e escopos de pedidos no dashboard;
-- cardápio público por `slug`;
-- busca local e filtro por categoria;
-- carrinho público com persistência local;
-- mini carrinho fixo no cardápio;
-- checkout com `checkout_sessions`;
-- simulação de pagamento aprovado;
-- conversão para pedido real;
-- acompanhamento público do pedido;
-- painel público de retirada;
-- melhorias amplas de responsividade e UX no dashboard e na área pública.
+* autenticação do comerciante;
+* dashboard protegido;
+* CRUD de categorias;
+* CRUD de produtos;
+* configurações da loja;
+* fluxo operacional de pedidos;
+* histórico e escopos de pedidos no dashboard;
+* cardápio público por `slug`;
+* busca local e filtro por categoria;
+* carrinho público com persistência local;
+* mini carrinho fixo no cardápio;
+* checkout com `checkout_sessions`;
+* simulação de pagamento aprovado;
+* conversão para pedido real;
+* acompanhamento público do pedido;
+* painel público de retirada;
+* melhorias amplas de responsividade e UX no dashboard e na área pública.
 
 ### Em andamento / pendente
 
-- integração com pagamento real;
-- remoção da simulação de pagamento quando houver gateway;
-- refinamentos finais para uso real;
-- evolução futura de relatórios e métricas, se necessário.
+* integração com pagamento real;
+* remoção da simulação de pagamento quando houver gateway;
+* ajustes pontuais para implantação em ambiente real;
+* evolução futura de relatórios e métricas, se necessário.
 
 ---
 
@@ -628,7 +657,7 @@ A licença pode ser definida posteriormente pela equipe.
 
 Responsável principal no contexto atual do desenvolvimento:
 
-- **Kauan Henrique Silva Paulino**
+* **Kauan Henrique Silva Paulino**
 
 ---
 
@@ -636,4 +665,4 @@ Responsável principal no contexto atual do desenvolvimento:
 
 O CardExpress já possui uma base sólida para operação de uma loja com cardápio digital e retirada no balcão. O projeto evoluiu para um fluxo público funcional em modo demo, com cardápio, carrinho, checkout, conversão para pedido real, acompanhamento público do pedido e operação administrativa consistente.
 
-A próxima etapa mais importante é substituir a simulação de pagamento por uma integração real com gateway, mantendo o banco e o código versionados no repositório.
+A principal evolução futura para uso real é a substituição da simulação atual por uma integração efetiva com gateway de pagamento, mantendo banco, código e migrations alinhados no repositório.

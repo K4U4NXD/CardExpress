@@ -58,13 +58,15 @@ export function PageHeader({
               </Link>
             ) : null}
             <h1 className={`${compact ? "text-lg" : "text-xl"} font-semibold text-zinc-900`}>{title}</h1>
-            {description && !compact ? <p className="mt-1 text-sm text-zinc-600">{description}</p> : null}
+            {description ? (
+              <p className={`mt-1 ${compact ? "text-xs" : "text-sm"} text-zinc-600`}>{description}</p>
+            ) : null}
           </div>
 
           {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
         </div>
 
-        {bottomContent ? <div className="mt-3">{bottomContent}</div> : null}
+        {bottomContent ? <div className={compact ? "mt-2.5" : "mt-3"}>{bottomContent}</div> : null}
       </div>
     </header>
   );

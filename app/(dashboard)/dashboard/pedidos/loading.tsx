@@ -13,6 +13,8 @@ export default function DashboardOrdersLoading() {
 
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
         <div className="space-y-4">
+          <p className="text-xs text-zinc-500">Carregando fila de pedidos e atualizando status...</p>
+
           <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
             <div className="h-3 w-32 animate-pulse rounded bg-zinc-200" />
             <div className="mt-3 flex flex-wrap gap-2">

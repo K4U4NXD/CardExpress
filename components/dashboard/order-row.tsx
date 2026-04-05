@@ -124,7 +124,7 @@ export function OrderRow({ order, isLast }: OrderRowProps) {
             <span className="text-base font-semibold text-zinc-900">{formatOrderCode(order)}</span>
             <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>{statusLabel}</span>
             {order.refund_status && order.refund_status !== "none" ? (
-              <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-900">
+              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">
                 Reembolso: {refundLabel}
               </span>
             ) : null}
@@ -145,7 +145,9 @@ export function OrderRow({ order, isLast }: OrderRowProps) {
 
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Itens do pedido</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Itens do pedido {items.length > 0 ? `(${items.length})` : ""}
+              </p>
               {items.length > 0 ? (
                 <button
                   type="button"
@@ -168,7 +170,7 @@ export function OrderRow({ order, isLast }: OrderRowProps) {
                   ))}
                 </ul>
               ) : (
-                <p className="mt-2 text-xs text-zinc-500">Itens não disponíveis nesta consulta.</p>
+                <p className="mt-2 text-xs text-zinc-500">Itens nao disponiveis nesta visualizacao.</p>
               )
             ) : null}
           </div>

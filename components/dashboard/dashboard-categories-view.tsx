@@ -20,7 +20,7 @@ export function DashboardCategoriesView({ categories, avisoText, erroText }: Das
     <>
       <PageHeader
         title="Categorias"
-        description="Organize o cardápio por seções."
+        description="Organize as secoes do cardapio para facilitar a navegacao do cliente."
         sticky
         compact
         stickyTopClassName="top-14 md:top-0"
@@ -67,13 +67,16 @@ export function DashboardCategoriesView({ categories, avisoText, erroText }: Das
 
           <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-zinc-900">Suas categorias</h2>
-              <p className="text-xs text-zinc-500">{categories.length} item(ns)</p>
+              <h2 className="text-sm font-semibold text-zinc-900">Categorias cadastradas</h2>
+              <p className="text-xs text-zinc-500">
+                {categories.length} {categories.length === 1 ? "categoria" : "categorias"}
+              </p>
             </div>
 
             {categories.length === 0 ? (
-              <div className="mt-4 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
-                Nenhuma categoria ainda. Use o botão &quot;Nova categoria&quot; para começar.
+              <div className="mt-4 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4">
+                <p className="text-sm font-medium text-zinc-700">Nenhuma categoria cadastrada.</p>
+                <p className="mt-1 text-xs text-zinc-500">Use o botao &quot;Nova categoria&quot; para iniciar a estrutura do cardapio.</p>
               </div>
             ) : (
               <div className="mt-2">

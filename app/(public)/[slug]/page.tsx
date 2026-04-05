@@ -25,17 +25,18 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
     throw new Error(`Erro ao carregar cardapio publico: ${menuResult.error.message}`);
   }
 
-  const menuRows = menuResult.data ?? [];
+  const menuRows: PublicMenuRpcRow[] = Array.isArray(menuResult.data) ? menuResult.data : [];
   const store = storeResult.data;
+  const canAcceptPublicOrders = store.accepts_orders && menuRows.length > 0;
 
   return (
     <>
       <PageHeader
         title={store.name}
         description={
-          store.accepts_orders
-            ? "Confira o cardápio digital e faça seu pedido."
-            : "A loja está com os pedidos pausados no momento."
+          canAcceptPublicOrders
+            ? "Cardapio digital atualizado para pedidos com retirada."
+            : "Pedidos indisponiveis no momento."
         }
         backHref="/"
         backLabel="Início"
@@ -58,10 +59,10 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
 
             <span
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                store.accepts_orders ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                canAcceptPublicOrders ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
               }`}
             >
-              {store.accepts_orders ? "Recebendo pedidos" : "Pedidos pausados"}
+              {canAcceptPublicOrders ? "Loja aceitando pedidos" : "Pedidos indisponiveis no momento"}
             </span>
           </div>
 
@@ -71,7 +72,7 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
         </section>
 
         <div className="pb-24 sm:pb-20">
-          <PublicStoreMenuClient slug={store.slug} acceptsOrders={store.accepts_orders} menuRows={menuRows} />
+          <PublicStoreMenuClient slug={store.slug} acceptsOrders={canAcceptPublicOrders} menuRows={menuRows} />
         </div>
       </div>
     </>

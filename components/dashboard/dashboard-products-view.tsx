@@ -36,7 +36,7 @@ export function DashboardProductsView({
     <>
       <PageHeader
         title="Produtos"
-        description="Itens do cardápio da sua loja."
+        description="Gerencie os itens exibidos no cardapio publico da loja."
         sticky
         compact
         stickyTopClassName="top-14 md:top-0"
@@ -47,7 +47,7 @@ export function DashboardProductsView({
             onClick={() => setIsCreateOpen((open) => !open)}
             className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
           >
-            {isCreateOpen ? "Fechar criação" : "Adicionar novo produto"}
+            {isCreateOpen ? "Fechar" : "Novo produto"}
           </button>
         }
       />
@@ -87,13 +87,16 @@ export function DashboardProductsView({
 
           <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-zinc-900">Seus produtos</h2>
-              <p className="text-xs text-zinc-500">{products.length} item(ns)</p>
+              <h2 className="text-sm font-semibold text-zinc-900">Produtos cadastrados</h2>
+              <p className="text-xs text-zinc-500">
+                {products.length} {products.length === 1 ? "produto" : "produtos"}
+              </p>
             </div>
 
             {products.length === 0 ? (
-              <div className="mt-4 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
-                Nenhum produto ainda. Use o botão &quot;Adicionar novo produto&quot; para começar.
+              <div className="mt-4 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4">
+                <p className="text-sm font-medium text-zinc-700">Nenhum produto cadastrado.</p>
+                <p className="mt-1 text-xs text-zinc-500">Crie um produto para iniciar a exibicao no cardapio.</p>
               </div>
             ) : (
               <div className="mt-2">

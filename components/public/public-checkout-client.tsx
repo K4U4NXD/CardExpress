@@ -97,6 +97,17 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
     hasPhoneInput &&
     phoneIsValid &&
     !isSubmitting;
+  const submitHint = !acceptsOrders
+    ? "A loja pausou os pedidos no momento."
+    : totalItems <= 0
+      ? "Adicione itens no cardapio para continuar."
+      : !customerNameTrimmed
+        ? "Informe seu nome completo."
+        : !hasPhoneInput
+          ? "Informe seu telefone para receber atualizacoes do pedido."
+          : !phoneIsValid
+            ? "Revise o telefone: use 10 ou 11 digitos."
+            : null;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -204,9 +215,9 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
   if (success) {
     return (
       <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-emerald-900">Checkout criado - aguardando pagamento</h2>
+        <h2 className="text-lg font-semibold text-emerald-900">Checkout criado com sucesso</h2>
         <p className="mt-2 text-sm text-emerald-800">
-          Sessao criada para {storeName}. Nesta fase de desenvolvimento, o pagamento pode ser simulado.
+          Sessao registrada para {storeName}. Nesta demonstracao, o pagamento pode ser simulado para concluir o fluxo.
         </p>
 
         <dl className="mt-4 grid gap-3 text-sm text-emerald-900">
@@ -220,7 +231,11 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
           </div>
           <div>
             <dt className="font-medium">Status</dt>
-            <dd>{success.status} (aguardando pagamento)</dd>
+            <dd>
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-900">
+                {success.status} (aguardando pagamento)
+              </span>
+            </dd>
           </div>
           <div>
             <dt className="font-medium">Total confirmado</dt>
@@ -233,7 +248,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
         </dl>
 
         <p className="mt-4 text-xs text-emerald-700">
-          Botao temporario de simulacao para desenvolvimento/demo, ate a integracao real com gateway.
+          Botao temporario de simulacao para ambiente academico, ate a integracao real com gateway.
         </p>
 
         {simulationErrorMessage ? (
@@ -256,7 +271,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
             href={`/${slug}`}
             className="inline-flex items-center rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
           >
-            Voltar ao cardapio
+            Retornar ao cardapio
           </Link>
         </div>
       </section>
@@ -270,6 +285,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
           <h2 className="text-lg font-semibold text-zinc-900">Resumo do pedido</h2>
           <span className="text-sm text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</span>
         </div>
+        <p className="mt-1 text-xs text-zinc-500">Confira os itens antes de criar a sessao de checkout.</p>
 
         {cartItems.length > 0 ? (
           <div className="mt-4 space-y-3">
@@ -287,24 +303,32 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
             ))}
           </div>
         ) : (
-          <div className="mt-4 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
-            Seu carrinho esta vazio. Adicione produtos para continuar.
+          <div className="mt-4 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4">
+            <p className="text-sm font-medium text-zinc-700">Seu carrinho esta vazio.</p>
+            <p className="mt-1 text-xs text-zinc-500">Adicione produtos no cardapio para continuar.</p>
+            <Link
+              href={`/${slug}`}
+              className="mt-3 inline-flex rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+            >
+              Voltar ao cardapio
+            </Link>
           </div>
         )}
 
         <div className="mt-4 border-t border-zinc-200 pt-4">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-zinc-600">Total local (estimativa)</span>
+            <span className="text-zinc-600">Total estimado</span>
             <span className="font-semibold text-zinc-900">{formatBRL(localTotalAmount)}</span>
           </div>
           <p className="mt-1 text-xs text-zinc-500">
-            O valor oficial e recalculado no servidor ao criar a sessao de checkout.
+            O valor oficial e recalculado no servidor no momento da criacao da sessao.
           </p>
         </div>
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
         <h2 className="text-lg font-semibold text-zinc-900">Dados do cliente</h2>
+        <p className="mt-1 text-xs text-zinc-500">Esses dados sao usados para identificar e atualizar o pedido.</p>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
             <label htmlFor="checkout-customer-name" className="block text-sm font-medium text-zinc-800">
@@ -357,11 +381,11 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
           </div>
 
           {!acceptsOrders ? (
-            <p className="text-sm text-amber-800">A loja nao esta aceitando pedidos no momento.</p>
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">A loja nao esta aceitando pedidos no momento.</p>
           ) : null}
 
           {errorMessage ? (
-            <p className="text-sm text-red-700" role="alert">
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
               {errorMessage}
             </p>
           ) : null}
@@ -371,12 +395,16 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
             disabled={!canSubmit}
             className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? "Finalizando checkout..." : "Finalizar checkout"}
+            {isSubmitting ? "Criando sessao..." : "Criar sessao de checkout"}
           </button>
+
+          {!canSubmit && !isSubmitting && !errorMessage && submitHint ? (
+            <p className="text-xs text-zinc-500">{submitHint}</p>
+          ) : null}
         </form>
 
         <p className="mt-3 text-xs text-zinc-500">
-          Ao continuar, uma sessao de checkout sera criada e os itens serao registrados no servidor.
+          Ao continuar, os itens do carrinho serao registrados em uma nova sessao de checkout.
         </p>
       </section>
     </div>

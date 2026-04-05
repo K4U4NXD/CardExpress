@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { PublicCheckoutClient } from "@/components/public/public-checkout-client";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import type { PublicStoreRpcRow } from "@/types";
+import type { PublicMenuRpcRow, PublicStoreRpcRow } from "@/types";
 import { notFound } from "next/navigation";
 
 type CheckoutPageProps = {
@@ -12,24 +12,34 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const { slug } = await params;
   const supabase = await createServerSupabaseClient();
 
-  const { data: store, error: storeError } = await supabase
-    .rpc("get_public_store_by_slug", { p_slug: slug })
-    .maybeSingle<PublicStoreRpcRow>();
+  const [storeResult, menuResult] = await Promise.all([
+    supabase.rpc("get_public_store_by_slug", { p_slug: slug }).maybeSingle<PublicStoreRpcRow>(),
+    supabase.rpc("get_public_menu_by_slug", { p_slug: slug }).returns<PublicMenuRpcRow[]>(),
+  ]);
+
+  const { data: store, error: storeError } = storeResult;
 
   if (storeError || !store) {
     notFound();
   }
 
+  if (menuResult.error) {
+    throw new Error(`Erro ao carregar cardapio publico: ${menuResult.error.message}`);
+  }
+
+  const menuRows: PublicMenuRpcRow[] = Array.isArray(menuResult.data) ? menuResult.data : [];
+  const canAcceptPublicOrders = store.accepts_orders && menuRows.length > 0;
+
   return (
     <>
       <PageHeader
         title={`Checkout - ${store.name}`}
-        description="Revise seus itens e confirme os dados para criar a sessao de checkout."
+        description="Revise os itens e confirme os dados para concluir esta etapa do pedido."
         backHref={`/${store.slug}`}
         backLabel="Voltar ao cardápio"
         sticky
         compact
-        bottomContent={<p className="text-xs text-zinc-500">Etapa atual: revisão e confirmação dos dados.</p>}
+        bottomContent={<p className="text-xs text-zinc-500">Etapa atual: revisao do carrinho e dados do cliente.</p>}
       />
 
       <div className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
@@ -47,16 +57,16 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
 
             <span
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                store.accepts_orders ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                canAcceptPublicOrders ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
               }`}
             >
-              {store.accepts_orders ? "Recebendo pedidos" : "Pedidos pausados"}
+              {canAcceptPublicOrders ? "Loja aceitando pedidos" : "Pedidos indisponiveis no momento"}
             </span>
           </div>
 
-          {!store.accepts_orders ? (
+          {!canAcceptPublicOrders ? (
             <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-              Esta loja nao esta aceitando pedidos no momento.
+              Esta loja nao esta aceitando pedidos neste momento.
             </p>
           ) : null}
 
@@ -65,7 +75,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
           ) : null}
         </section>
 
-        <PublicCheckoutClient slug={store.slug} storeName={store.name} acceptsOrders={store.accepts_orders} />
+        <PublicCheckoutClient slug={store.slug} storeName={store.name} acceptsOrders={canAcceptPublicOrders} />
       </div>
     </>
   );

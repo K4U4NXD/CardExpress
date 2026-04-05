@@ -70,22 +70,24 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
     <>
       <PageHeader
         title={`Pedido ${formatOrderCode(order)}`}
-        description={`Estabelecimento: ${store.name}`}
+        description={`Acompanhe o status do pedido no estabelecimento ${store.name}.`}
         backHref={`/${store.slug}`}
         backLabel="Voltar ao cardápio"
       />
 
-      <div className="mx-auto max-w-3xl px-6 py-10">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-lg font-semibold text-zinc-900">{formatOrderCode(order)}</span>
             <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>{statusLabel}</span>
             {order.refund_status && order.refund_status !== "none" ? (
-              <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-900">
+              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">
                 Reembolso: {refundLabel}
               </span>
             ) : null}
           </div>
+
+          <p className="mt-2 text-xs text-zinc-500">Use esta tela para acompanhar atualizacoes do pedido em tempo real.</p>
 
           <div className="mt-3 space-y-2 text-sm text-zinc-700">
             <p>Total: {formatBRL(order.total_amount)}</p>
@@ -93,7 +95,8 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
             {order.customer_name ? <p>Cliente: {order.customer_name}</p> : null}
           </div>
 
-          <div className="mt-6 space-y-2 text-sm text-zinc-700">
+          <div className="mt-6 space-y-2 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Linha do tempo</p>
             <p>
               Recebido: <span className="text-zinc-900">{formatDateTime(order.placed_at)}</span>
             </p>

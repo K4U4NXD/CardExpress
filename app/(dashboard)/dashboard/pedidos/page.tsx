@@ -28,9 +28,9 @@ const SCOPE_FILTERS: Array<{ value: OrdersScopeFilter; label: string }> = [
 
 const SCOPE_LABELS: Record<OrdersScopeFilter, string> = {
   ativos: "fila operacional",
-  finalizados: "histórico de finalizados",
-  recusados: "histórico de recusados",
-  todos: "todos os pedidos",
+  finalizados: "historico de finalizados",
+  recusados: "historico de recusados",
+  todos: "visao geral",
 };
 
 function parseScopeFilter(value: string | undefined): OrdersScopeFilter {
@@ -142,25 +142,28 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
         stickyTopClassName="top-14 md:top-0"
         maxWidthClassName="max-w-6xl"
         bottomContent={
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 pt-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {SCOPE_FILTERS.map((filter) => {
-              const isActive = filter.value === selectedScope;
-              const href =
-                filter.value === "ativos"
-                  ? "/dashboard/pedidos"
-                  : `/dashboard/pedidos?escopo=${encodeURIComponent(filter.value)}`;
+          <div className="space-y-2">
+            <p className="text-xs text-zinc-500">Escopo atual: {selectedScopeLabel}.</p>
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 pt-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {SCOPE_FILTERS.map((filter) => {
+                const isActive = filter.value === selectedScope;
+                const href =
+                  filter.value === "ativos"
+                    ? "/dashboard/pedidos"
+                    : `/dashboard/pedidos?escopo=${encodeURIComponent(filter.value)}`;
 
-              return (
-                <Link
-                  key={filter.value}
-                  href={href}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`${isActive ? "cx-chip-active" : "cx-chip"} px-3.5 py-1.5`}
-                >
-                  {filter.label}
-                </Link>
-              );
-            })}
+                return (
+                  <Link
+                    key={filter.value}
+                    href={href}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`${isActive ? "cx-chip-active" : "cx-chip"} px-3.5 py-1.5`}
+                  >
+                    {filter.label}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         }
       />
@@ -181,7 +184,7 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
         ) : null}
         {itemsUnavailable ? (
           <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
-            Itens do pedido não estão acessíveis na consulta atual. Exibindo apenas dados gerais do pedido.
+            Itens do pedido nao estao acessiveis nesta consulta. Exibindo apenas os dados gerais.
           </p>
         ) : null}
 
@@ -195,7 +198,7 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
               <div className="rounded-xl border border-red-200 bg-red-50 p-6 shadow-sm">
                 <h2 className="text-sm font-semibold text-red-900">Erro ao carregar pedidos</h2>
                 <p className="mt-2 text-sm text-red-800">
-                  Não foi possível buscar os pedidos agora. Atualize a página para tentar novamente.
+                  Nao foi possivel buscar os pedidos agora. Atualize a pagina para tentar novamente.
                 </p>
                 <p className="mt-2 text-xs text-red-700">Detalhe técnico: {loadError}</p>
               </div>
@@ -206,18 +209,18 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
                 </p>
                 <p className="mt-2 text-xs text-zinc-500">
                   {isOperationalView
-                    ? "Novos pedidos pagos aparecerão automaticamente aqui."
-                    : "Use os filtros para alternar entre visão operacional e histórico."}
+                    ? "Novos pedidos pagos aparecerao automaticamente nesta tela."
+                    : "Use os filtros acima para alternar entre operacao e historico."}
                 </p>
               </div>
             ) : (
               <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <h2 className="text-sm font-semibold text-zinc-900">
-                    {isOperationalView ? "Pedidos em andamento" : "Histórico de pedidos"}
+                    {isOperationalView ? "Pedidos em andamento" : "Historico de pedidos"}
                   </h2>
                   <p className="text-xs text-zinc-500">
-                    {orders.length} pedido(s) em {selectedScopeLabel}. Mostrando até 50 pedidos.
+                    {orders.length} pedido(s) em {selectedScopeLabel}. Exibindo ate 50 registros.
                   </p>
                 </div>
                 <div className="mt-3">

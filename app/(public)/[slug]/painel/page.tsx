@@ -42,7 +42,7 @@ export default async function PublicReadyPanelPage({ params }: PageProps) {
     <>
       <PageHeader
         title={`Painel de retirada — ${store.name}`}
-        description="Mostrando o último pedido pronto para retirada."
+        description="Exibicao do ultimo pedido liberado para retirada."
         backHref={`/${store.slug}`}
         backLabel="Voltar ao cardápio"
       />
@@ -50,7 +50,8 @@ export default async function PublicReadyPanelPage({ params }: PageProps) {
         <div className="mx-auto max-w-3xl px-6">
           {!order ? (
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-8 text-center text-sm text-zinc-400">
-              Nenhum pedido pronto para retirada agora.
+              <p className="text-sm font-medium text-zinc-200">Nenhum pedido pronto no momento.</p>
+              <p className="mt-1 text-xs text-zinc-400">Atualize esta tela para acompanhar novos chamados.</p>
             </div>
           ) : (
             <div className="rounded-[32px] border border-emerald-400/40 bg-gradient-to-b from-zinc-900 to-black p-10 text-center text-white shadow-[0_0_60px_rgba(16,185,129,0.2)]">

@@ -200,12 +200,13 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
       {hasProducts ? (
         <section className="sticky top-[4.5rem] z-10 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
           <div className="space-y-3">
+            <p className="text-xs font-medium text-zinc-500">Filtre por categoria ou busque por produto.</p>
             <div className="flex items-center gap-2">
               <input
                 type="search"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Buscar produto"
+                placeholder="Buscar por nome ou descricao"
                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
               />
               {searchQuery ? (
@@ -235,7 +236,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
               })}
             </div>
 
-            <p className="text-xs text-zinc-500">{visibleProductsCount} produto(s) exibido(s)</p>
+            <p className="text-xs text-zinc-500">{visibleProductsCount} resultado(s) no cardapio</p>
           </div>
         </section>
       ) : null}
@@ -246,7 +247,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
           <section key={section.category_id} className="space-y-4 scroll-mt-24">
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">{section.category_name}</h2>
-              <p className="text-sm text-zinc-500">Escolha seus itens e ajuste quantidades no carrinho.</p>
+              <p className="text-sm text-zinc-500">Selecione os itens e ajuste as quantidades antes de seguir para o checkout.</p>
             </div>
 
             <div className="space-y-4">
@@ -336,13 +337,24 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
           ))
         ) : (
           <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-8 text-center">
-            <p className="text-sm text-zinc-600">Nenhum produto encontrado para o filtro atual.</p>
-            <p className="mt-1 text-xs text-zinc-500">Tente limpar a busca ou selecionar outra categoria.</p>
+            <p className="text-sm font-medium text-zinc-700">Nenhum produto encontrado para este filtro.</p>
+            <p className="mt-1 text-xs text-zinc-500">Revise a busca ou selecione outra categoria para continuar.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setActiveCategory("todos");
+              }}
+              className="mt-3 inline-flex rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+            >
+              Limpar filtros
+            </button>
           </div>
         )
       ) : (
         <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-8 text-center">
-          <p className="text-sm text-zinc-600">Nenhum produto disponivel no momento.</p>
+          <p className="text-sm font-medium text-zinc-700">Cardapio indisponivel no momento.</p>
+          <p className="mt-1 text-xs text-zinc-500">Volte mais tarde para conferir os produtos deste estabelecimento.</p>
         </div>
       )}
 
@@ -351,6 +363,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
           <div className="min-w-0">
             <p className="text-xs text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</p>
             <p className="text-sm font-semibold text-zinc-900">{formatBRL(totalAmount)}</p>
+            {totalItems === 0 ? <p className="text-[11px] text-zinc-500">Adicione itens para liberar o checkout.</p> : null}
           </div>
 
           <div className="flex items-center gap-2">
@@ -360,7 +373,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
               disabled={totalItems === 0}
               className="text-xs font-medium text-zinc-500 hover:text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Limpar
+              Limpar carrinho
             </button>
 
             {isCheckoutDisabled ? (
@@ -382,7 +395,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
         </div>
 
         {!acceptsOrders ? (
-          <p className="mx-auto max-w-4xl px-4 pb-2 text-[11px] text-amber-700 sm:px-6">A loja está com pedidos pausados no momento.</p>
+          <p className="mx-auto max-w-4xl px-4 pb-2 text-[11px] text-amber-700 sm:px-6">Pedidos pausados temporariamente pelo estabelecimento.</p>
         ) : null}
       </div>
     </div>

@@ -38,8 +38,6 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
             ? "Cardapio digital atualizado para pedidos com retirada."
             : "Pedidos indisponiveis no momento."
         }
-        backHref="/"
-        backLabel="Início"
         sticky
         compact
       />

@@ -2,8 +2,10 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import { CopyButton } from "@/components/layout/copy-button";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { calculateStoreReadiness } from "@/lib/store-readiness";
+import { buildAbsolutePublicStoreUrl, buildPublicStorePath } from "@/lib/public-store-url";
 import { PageHeader } from "@/components/layout/page-header";
 import { formatBRL } from "@/lib/validation/price";
+import { headers } from "next/headers";
 import Link from "next/link";
 import type { OrderStatus } from "@/types";
 
@@ -19,6 +21,7 @@ function statusLabel(acceptsOrders: boolean, isReady: boolean) {
 
 export default async function DashboardHomePage() {
   const supabase = await createServerSupabaseClient();
+  const requestHeaders = await headers();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -60,7 +63,6 @@ export default async function DashboardHomePage() {
       settingsResult,
       readinessResult,
       activeCategoriesResult,
-      visibleProductsResult,
       waitingOrdersResult,
       preparingOrdersResult,
       readyOrdersResult,
@@ -82,13 +84,6 @@ export default async function DashboardHomePage() {
         .select("id", { count: "exact", head: true })
         .eq("store_id", store.id)
         .eq("is_active", true),
-      supabase
-        .from("products")
-        .select("id", { count: "exact", head: true })
-        .eq("store_id", store.id)
-        .eq("is_active", true)
-        .eq("is_available", true)
-        .or("track_stock.eq.false,stock_quantity.gt.0"),
       supabase
         .from("orders")
         .select("id", { count: "exact", head: true })
@@ -115,7 +110,7 @@ export default async function DashboardHomePage() {
     acceptsOrders = settingsResult.data?.accepts_orders ?? true;
     readiness = readinessResult;
     activeCategories = activeCategoriesResult.count ?? 0;
-    visibleProducts = visibleProductsResult.count ?? 0;
+  visibleProducts = readinessResult?.activeAvailableProducts ?? 0;
     waitingOrders = waitingOrdersResult.count ?? 0;
     preparingOrders = preparingOrdersResult.count ?? 0;
     readyOrders = readyOrdersResult.count ?? 0;
@@ -125,7 +120,8 @@ export default async function DashboardHomePage() {
     soldToday = finalizedTodayRows.reduce((acc, row) => acc + Number(row.total_amount ?? 0), 0);
   }
 
-  const publicStoreUrl = store ? `/${store.slug}` : null;
+  const publicStorePath = store ? buildPublicStorePath(store.slug) : null;
+  const publicStoreUrl = publicStorePath ? buildAbsolutePublicStoreUrl(publicStorePath, requestHeaders) : null;
   const operationStatus = statusLabel(acceptsOrders, readiness?.isReady ?? false);
 
   return (
@@ -250,16 +246,18 @@ export default async function DashboardHomePage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Link público</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <span className="max-w-full truncate rounded bg-zinc-100 px-2 py-1 text-sm text-zinc-700">
-                    {publicStoreUrl}
+                    {publicStorePath}
                   </span>
                   {publicStoreUrl ? <CopyButton text={publicStoreUrl} /> : null}
-                  {store ? (
-                    <Link
-                      href={`/${store.slug}`}
+                  {publicStoreUrl ? (
+                    <a
+                      href={publicStoreUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
                       className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
                     >
                       Abrir cardápio público
-                    </Link>
+                    </a>
                   ) : null}
                 </div>
               </section>

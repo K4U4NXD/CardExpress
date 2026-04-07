@@ -2,20 +2,10 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StoreSettingsForm } from "@/components/dashboard/store-settings-form";
 import { getUserStore } from "@/lib/auth/store";
 import { formatPostgrestError } from "@/lib/db-errors";
+import { buildAbsolutePublicStoreUrl, buildPublicStorePath } from "@/lib/public-store-url";
 import { calculateStoreReadiness, type StoreReadinessResult } from "@/lib/store-readiness";
 import { headers } from "next/headers";
 import Link from "next/link";
-
-function resolvePublicStoreUrl(slug: string, requestHeaders: Headers) {
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
-  const proto = requestHeaders.get("x-forwarded-proto") ?? "http";
-
-  if (!host) {
-    return `/${slug}`;
-  }
-
-  return `${proto}://${host}/${slug}`;
-}
 
 const FALLBACK_READINESS: StoreReadinessResult = {
   isReady: false,
@@ -62,6 +52,9 @@ export default async function DashboardSettingsPage() {
     }
   }
 
+  const publicStorePath = store ? buildPublicStorePath(store.slug) : null;
+  const publicStoreUrl = publicStorePath ? buildAbsolutePublicStoreUrl(publicStorePath, requestHeaders) : null;
+
   return (
     <>
       <PageHeader
@@ -72,9 +65,11 @@ export default async function DashboardSettingsPage() {
         stickyTopClassName="top-14 md:top-0"
         maxWidthClassName="max-w-6xl"
         actions={
-          store ? (
+          publicStoreUrl ? (
             <Link
-              href={`/${store.slug}`}
+              href={publicStoreUrl}
+              target="_blank"
+              rel="noreferrer noopener"
               className="hidden items-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 sm:inline-flex"
             >
               Ver cardápio público
@@ -82,10 +77,12 @@ export default async function DashboardSettingsPage() {
           ) : null
         }
         bottomContent={
-          store ? (
+          publicStoreUrl ? (
             <div className="flex sm:hidden">
               <Link
-                href={`/${store.slug}`}
+                href={publicStoreUrl}
+                target="_blank"
+                rel="noreferrer noopener"
                 className="inline-flex w-full items-center justify-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 sm:w-auto"
               >
                 Ver cardápio público
@@ -115,7 +112,8 @@ export default async function DashboardSettingsPage() {
               name: store.name,
               phone: store.phone ?? "",
               slug: store.slug,
-              public_url: resolvePublicStoreUrl(store.slug, requestHeaders),
+              public_path: publicStorePath ?? buildPublicStorePath(store.slug),
+              public_url: publicStoreUrl ?? buildPublicStorePath(store.slug),
               accepts_orders: readiness.isReady ? acceptsOrders : false,
               public_message: publicMessage,
             }}

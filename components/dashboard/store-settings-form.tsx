@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
+import { QRCodeCanvas } from "qrcode.react";
 
 import {
   saveStoreSettingsAction,
@@ -12,10 +13,12 @@ import {
   STORE_PUBLIC_MESSAGE_MAX_LENGTH,
   validateStoreSettingsInput,
 } from "@/lib/validation/store-settings";
+import { buildAbsoluteUrlFromOrigin } from "@/lib/public-store-url";
 
 type StoreSettingsFormProps = {
   initialValues: StoreSettingsFormValues & {
     slug: string;
+    public_path: string;
     public_url: string;
   };
   initialReadiness: StoreReadinessResult;
@@ -25,6 +28,7 @@ type StoreSettingsFormProps = {
 const INITIAL_STATE: StoreSettingsActionState = {};
 
 type CopyStatus = "idle" | "ok" | "error";
+type QrDownloadStatus = "idle" | "error";
 
 function normalizeFormValues(values: StoreSettingsFormValues): StoreSettingsFormValues {
   return {
@@ -64,6 +68,7 @@ export function StoreSettingsForm({
   const [values, setValues] = useState<StoreSettingsFormValues>(initialSnapshot);
   const [savedSnapshot, setSavedSnapshot] = useState<StoreSettingsFormValues>(initialSnapshot);
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
+  const [qrDownloadStatus, setQrDownloadStatus] = useState<QrDownloadStatus>("idle");
   const [hideServerFeedback, setHideServerFeedback] = useState(false);
 
   useEffect(() => {
@@ -102,6 +107,13 @@ export function StoreSettingsForm({
   const saveDisabled = pending || !isDirty || hasClientValidationError;
   const acceptsToggleDisabled = pending || (!readiness.isReady && !values.accepts_orders);
   const serverFeedbackVisible = !hideServerFeedback;
+  const canonicalPublicUrl = useMemo(() => {
+    if (typeof window === "undefined") {
+      return initialValues.public_url;
+    }
+
+    return buildAbsoluteUrlFromOrigin(initialValues.public_path, window.location.origin);
+  }, [initialValues.public_path, initialValues.public_url]);
 
   const nameError = validation.fieldErrors.name ?? (serverFeedbackVisible ? state.fieldErrors?.name : undefined);
   const phoneError = validation.fieldErrors.phone ?? (serverFeedbackVisible ? state.fieldErrors?.phone : undefined);
@@ -125,10 +137,29 @@ export function StoreSettingsForm({
 
   async function handleCopyPublicLink() {
     try {
-      await navigator.clipboard.writeText(initialValues.public_url);
+      await navigator.clipboard.writeText(canonicalPublicUrl);
       setCopyStatus("ok");
     } catch {
       setCopyStatus("error");
+    }
+  }
+
+  function handleDownloadPublicQrCode() {
+    const qrCanvas = document.getElementById("settings-public-url-qr") as HTMLCanvasElement | null;
+
+    if (!qrCanvas) {
+      setQrDownloadStatus("error");
+      return;
+    }
+
+    try {
+      const downloadLink = document.createElement("a");
+      downloadLink.href = qrCanvas.toDataURL("image/png");
+      downloadLink.download = `${initialValues.slug}-cardapio-publico.png`;
+      downloadLink.click();
+      setQrDownloadStatus("idle");
+    } catch {
+      setQrDownloadStatus("error");
     }
   }
 
@@ -222,7 +253,7 @@ export function StoreSettingsForm({
               id="settings-store-public-url"
               type="text"
               readOnly
-              value={initialValues.public_url}
+              value={initialValues.public_path}
               className="w-full cursor-not-allowed rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-700"
             />
             <button
@@ -232,10 +263,51 @@ export function StoreSettingsForm({
             >
               Copiar
             </button>
+            <a
+              href={canonicalPublicUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100"
+            >
+              Abrir
+            </a>
           </div>
           {copyStatus === "ok" ? <p className="mt-1 text-xs text-emerald-700">Link copiado.</p> : null}
           {copyStatus === "error" ? (
             <p className="mt-1 text-xs text-red-700">Não foi possível copiar automaticamente.</p>
+          ) : null}
+        </div>
+
+        <div className="sm:col-span-2 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-zinc-800">QR Code do cardápio público</p>
+              <p className="mt-1 text-xs text-zinc-600">Use para compartilhar o link da loja em balcão, mesa ou embalagem.</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDownloadPublicQrCode}
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100"
+            >
+              Baixar QR Code
+            </button>
+          </div>
+
+          <div className="mt-3 flex justify-center sm:justify-start">
+            <div className="w-full max-w-[176px] rounded-lg border border-zinc-200 bg-white p-3 shadow-sm">
+              <QRCodeCanvas
+                id="settings-public-url-qr"
+                value={canonicalPublicUrl}
+                size={160}
+                level="M"
+                includeMargin
+                className="h-auto w-full"
+              />
+            </div>
+          </div>
+
+          {qrDownloadStatus === "error" ? (
+            <p className="mt-2 text-xs text-red-700">Não foi possível baixar o QR Code agora.</p>
           ) : null}
         </div>
       </div>
@@ -257,7 +329,7 @@ export function StoreSettingsForm({
 
         <div className="mt-3 flex flex-wrap gap-4 text-xs text-zinc-600">
           <p>Categorias ativas: {readiness.activeCategories}</p>
-          <p>Produtos ativos e disponíveis: {readiness.activeAvailableProducts}</p>
+          <p>Produtos aptos no cardápio público: {readiness.activeAvailableProducts}</p>
         </div>
 
         {!readiness.isReady ? (

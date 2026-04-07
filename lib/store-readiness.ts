@@ -21,27 +21,36 @@ export async function calculateStoreReadiness(
   supabase: ServerSupabaseClient,
   input: StoreReadinessInput
 ): Promise<StoreReadinessResult> {
-  const [{ count: activeCategoryCount, error: categoriesError }, { count: activeProductCount, error: productsError }] =
-    await Promise.all([
-      supabase
-        .from("categories")
-        .select("id", { count: "exact", head: true })
-        .eq("store_id", input.storeId)
-        .eq("is_active", true),
-      supabase
-        .from("products")
-        .select("id", { count: "exact", head: true })
-        .eq("store_id", input.storeId)
-        .eq("is_active", true)
-        .eq("is_available", true),
-    ]);
+  const { data: activeCategoryRows, error: categoriesError } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("store_id", input.storeId)
+    .eq("is_active", true);
 
   if (categoriesError) {
     throw categoriesError;
   }
 
-  if (productsError) {
-    throw productsError;
+  const activeCategoryIds = (activeCategoryRows ?? []).map((row) => row.id);
+  const activeCategories = activeCategoryIds.length;
+
+  let activeAvailableProducts = 0;
+
+  if (activeCategoryIds.length > 0) {
+    const { count: readyProductCount, error: productsError } = await supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("store_id", input.storeId)
+      .in("category_id", activeCategoryIds)
+      .eq("is_active", true)
+      .eq("is_available", true)
+      .or("track_stock.eq.false,stock_quantity.gt.0");
+
+    if (productsError) {
+      throw productsError;
+    }
+
+    activeAvailableProducts = readyProductCount ?? 0;
   }
 
   const pendingItems: string[] = [];
@@ -62,15 +71,12 @@ export async function calculateStoreReadiness(
     pendingItems.push("Defina um slug público válido para a loja.");
   }
 
-  const activeCategories = activeCategoryCount ?? 0;
-  const activeAvailableProducts = activeProductCount ?? 0;
-
   if (activeCategories < 1) {
     pendingItems.push("Cadastre ao menos uma categoria ativa.");
   }
 
   if (activeAvailableProducts < 1) {
-    pendingItems.push("Cadastre ao menos um produto ativo e disponível.");
+    pendingItems.push("Cadastre ao menos um produto apto ao cardápio público.");
   }
 
   return {

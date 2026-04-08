@@ -70,7 +70,7 @@ export default async function DashboardSettingsPage() {
               href={publicStoreUrl}
               target="_blank"
               rel="noreferrer noopener"
-              className="hidden items-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 sm:inline-flex"
+              className="cx-btn-secondary hidden items-center px-3 py-2 sm:inline-flex"
             >
               Ver cardápio público
             </Link>
@@ -83,7 +83,7 @@ export default async function DashboardSettingsPage() {
                 href={publicStoreUrl}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="inline-flex w-full items-center justify-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 sm:w-auto"
+                className="cx-btn-secondary inline-flex w-full items-center justify-center px-3 py-2 sm:w-auto"
               >
                 Ver cardápio público
               </Link>
@@ -103,7 +103,7 @@ export default async function DashboardSettingsPage() {
         ) : null}
 
         {!store ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900 shadow-sm">
             Nenhuma loja vinculada à sua conta. Conclua o cadastro antes de editar configurações.
           </div>
         ) : (

@@ -27,7 +27,6 @@ type DashboardOrder = Order & {
 
 type OrderRowProps = {
   order: DashboardOrder;
-  isLast: boolean;
 };
 
 type ActionButtonProps = {
@@ -56,7 +55,7 @@ function ActionButton({ label, className }: ActionButtonProps) {
   );
 }
 
-export function OrderRow({ order, isLast }: OrderRowProps) {
+export function OrderRow({ order }: OrderRowProps) {
   const statusBadge = ORDER_STATUS_BADGE[order.status];
   const statusLabel = ORDER_STATUS_LABELS[order.status];
   const refundLabel = REFUND_STATUS_LABELS[order.refund_status];
@@ -65,6 +64,13 @@ export function OrderRow({ order, isLast }: OrderRowProps) {
     order.status === "aguardando_aceite" || order.status === "em_preparo" || order.status === "pronto_para_retirada";
   const defaultItemsExpanded = isOperationalOrder || items.length === 0;
   const [itemsExpanded, setItemsExpanded] = useState(defaultItemsExpanded);
+  const accentClassByStatus: Record<Order["status"], string> = {
+    aguardando_aceite: "border-l-amber-400",
+    em_preparo: "border-l-sky-400",
+    pronto_para_retirada: "border-l-emerald-400",
+    finalizado: "border-l-zinc-300",
+    recusado: "border-l-rose-300",
+  };
 
   const actionsByStatus: Record<Order["status"], OrderAction[]> = {
     aguardando_aceite: [
@@ -72,15 +78,14 @@ export function OrderRow({ order, isLast }: OrderRowProps) {
         key: "accept",
         label: "Aceitar",
         action: acceptOrderAction,
-        className:
-          "rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-800 hover:bg-zinc-50",
+        className: "cx-btn-secondary px-3 py-2",
       },
       {
         key: "reject",
         label: "Recusar",
         action: rejectOrderAction,
         className:
-          "rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-50",
+          "rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50",
       },
     ],
     em_preparo: [
@@ -89,7 +94,7 @@ export function OrderRow({ order, isLast }: OrderRowProps) {
         label: "Marcar pronto",
         action: markReadyAction,
         className:
-          "rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-sm text-emerald-800 hover:bg-emerald-50",
+          "rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50",
       },
     ],
     pronto_para_retirada: [
@@ -98,7 +103,7 @@ export function OrderRow({ order, isLast }: OrderRowProps) {
         label: "Finalizar",
         action: finalizeOrderAction,
         className:
-          "rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-sm text-sky-800 hover:bg-sky-50",
+          "rounded-xl border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-sky-800 transition hover:bg-sky-50",
       },
     ],
     finalizado: [],
@@ -106,6 +111,7 @@ export function OrderRow({ order, isLast }: OrderRowProps) {
   };
 
   const actions = actionsByStatus[order.status];
+  const accentClass = accentClassByStatus[order.status];
 
   const timeline: Array<{ label: string; value: string | null | undefined; always?: boolean }> = [
     { label: "Recebido", value: order.placed_at, always: true },
@@ -117,98 +123,112 @@ export function OrderRow({ order, isLast }: OrderRowProps) {
   ];
 
   return (
-    <div className={`flex flex-col gap-3 border-b border-zinc-100 py-4 ${isLast ? "border-b-0" : ""}`}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-base font-semibold text-zinc-900">{formatOrderCode(order)}</span>
-            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>{statusLabel}</span>
-            {order.refund_status && order.refund_status !== "none" ? (
-              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">
-                Reembolso: {refundLabel}
+    <article className={`rounded-2xl border border-zinc-200 border-l-4 ${accentClass} bg-white p-4 shadow-[0_18px_36px_-30px_rgba(24,24,27,0.4)] sm:p-5`}>
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-lg bg-zinc-900 px-2.5 py-1 text-sm font-semibold text-white">
+                {formatOrderCode(order)}
               </span>
-            ) : null}
-          </div>
-
-          <div className="grid gap-1 text-sm text-zinc-700 sm:grid-cols-2">
-            <p>
-              <span className="text-zinc-500">Cliente:</span> {order.customer_name?.trim() || "Não informado"}
-            </p>
-            <p>
-              <span className="text-zinc-500">Telefone:</span> {formatCustomerPhone(order.customer_phone)}
-            </p>
-            <p>
-              <span className="text-zinc-500">Total:</span>{" "}
-              <span className="font-semibold text-zinc-800">{formatBRL(order.total_amount)}</span>
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Itens do pedido {items.length > 0 ? `(${items.length})` : ""}
-              </p>
-              {items.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setItemsExpanded((expanded) => !expanded)}
-                  className="text-xs font-medium text-zinc-600 underline underline-offset-2 hover:text-zinc-900"
-                >
-                  {itemsExpanded ? "Ocultar itens" : "Ver itens"}
-                </button>
+              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>{statusLabel}</span>
+              {order.refund_status && order.refund_status !== "none" ? (
+                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">
+                  Reembolso: {refundLabel}
+                </span>
               ) : null}
             </div>
 
-            {itemsExpanded ? (
-              items.length > 0 ? (
-                <ul className="mt-2 space-y-1 text-sm text-zinc-800">
-                  {items.map((item, idx) => (
-                    <li key={`${item.name}-${idx}`} className="flex gap-2">
-                      <span className="font-semibold text-zinc-700">{Math.max(1, Math.floor(item.quantity))}x</span>
-                      <span>{item.name}</span>
-                    </li>
-                  ))}
-                </ul>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Cliente</p>
+                <p className="text-sm font-medium text-zinc-800">{order.customer_name?.trim() || "Nao informado"}</p>
+              </div>
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Telefone</p>
+                <p className="text-sm font-medium text-zinc-800">{formatCustomerPhone(order.customer_phone)}</p>
+              </div>
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Total</p>
+                <p className="text-sm font-semibold text-zinc-900">{formatBRL(order.total_amount)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-2">
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              {actions.length === 0 ? (
+                <p className="px-1 text-xs text-zinc-500">Sem acoes disponiveis para este status.</p>
               ) : (
-                <p className="mt-2 text-xs text-zinc-500">Itens nao disponiveis nesta visualizacao.</p>
-              )
+                actions.map((actionItem) => (
+                  <form key={actionItem.key} action={actionItem.action} className="inline">
+                    <input type="hidden" name="order_id" value={order.id} />
+                    <ActionButton label={actionItem.label} className={actionItem.className} />
+                  </form>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        <section className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              Itens do pedido {items.length > 0 ? `(${items.length})` : ""}
+            </p>
+            {items.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setItemsExpanded((expanded) => !expanded)}
+                className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
+              >
+                {itemsExpanded ? "Ocultar itens" : "Ver itens"}
+              </button>
             ) : null}
           </div>
 
-          {order.note ? (
-            <p className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
-              Observação geral: {order.note}
-            </p>
+          {itemsExpanded ? (
+            items.length > 0 ? (
+              <ul className="mt-2 divide-y divide-zinc-200 text-sm text-zinc-800">
+                {items.map((item, idx) => (
+                  <li key={`${item.name}-${idx}`} className="flex items-center justify-between gap-3 py-1.5">
+                    <span className="min-w-0 truncate">{item.name}</span>
+                    <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-zinc-700">
+                      {Math.max(1, Math.floor(item.quantity))}x
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-xs text-zinc-500">Itens nao disponiveis nesta visualizacao.</p>
+            )
           ) : null}
+        </section>
 
-          <p className="text-[11px] text-zinc-500" title={order.id}>
-            ID completo: {order.id}
-          </p>
+        {order.note ? (
+          <section className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Observacao</p>
+            <p className="mt-1 text-sm text-amber-900">{order.note}</p>
+          </section>
+        ) : null}
 
-          <div className="flex flex-wrap gap-3 text-xs text-zinc-600">
+        <section className="rounded-xl border border-zinc-200 bg-white p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Linha do tempo</p>
+          <div className="mt-2 grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
             {timeline
               .filter((item) => item.always || item.value)
               .map((item) => (
-                <span key={item.label}>
-                  {item.label}: {formatDateTime(item.value)}
+                <span key={item.label} className="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs text-zinc-700">
+                  <span className="font-semibold text-zinc-600">{item.label}:</span> {formatDateTime(item.value)}
                 </span>
               ))}
           </div>
-        </div>
+        </section>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {actions.length === 0 ? (
-            <p className="text-xs text-zinc-500">Sem ações disponíveis para este status.</p>
-          ) : (
-            actions.map((actionItem) => (
-              <form key={actionItem.key} action={actionItem.action} className="inline">
-                <input type="hidden" name="order_id" value={order.id} />
-                <ActionButton label={actionItem.label} className={actionItem.className} />
-              </form>
-            ))
-          )}
-        </div>
+        <p className="text-[11px] text-zinc-500" title={order.id}>
+          ID completo: {order.id}
+        </p>
       </div>
-    </div>
+    </article>
   );
 }

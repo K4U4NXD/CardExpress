@@ -198,8 +198,13 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
   return (
     <div className="space-y-6 pb-28 sm:pb-24">
       {hasProducts ? (
-        <section className="sticky top-[4.5rem] z-10 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
+        <section className="sticky top-[4.5rem] z-10 rounded-2xl border border-zinc-200 bg-white/95 p-3 shadow-[0_20px_38px_-30px_rgba(24,24,27,0.5)] backdrop-blur-sm">
           <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-zinc-800">Explore o cardápio</p>
+              <p className="text-xs text-zinc-500">{visibleProductsCount} resultado(s)</p>
+            </div>
+
             <p className="text-xs font-medium text-zinc-500">Filtre por categoria ou busque por produto.</p>
             <div className="flex items-center gap-2">
               <input
@@ -207,20 +212,21 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Buscar por nome ou descricao"
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+                className="cx-input"
               />
               {searchQuery ? (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                  className="cx-btn-secondary shrink-0 px-3 py-2"
                 >
                   Limpar
                 </button>
               ) : null}
             </div>
 
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="-mx-1 rounded-xl border border-zinc-200 bg-zinc-50/80 px-1.5 py-1">
+              <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {categoryFilters.map((filter) => {
                 const active = activeCategory === filter.value;
                 return (
@@ -234,9 +240,8 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
                   </button>
                 );
               })}
+              </div>
             </div>
-
-            <p className="text-xs text-zinc-500">{visibleProductsCount} resultado(s) no cardapio</p>
           </div>
         </section>
       ) : null}
@@ -256,10 +261,10 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
                 const quantity = cartItem?.quantity ?? 0;
 
                 return (
-                  <article key={product.id} className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+                  <article key={product.id} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_42px_-32px_rgba(24,24,27,0.5)]">
                     <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                       {product.image_url ? (
-                        <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md bg-zinc-50">
+                        <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" />
                         </div>
@@ -305,7 +310,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
                             <button
                               type="button"
                               onClick={() => decreaseQuantity(product.id)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-300 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
                             >
                               -
                             </button>
@@ -313,7 +318,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
                             <button
                               type="button"
                               onClick={() => increaseQuantity(product.id)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-300 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
                             >
                               +
                             </button>
@@ -322,7 +327,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
                           <button
                             type="button"
                             onClick={() => addProduct(product)}
-                            className="inline-flex w-fit items-center rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+                            className="cx-btn-primary w-fit px-3 py-2"
                           >
                             Adicionar
                           </button>
@@ -336,7 +341,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
           </section>
           ))
         ) : (
-          <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-8 text-center">
+          <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-8 text-center">
             <p className="text-sm font-medium text-zinc-700">Nenhum produto encontrado para este filtro.</p>
             <p className="mt-1 text-xs text-zinc-500">Revise a busca ou selecione outra categoria para continuar.</p>
             <button
@@ -345,21 +350,21 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
                 setSearchQuery("");
                 setActiveCategory("todos");
               }}
-              className="mt-3 inline-flex rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+              className="cx-btn-secondary mt-3 px-3 py-1.5 text-xs"
             >
               Limpar filtros
             </button>
           </div>
         )
       ) : (
-        <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-8 text-center">
           <p className="text-sm font-medium text-zinc-700">Cardapio indisponivel no momento.</p>
           <p className="mt-1 text-xs text-zinc-500">Volte mais tarde para conferir os produtos deste estabelecimento.</p>
         </div>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200 bg-white/98 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200 bg-white/97 shadow-[0_-12px_30px_rgba(0,0,0,0.08)] backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <div className="min-w-0">
             <p className="text-xs text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</p>
             <p className="text-sm font-semibold text-zinc-900">{formatBRL(totalAmount)}</p>
@@ -371,7 +376,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
               type="button"
               onClick={clearCart}
               disabled={totalItems === 0}
-              className="text-xs font-medium text-zinc-500 hover:text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="text-xs font-medium text-zinc-500 transition hover:text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Limpar carrinho
             </button>
@@ -386,7 +391,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
             ) : (
               <Link
                 href={`/${slug}/checkout`}
-                className="cx-btn-primary rounded-md px-3 py-2 text-xs sm:px-4 sm:text-sm"
+                className="cx-btn-primary px-3 py-2 text-xs sm:px-4 sm:text-sm"
               >
                 Ir para checkout
               </Link>

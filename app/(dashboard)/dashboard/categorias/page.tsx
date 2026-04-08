@@ -68,7 +68,7 @@ export default async function DashboardCategoriesPage({ searchParams }: PageProp
             </p>
           ) : null}
 
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900 shadow-sm">
             Nenhuma loja vinculada à sua conta. Conclua o cadastro antes de gerenciar categorias.
           </div>
         </div>

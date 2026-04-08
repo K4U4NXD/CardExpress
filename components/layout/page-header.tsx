@@ -38,26 +38,27 @@ export function PageHeader({
   maxWidthClassName = "max-w-4xl",
 }: PageHeaderProps) {
   const headerClassName = [
-    "border-b border-zinc-200 bg-white",
-    sticky ? `sticky z-20 ${stickyTopClassName} backdrop-blur supports-[backdrop-filter]:bg-white/95` : "",
+    "border-b border-zinc-200/80 bg-white/92 shadow-[0_12px_28px_-26px_rgba(24,24,27,0.55)]",
+    sticky ? `sticky z-20 ${stickyTopClassName} backdrop-blur supports-[backdrop-filter]:bg-white/88` : "",
   ]
     .filter(Boolean)
     .join(" ");
 
   return (
     <header className={headerClassName}>
-      <div className={`mx-auto ${maxWidthClassName} px-4 sm:px-6 ${compact ? "py-3" : "py-6"}`}>
+      <div className={`mx-auto ${maxWidthClassName} px-4 sm:px-6 ${compact ? "py-3.5" : "py-6"}`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             {backHref ? (
               <Link
                 href={backHref}
-                className={`inline-block text-zinc-500 hover:text-zinc-800 ${compact ? "mb-2 text-xs" : "mb-3 text-sm"}`}
+                className={`inline-flex items-center gap-1 rounded-lg px-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 ${compact ? "mb-2 text-xs" : "mb-3 text-sm"}`}
               >
-                ← {backLabel}
+                <span aria-hidden>←</span>
+                <span>{backLabel}</span>
               </Link>
             ) : null}
-            <h1 className={`${compact ? "text-lg" : "text-xl"} font-semibold text-zinc-900`}>{title}</h1>
+            <h1 className={`${compact ? "text-lg" : "text-xl"} font-semibold tracking-tight text-zinc-900`}>{title}</h1>
             {description ? (
               <p className={`mt-1 ${compact ? "text-xs" : "text-sm"} text-zinc-600`}>{description}</p>
             ) : null}

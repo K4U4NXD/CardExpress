@@ -76,7 +76,7 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
       />
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-zinc-200 bg-white/96 p-6 shadow-[0_24px_46px_-34px_rgba(24,24,27,0.55)]">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-lg font-semibold text-zinc-900">{formatOrderCode(order)}</span>
             <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>{statusLabel}</span>
@@ -95,7 +95,7 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
             {order.customer_name ? <p>Cliente: {order.customer_name}</p> : null}
           </div>
 
-          <div className="mt-6 space-y-2 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
+          <div className="mt-6 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Linha do tempo</p>
             <p>
               Recebido: <span className="text-zinc-900">{formatDateTime(order.placed_at)}</span>

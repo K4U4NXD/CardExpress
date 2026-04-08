@@ -1,4 +1,3 @@
-import { LogoutButton } from "@/components/auth/logout-button";
 import { CopyButton } from "@/components/layout/copy-button";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { calculateStoreReadiness } from "@/lib/store-readiness";
@@ -110,7 +109,7 @@ export default async function DashboardHomePage() {
     acceptsOrders = settingsResult.data?.accepts_orders ?? true;
     readiness = readinessResult;
     activeCategories = activeCategoriesResult.count ?? 0;
-  visibleProducts = readinessResult?.activeAvailableProducts ?? 0;
+    visibleProducts = readinessResult?.activeAvailableProducts ?? 0;
     waitingOrders = waitingOrdersResult.count ?? 0;
     preparingOrders = preparingOrdersResult.count ?? 0;
     readyOrders = readyOrdersResult.count ?? 0;
@@ -136,8 +135,7 @@ export default async function DashboardHomePage() {
       />
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+        <div className="space-y-3 rounded-2xl border border-zinc-200 bg-white/90 p-4 shadow-[0_28px_54px_-40px_rgba(24,24,27,0.58)] backdrop-blur-sm sm:p-6">
           {!store ? (
             <div className="space-y-2 text-left">
               <p className="font-medium text-zinc-800">Nenhuma loja encontrada</p>
@@ -148,8 +146,8 @@ export default async function DashboardHomePage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 sm:p-5">
+            <div className="space-y-3.5">
+              <section className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-zinc-50 via-white to-zinc-100/70 p-4 shadow-sm sm:p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Loja</p>
@@ -161,54 +159,53 @@ export default async function DashboardHomePage() {
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${operationStatus.badge}`}>
                       {operationStatus.text}
                     </span>
-                    <LogoutButton />
                   </div>
                 </div>
               </section>
 
-              <section className="rounded-lg border border-zinc-200 p-4 sm:p-5">
+              <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
                 <h2 className="text-sm font-semibold text-zinc-900">Visão operacional</h2>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                  <article className="cx-kpi-card">
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Categorias ativas</p>
-                  <p className="mt-2 text-2xl font-semibold text-zinc-900">{activeCategories}</p>
+                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{activeCategories}</p>
                   </article>
 
-                  <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                  <article className="cx-kpi-card">
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Produtos visíveis</p>
-                  <p className="mt-2 text-2xl font-semibold text-zinc-900">{visibleProducts}</p>
+                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{visibleProducts}</p>
                   </article>
 
-                  <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                  <article className="cx-kpi-card">
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Aguardando aceite</p>
-                  <p className="mt-2 text-2xl font-semibold text-zinc-900">{waitingOrders}</p>
+                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{waitingOrders}</p>
                   </article>
 
-                  <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                  <article className="cx-kpi-card">
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Em preparo</p>
-                  <p className="mt-2 text-2xl font-semibold text-zinc-900">{preparingOrders}</p>
+                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{preparingOrders}</p>
                   </article>
 
-                  <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                  <article className="cx-kpi-card">
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Prontos para retirada</p>
-                  <p className="mt-2 text-2xl font-semibold text-zinc-900">{readyOrders}</p>
+                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{readyOrders}</p>
                   </article>
 
-                  <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                  <article className="cx-kpi-card">
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Finalizados hoje</p>
-                  <p className="mt-2 text-2xl font-semibold text-zinc-900">{finalizedTodayCount}</p>
+                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{finalizedTodayCount}</p>
                   </article>
 
-                  <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 sm:col-span-2 xl:col-span-2">
+                  <article className="cx-kpi-card sm:col-span-2 xl:col-span-2">
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Vendido hoje</p>
-                  <p className="mt-2 text-2xl font-semibold text-zinc-900">{formatBRL(soldToday)}</p>
+                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900">{formatBRL(soldToday)}</p>
                   <p className="mt-1 text-xs text-zinc-500">Somatório de pedidos finalizados no dia.</p>
                   </article>
                 </div>
               </section>
 
               {readiness && !readiness.isReady ? (
-                <section className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
                   <p className="text-sm font-semibold text-amber-900">Pendências para operar</p>
                   <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
                     {readiness.pendingItems.map((item) => (
@@ -218,47 +215,49 @@ export default async function DashboardHomePage() {
                 </section>
               ) : null}
 
-              <section className="rounded-lg border border-zinc-200 p-4 sm:p-5">
+              <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Atalhos rápidos</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link
                     href="/dashboard/pedidos"
-                    className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+                    className="cx-btn-primary px-3 py-2"
                   >
                     Ir para pedidos
                   </Link>
                   <Link
                     href="/dashboard/produtos"
-                    className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                    className="cx-btn-secondary px-3 py-2"
                   >
                     Ir para produtos
                   </Link>
                   <Link
                     href="/dashboard/configuracoes"
-                    className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                    className="cx-btn-secondary px-3 py-2"
                   >
                     Ir para configurações
                   </Link>
                 </div>
               </section>
 
-              <section className="rounded-lg border border-zinc-200 p-4 sm:p-5">
+              <section className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50/80 p-4 shadow-sm sm:p-5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Link público</p>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="max-w-full truncate rounded bg-zinc-100 px-2 py-1 text-sm text-zinc-700">
+                <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
+                  <span className="max-w-full truncate rounded-xl border border-zinc-200 bg-zinc-100 px-2.5 py-2 text-sm text-zinc-700">
                     {publicStorePath}
                   </span>
-                  {publicStoreUrl ? <CopyButton text={publicStoreUrl} /> : null}
-                  {publicStoreUrl ? (
-                    <a
-                      href={publicStoreUrl}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
-                    >
-                      Abrir cardápio público
-                    </a>
-                  ) : null}
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    {publicStoreUrl ? <CopyButton text={publicStoreUrl} /> : null}
+                    {publicStoreUrl ? (
+                      <a
+                        href={publicStoreUrl}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="cx-btn-secondary px-3 py-2"
+                      >
+                        Abrir cardápio público
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
               </section>
             </div>

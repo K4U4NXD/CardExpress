@@ -41,14 +41,14 @@ export function CreateCategoryForm({ onCancel }: CreateCategoryFormProps) {
             value={name}
             onChange={(event) => handleChange(event.target.value)}
             aria-invalid={Boolean(localError)}
-            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+            className="cx-input mt-1"
           />
         </div>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <button
             type="submit"
             disabled={pending}
-            className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 sm:w-auto"
+            className="cx-btn-primary w-full px-4 py-2 disabled:opacity-60 sm:w-auto"
           >
             {pending ? "Salvando…" : "Adicionar"}
           </button>
@@ -56,7 +56,7 @@ export function CreateCategoryForm({ onCancel }: CreateCategoryFormProps) {
             <button
               type="button"
               onClick={onCancel}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 sm:w-auto"
+              className="cx-btn-secondary w-full px-4 py-2 sm:w-auto"
             >
               Cancelar
             </button>

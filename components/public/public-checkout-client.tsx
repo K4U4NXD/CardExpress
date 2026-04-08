@@ -214,7 +214,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
 
   if (success) {
     return (
-      <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+      <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-emerald-900">Checkout criado com sucesso</h2>
         <p className="mt-2 text-sm text-emerald-800">
           Sessao registrada para {storeName}. Nesta demonstracao, o pagamento pode ser simulado para concluir o fluxo.
@@ -262,14 +262,14 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
             type="button"
             onClick={handleSimulatePaymentApproved}
             disabled={isSimulatingPayment}
-            className="inline-flex items-center rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSimulatingPayment ? "Simulando pagamento..." : "Simular pagamento aprovado"}
           </button>
 
           <Link
             href={`/${slug}`}
-            className="inline-flex items-center rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
+            className="cx-btn-secondary inline-flex items-center px-4 py-2"
           >
             Retornar ao cardapio
           </Link>
@@ -280,7 +280,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+      <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_20px_40px_-30px_rgba(24,24,27,0.45)] sm:p-5">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-zinc-900">Resumo do pedido</h2>
           <span className="text-sm text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</span>
@@ -292,7 +292,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
             {cartItems.map((item) => (
               <div
                 key={item.product_id}
-                className="flex items-start justify-between gap-3 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2"
+                className="flex items-start justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2"
               >
                 <div>
                   <p className="text-sm font-medium text-zinc-900">{item.name}</p>
@@ -303,12 +303,12 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
             ))}
           </div>
         ) : (
-          <div className="mt-4 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4">
+          <div className="mt-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4">
             <p className="text-sm font-medium text-zinc-700">Seu carrinho esta vazio.</p>
             <p className="mt-1 text-xs text-zinc-500">Adicione produtos no cardapio para continuar.</p>
             <Link
               href={`/${slug}`}
-              className="mt-3 inline-flex rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+              className="cx-btn-secondary mt-3 inline-flex px-3 py-1.5 text-xs"
             >
               Voltar ao cardapio
             </Link>
@@ -326,7 +326,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
         </div>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+      <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_20px_40px_-30px_rgba(24,24,27,0.45)] sm:p-5">
         <h2 className="text-lg font-semibold text-zinc-900">Dados do cliente</h2>
         <p className="mt-1 text-xs text-zinc-500">Esses dados sao usados para identificar e atualizar o pedido.</p>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
@@ -340,7 +340,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
               required
               value={customerName}
               onChange={(event) => setCustomerName(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              className="cx-input mt-1"
               placeholder="Ex.: Maria Silva"
             />
           </div>
@@ -355,7 +355,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
               required
               value={customerPhone}
               onChange={(event) => setCustomerPhone(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              className="cx-input mt-1"
               placeholder="(11) 99999-9999"
             />
             {customerPhoneTrimmed.length > 0 && !phoneIsValid ? (
@@ -375,7 +375,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
               rows={3}
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              className="cx-textarea mt-1"
               placeholder="Ex.: sem cebola, retirar no balcao"
             />
           </div>
@@ -393,7 +393,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
           <button
             type="submit"
             disabled={!canSubmit}
-            className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cx-btn-primary w-full px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Criando sessao..." : "Criar sessao de checkout"}
           </button>

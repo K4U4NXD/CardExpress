@@ -15,7 +15,7 @@ export default function DashboardOrdersLoading() {
         <div className="space-y-4">
           <p className="text-xs text-zinc-500">Carregando fila de pedidos e atualizando status...</p>
 
-          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
             <div className="h-3 w-32 animate-pulse rounded bg-zinc-200" />
             <div className="mt-3 flex flex-wrap gap-2">
               {Array.from({ length: 5 }).map((_, idx) => (
@@ -24,7 +24,7 @@ export default function DashboardOrdersLoading() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
             <div className="h-4 w-48 animate-pulse rounded bg-zinc-200" />
             <div className="mt-4 space-y-4">
               {Array.from({ length: 3 }).map((_, idx) => (

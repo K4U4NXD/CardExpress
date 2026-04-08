@@ -33,6 +33,17 @@ const SCOPE_LABELS: Record<OrdersScopeFilter, string> = {
   todos: "visao geral",
 };
 
+function EmptyOrdersIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
+      <path d="M6 3h12v18l-2.5-1.5L13 21l-2.5-1.5L8 21 6 19.5 4 21V5a2 2 0 0 1 2-2Z" />
+      <path d="M8 8h8" />
+      <path d="M8 12h8" />
+      <path d="M8 16h5" />
+    </svg>
+  );
+}
+
 function parseScopeFilter(value: string | undefined): OrdersScopeFilter {
   if (value === "finalizados" || value === "recusados" || value === "todos") {
     return value;
@@ -189,13 +200,13 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
         ) : null}
 
         {!store ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900 shadow-sm">
             Nenhuma loja vinculada à sua conta. Conclua o cadastro antes de gerenciar pedidos.
           </div>
         ) : (
           <div className="space-y-4">
             {loadError ? (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-6 shadow-sm">
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-6 shadow-sm">
                 <h2 className="text-sm font-semibold text-red-900">Erro ao carregar pedidos</h2>
                 <p className="mt-2 text-sm text-red-800">
                   Nao foi possivel buscar os pedidos agora. Atualize a pagina para tentar novamente.
@@ -203,18 +214,27 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
                 <p className="mt-2 text-xs text-red-700">Detalhe técnico: {loadError}</p>
               </div>
             ) : orders.length === 0 ? (
-              <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
-                <p className="text-sm text-zinc-600">
-                  Nenhum pedido encontrado em <span className="font-medium">{selectedScopeLabel}</span>.
-                </p>
-                <p className="mt-2 text-xs text-zinc-500">
-                  {isOperationalView
-                    ? "Novos pedidos pagos aparecerao automaticamente nesta tela."
-                    : "Use os filtros acima para alternar entre operacao e historico."}
-                </p>
+              <div className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50/80 p-4 shadow-sm sm:p-6">
+                <div className="flex items-start gap-3">
+                  <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-500">
+                    <EmptyOrdersIcon />
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-800">Nenhum pedido em {selectedScopeLabel}</p>
+                    <p className="mt-1 text-sm text-zinc-600">
+                      {isOperationalView
+                        ? "Quando novos pedidos entrarem, eles aparecerão automaticamente nesta fila."
+                        : "Altere o escopo acima para consultar outro conjunto de pedidos."}
+                    </p>
+                    <p className="mt-2 text-xs text-zinc-500">
+                      Dica: mantenha esta tela aberta durante a operação para acompanhar entradas em tempo real.
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <h2 className="text-sm font-semibold text-zinc-900">
                     {isOperationalView ? "Pedidos em andamento" : "Historico de pedidos"}
@@ -223,9 +243,9 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
                     {orders.length} pedido(s) em {selectedScopeLabel}. Exibindo ate 50 registros.
                   </p>
                 </div>
-                <div className="mt-3">
-                  {orders.map((order, idx) => (
-                    <OrderRow key={order.id} order={order} isLast={idx === orders.length - 1} />
+                <div className="mt-4 space-y-3">
+                  {orders.map((order) => (
+                    <OrderRow key={order.id} order={order} />
                   ))}
                 </div>
               </div>

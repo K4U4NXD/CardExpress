@@ -46,15 +46,15 @@ export default async function PublicReadyPanelPage({ params }: PageProps) {
         backHref={`/${store.slug}`}
         backLabel="Voltar ao cardápio"
       />
-      <div className="bg-zinc-950 py-10">
+      <div className="bg-gradient-to-b from-zinc-950 via-zinc-900 to-black py-10">
         <div className="mx-auto max-w-3xl px-6">
           {!order ? (
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-8 text-center text-sm text-zinc-400">
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-8 text-center text-sm text-zinc-400 shadow-[0_26px_44px_-30px_rgba(0,0,0,0.85)]">
               <p className="text-sm font-medium text-zinc-200">Nenhum pedido pronto no momento.</p>
               <p className="mt-1 text-xs text-zinc-400">Atualize esta tela para acompanhar novos chamados.</p>
             </div>
           ) : (
-            <div className="rounded-[32px] border border-emerald-400/40 bg-gradient-to-b from-zinc-900 to-black p-10 text-center text-white shadow-[0_0_60px_rgba(16,185,129,0.2)]">
+            <div className="rounded-[32px] border border-emerald-300/45 bg-gradient-to-b from-zinc-900 to-black p-10 text-center text-white shadow-[0_0_70px_rgba(16,185,129,0.24)]">
               <p className="text-sm font-semibold uppercase tracking-[0.6em] text-emerald-300">SENHA</p>
               <p className="mt-4 text-7xl font-black text-white">{order.display_code ?? "----"}</p>
               <p className="mt-6 text-sm text-zinc-400">

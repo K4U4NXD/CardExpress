@@ -42,8 +42,8 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
         compact
       />
 
-      <div className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+        <section className="rounded-2xl border border-zinc-200 bg-white/95 p-4 shadow-[0_24px_44px_-34px_rgba(24,24,27,0.55)] sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1">
               <p className="text-sm font-medium text-zinc-700">Estabelecimento</p>
@@ -65,7 +65,7 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
           </div>
 
           {store.public_message ? (
-            <p className="mt-4 rounded-lg bg-zinc-50 p-3 text-sm text-zinc-700">{store.public_message}</p>
+            <p className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700">{store.public_message}</p>
           ) : null}
         </section>
 

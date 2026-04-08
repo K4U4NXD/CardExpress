@@ -12,20 +12,29 @@
   --cx-surface: 255 255 255;
   --cx-border: 228 228 231;
   --cx-text: 39 39 42;
+  --cx-subtle: 245 247 250;
 }
 
 @layer components {
   .cx-btn-primary {
-    @apply inline-flex items-center rounded-lg px-3 py-2 text-sm font-semibold text-white transition;
+    @apply inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold text-white transition duration-300 ease-out;
     background-color: rgb(var(--cx-primary));
+    box-shadow: 0 10px 24px -16px rgb(24 24 27 / 0.9);
   }
 
   .cx-btn-primary:hover {
     background-color: rgb(var(--cx-primary-hover));
+    transform: translateY(-1px);
+    box-shadow: 0 16px 30px -18px rgb(24 24 27 / 0.95);
+  }
+
+  .cx-btn-primary:focus-visible {
+    @apply outline-none ring-2 ring-offset-2;
+    --tw-ring-color: rgb(251 191 36 / 0.5);
   }
 
   .cx-btn-secondary {
-    @apply inline-flex items-center rounded-lg border px-3 py-2 text-sm font-medium transition;
+    @apply inline-flex items-center justify-center rounded-xl border px-3 py-2 text-sm font-medium transition duration-300 ease-out;
     border-color: rgb(var(--cx-border));
     background-color: rgb(var(--cx-surface));
     color: rgb(var(--cx-text));
@@ -33,6 +42,12 @@
 
   .cx-btn-secondary:hover {
     background-color: rgb(244 244 245);
+    transform: translateY(-1px);
+  }
+
+  .cx-btn-secondary:focus-visible {
+    @apply outline-none ring-2 ring-offset-2;
+    --tw-ring-color: rgb(24 24 27 / 0.25);
   }
 
   .cx-chip {
@@ -52,8 +67,103 @@
     background-color: rgb(var(--cx-primary));
     color: rgb(255 255 255);
   }
+
+  .cx-panel {
+    @apply rounded-2xl border bg-white/96 shadow-[0_20px_44px_-34px_rgba(24,24,27,0.5)] backdrop-blur-sm;
+    border-color: rgb(var(--cx-border));
+  }
+
+  .cx-panel-muted {
+    @apply rounded-2xl border bg-zinc-50/90 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)];
+    border-color: rgb(var(--cx-border));
+  }
+
+  .cx-input,
+  .cx-textarea,
+  .cx-select {
+    @apply w-full rounded-xl border bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition duration-200;
+    border-color: rgb(var(--cx-border));
+  }
+
+  .cx-input:focus,
+  .cx-textarea:focus,
+  .cx-select:focus {
+    @apply ring-2 ring-offset-1;
+    border-color: rgb(113 113 122);
+    --tw-ring-color: rgb(24 24 27 / 0.18);
+  }
+
+  .cx-kpi-card {
+    @apply rounded-2xl border bg-white p-4 shadow-[0_14px_30px_-24px_rgba(24,24,27,0.45)] transition duration-300;
+    border-color: rgb(var(--cx-border));
+  }
+
+  .cx-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 40px -30px rgb(24 24 27 / 0.45);
+  }
+
+  .cx-reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 560ms ease, transform 640ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    will-change: opacity, transform;
+  }
+
+  .cx-reveal-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .cx-lift {
+    transition: transform 280ms ease, box-shadow 320ms ease, border-color 280ms ease, background-color 280ms ease;
+  }
+
+  .cx-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 40px -30px rgb(24 24 27 / 0.6);
+  }
+
+  .cx-soft-float {
+    animation: cx-soft-float 5.8s ease-in-out infinite;
+  }
 }
 
 body {
-  @apply bg-zinc-50 text-zinc-900 antialiased;
+  @apply text-zinc-900 antialiased;
+  background: linear-gradient(180deg, rgb(250 250 251) 0%, rgb(245 247 250) 42%, rgb(242 245 249) 100%);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes cx-soft-float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .cx-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .cx-soft-float {
+    animation: none;
+  }
 }

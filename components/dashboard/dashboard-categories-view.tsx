@@ -29,7 +29,7 @@ export function DashboardCategoriesView({ categories, avisoText, erroText }: Das
           <button
             type="button"
             onClick={() => setIsCreateOpen((open) => !open)}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+            className="cx-btn-secondary px-3 py-2"
           >
             {isCreateOpen ? "Fechar" : "Nova categoria"}
           </button>
@@ -57,7 +57,7 @@ export function DashboardCategoriesView({ categories, avisoText, erroText }: Das
 
         <div className="space-y-4">
           {isCreateOpen ? (
-            <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+            <section className="cx-panel p-4 sm:p-6">
               <div className="mb-4 flex items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold text-zinc-900">Nova categoria</h2>
               </div>
@@ -65,7 +65,7 @@ export function DashboardCategoriesView({ categories, avisoText, erroText }: Das
             </section>
           ) : null}
 
-          <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+          <section className="cx-panel p-4 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-zinc-900">Categorias cadastradas</h2>
               <p className="text-xs text-zinc-500">
@@ -74,12 +74,12 @@ export function DashboardCategoriesView({ categories, avisoText, erroText }: Das
             </div>
 
             {categories.length === 0 ? (
-              <div className="mt-4 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4">
+              <div className="mt-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4">
                 <p className="text-sm font-medium text-zinc-700">Nenhuma categoria cadastrada.</p>
                 <p className="mt-1 text-xs text-zinc-500">Use o botao &quot;Nova categoria&quot; para iniciar a estrutura do cardapio.</p>
               </div>
             ) : (
-              <div className="mt-2">
+              <div className="mt-3 sm:mt-2 space-y-2 sm:space-y-0">
                 {categories.map((cat, index) => (
                   <CategoryRow
                     key={cat.id}

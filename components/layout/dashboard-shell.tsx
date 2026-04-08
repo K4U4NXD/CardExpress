@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { LogoutButton } from "@/components/auth/logout-button";
+
 type DashboardShellProps = {
   children: React.ReactNode;
 };
@@ -39,10 +41,14 @@ export function DashboardShell({ children }: DashboardShellProps) {
   }, [menuOpen]);
 
   return (
-    <div className="min-h-screen bg-zinc-100">
-      <aside className="fixed inset-y-0 left-0 hidden w-52 border-r border-zinc-200 bg-white px-3 py-6 md:block">
-        <p className="px-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">CardExpress</p>
-        <nav className="mt-6 flex flex-col gap-1" aria-label="Navegação do dashboard">
+    <div className="min-h-screen bg-[radial-gradient(120%_90%_at_16%_-8%,_#fff7df_0%,_#f8fafc_44%,_#f2f5f9_100%)]">
+      <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-zinc-200/80 bg-white/92 px-3 py-5 shadow-[0_30px_60px_-50px_rgba(24,24,27,0.6)] backdrop-blur-xl md:flex">
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50/80 px-3 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-400">CardExpress</p>
+          <p className="mt-1 text-sm font-semibold text-zinc-800">Painel do comerciante</p>
+        </div>
+
+        <nav className="mt-5 flex flex-col gap-1.5" aria-label="Navegação do dashboard">
           {navItems.map((item) => {
             const active = isActivePath(pathname, item.href);
             return (
@@ -50,10 +56,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`rounded-md px-2 py-2 text-sm transition ${
+                className={`rounded-xl px-3 py-2.5 text-sm font-medium transition duration-300 ${
                   active
-                    ? "bg-zinc-900 text-white"
-                    : "text-zinc-700 hover:bg-zinc-100"
+                    ? "bg-zinc-900 text-white shadow-[0_12px_28px_-18px_rgba(24,24,27,0.9)]"
+                    : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
                 }`}
               >
                 {item.label}
@@ -61,18 +67,23 @@ export function DashboardShell({ children }: DashboardShellProps) {
             );
           })}
         </nav>
+
+        <div className="mt-auto border-t border-zinc-200/80 pt-4">
+          <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Sessão</p>
+          <LogoutButton compact className="w-full rounded-xl border border-red-200 bg-red-50/70 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200" />
+        </div>
       </aside>
 
-      <div className="md:pl-52">
-        <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white md:hidden">
+      <div className="md:pl-60">
+        <header className="sticky top-0 z-30 border-b border-zinc-200/80 bg-white/90 backdrop-blur-xl md:hidden">
           <div className="flex h-14 items-center justify-between px-4">
-            <p className="text-sm font-semibold uppercase tracking-wide text-zinc-500">CardExpress</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">CardExpress</p>
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
               aria-expanded={menuOpen}
               aria-controls="dashboard-mobile-nav"
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+              className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
             >
               Menu
             </button>
@@ -88,25 +99,25 @@ export function DashboardShell({ children }: DashboardShellProps) {
             type="button"
             onClick={() => setMenuOpen(false)}
             aria-label="Fechar menu"
-            className="absolute inset-0 bg-zinc-900/40"
+            className="absolute inset-0 bg-zinc-900/45"
           />
 
           <aside
             id="dashboard-mobile-nav"
-            className="relative h-full w-72 max-w-[85vw] border-r border-zinc-200 bg-white px-4 py-5"
+            className="relative flex h-full w-72 max-w-[85vw] flex-col border-r border-zinc-200 bg-white/96 px-4 py-5 shadow-2xl backdrop-blur-xl"
           >
             <div className="mb-4 flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Navegação</p>
               <button
                 type="button"
                 onClick={() => setMenuOpen(false)}
-                className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-50"
+                className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-700 transition hover:bg-zinc-50"
               >
                 Fechar
               </button>
             </div>
 
-            <nav className="flex flex-col gap-1" aria-label="Navegação do dashboard">
+            <nav className="flex flex-col gap-1.5" aria-label="Navegação do dashboard">
               {navItems.map((item) => {
                 const active = isActivePath(pathname, item.href);
                 return (
@@ -114,7 +125,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
                     key={item.href}
                     href={item.href}
                     aria-current={active ? "page" : undefined}
-                    className={`rounded-md px-3 py-2.5 text-sm transition ${
+                    className={`rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                       active
                         ? "bg-zinc-900 text-white"
                         : "text-zinc-700 hover:bg-zinc-100"
@@ -125,6 +136,11 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 );
               })}
             </nav>
+
+            <div className="mt-auto border-t border-zinc-200/80 pt-4">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Sessão</p>
+              <LogoutButton compact className="w-full rounded-xl border border-red-200 bg-red-50/70 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200" />
+            </div>
           </aside>
         </div>
       ) : null}

@@ -45,7 +45,7 @@ export function DashboardProductsView({
           <button
             type="button"
             onClick={() => setIsCreateOpen((open) => !open)}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+            className="cx-btn-secondary px-3 py-2"
           >
             {isCreateOpen ? "Fechar" : "Novo produto"}
           </button>
@@ -70,13 +70,13 @@ export function DashboardProductsView({
 
         <div className="space-y-4">
           {isCreateOpen ? (
-            <section id="novo-produto" className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+            <section id="novo-produto" className="cx-panel p-4 sm:p-6">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold text-zinc-900">Novo produto</h2>
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-800 hover:bg-zinc-50"
+                  className="cx-btn-secondary px-3 py-1.5"
                 >
                   Cancelar
                 </button>
@@ -85,21 +85,24 @@ export function DashboardProductsView({
             </section>
           ) : null}
 
-          <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+          <section className="cx-panel p-4 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-zinc-900">Produtos cadastrados</h2>
               <p className="text-xs text-zinc-500">
                 {products.length} {products.length === 1 ? "produto" : "produtos"}
               </p>
             </div>
+            {products.length > 0 ? (
+              <p className="mt-1 text-xs text-zinc-500">Ajuste dados e status sem sair desta lista.</p>
+            ) : null}
 
             {products.length === 0 ? (
-              <div className="mt-4 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4">
+              <div className="mt-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4">
                 <p className="text-sm font-medium text-zinc-700">Nenhum produto cadastrado.</p>
                 <p className="mt-1 text-xs text-zinc-500">Crie um produto para iniciar a exibicao no cardapio.</p>
               </div>
             ) : (
-              <div className="mt-2">
+              <div className="mt-4 space-y-3">
                 {products.map((product, index) => {
                   const baseOptions = categories
                     .filter((category) => category.is_active || category.id === product.category_id)

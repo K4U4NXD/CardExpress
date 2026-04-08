@@ -166,7 +166,7 @@ export function StoreSettingsForm({
   return (
     <form
       action={formAction}
-      className="space-y-6 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6"
+      className="space-y-6 rounded-2xl border border-zinc-200 bg-white/96 p-4 shadow-[0_24px_44px_-34px_rgba(24,24,27,0.55)] sm:p-6"
       onSubmit={() => setHideServerFeedback(false)}
     >
       <div>
@@ -208,7 +208,7 @@ export function StoreSettingsForm({
             value={values.name}
             onChange={(event) => updateField("name", event.target.value)}
             aria-invalid={Boolean(nameError)}
-            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+            className="cx-input mt-1"
           />
           {nameError ? <p className="mt-1 text-xs text-red-700">{nameError}</p> : null}
         </div>
@@ -225,7 +225,7 @@ export function StoreSettingsForm({
             value={values.phone}
             onChange={(event) => updateField("phone", event.target.value)}
             aria-invalid={Boolean(phoneError)}
-            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+            className="cx-input mt-1"
             placeholder="(11) 99999-9999"
           />
           {phoneError ? <p className="mt-1 text-xs text-red-700">{phoneError}</p> : null}
@@ -240,7 +240,7 @@ export function StoreSettingsForm({
             type="text"
             readOnly
             value={initialValues.slug}
-            className="mt-1 w-full cursor-not-allowed rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-700"
+            className="mt-1 w-full cursor-not-allowed rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-700"
           />
         </div>
 
@@ -254,12 +254,12 @@ export function StoreSettingsForm({
               type="text"
               readOnly
               value={initialValues.public_path}
-              className="w-full cursor-not-allowed rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-700"
+              className="w-full cursor-not-allowed rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-700"
             />
             <button
               type="button"
               onClick={handleCopyPublicLink}
-              className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100"
+              className="cx-btn-secondary shrink-0 px-3 py-2"
             >
               Copiar
             </button>
@@ -267,7 +267,7 @@ export function StoreSettingsForm({
               href={canonicalPublicUrl}
               target="_blank"
               rel="noreferrer noopener"
-              className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100"
+              className="cx-btn-secondary shrink-0 px-3 py-2"
             >
               Abrir
             </a>
@@ -278,23 +278,12 @@ export function StoreSettingsForm({
           ) : null}
         </div>
 
-        <div className="sm:col-span-2 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-zinc-800">QR Code do cardápio público</p>
-              <p className="mt-1 text-xs text-zinc-600">Use para compartilhar o link da loja em balcão, mesa ou embalagem.</p>
-            </div>
-            <button
-              type="button"
-              onClick={handleDownloadPublicQrCode}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100"
-            >
-              Baixar QR Code
-            </button>
-          </div>
+        <div className="sm:col-span-2 rounded-xl border border-zinc-200 bg-zinc-50/85 p-4">
+          <p className="text-sm font-medium text-zinc-800">QR Code do cardápio público</p>
+          <p className="mt-1 text-xs text-zinc-600">Use para compartilhar o link da loja em balcão, mesa ou embalagem.</p>
 
-          <div className="mt-3 flex justify-center sm:justify-start">
-            <div className="w-full max-w-[176px] rounded-lg border border-zinc-200 bg-white p-3 shadow-sm">
+          <div className="mt-3 grid gap-3 sm:grid-cols-[176px_1fr] sm:items-start">
+            <div className="w-full rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
               <QRCodeCanvas
                 id="settings-public-url-qr"
                 value={canonicalPublicUrl}
@@ -304,6 +293,28 @@ export function StoreSettingsForm({
                 className="h-auto w-full"
               />
             </div>
+
+            <div className="space-y-3 rounded-xl border border-zinc-200 bg-white p-3">
+              <p className="text-xs text-zinc-600">Este QR abre diretamente o cardápio público da loja.</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadPublicQrCode}
+                  className="cx-btn-secondary px-3 py-2"
+                >
+                  Baixar QR Code
+                </button>
+                <a
+                  href={canonicalPublicUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="cx-btn-secondary px-3 py-2"
+                >
+                  Abrir destino
+                </a>
+              </div>
+              <p className="text-[11px] text-zinc-500">Arquivo exportado em PNG com nome baseado no slug da loja.</p>
+            </div>
           </div>
 
           {qrDownloadStatus === "error" ? (
@@ -312,7 +323,7 @@ export function StoreSettingsForm({
         </div>
       </div>
 
-      <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+      <section className="rounded-xl border border-zinc-200 bg-zinc-50/85 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-zinc-900">Prontidão operacional</p>
@@ -341,7 +352,7 @@ export function StoreSettingsForm({
         ) : null}
       </section>
 
-      <section className="rounded-lg border border-zinc-200 p-4">
+      <section className="rounded-xl border border-zinc-200 p-4">
         <label className="flex items-center gap-2 text-sm font-medium text-zinc-900">
           <input
             type="checkbox"
@@ -373,7 +384,7 @@ export function StoreSettingsForm({
           maxLength={STORE_PUBLIC_MESSAGE_MAX_LENGTH}
           onChange={(event) => updateField("public_message", event.target.value)}
           aria-invalid={Boolean(publicMessageError)}
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+          className="cx-textarea mt-1"
           placeholder="Ex.: Retirada no balcão em até 25 minutos."
         />
         <div className="mt-1 flex items-center justify-between text-xs">
@@ -393,14 +404,14 @@ export function StoreSettingsForm({
           type="button"
           onClick={handleDiscardChanges}
           disabled={pending}
-          className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-60"
+          className="cx-btn-secondary px-4 py-2 disabled:opacity-60"
         >
           Descartar alterações
         </button>
         <button
           type="submit"
           disabled={saveDisabled}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+          className="cx-btn-primary px-4 py-2 disabled:opacity-60"
         >
           {pending ? "Salvando..." : "Salvar configurações"}
         </button>

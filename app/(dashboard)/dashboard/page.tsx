@@ -3,7 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { calculateStoreReadiness } from "@/lib/store-readiness";
 import { buildAbsolutePublicStoreUrl, buildPublicStorePath } from "@/lib/public-store-url";
 import { PageHeader } from "@/components/layout/page-header";
-import { AutoRefresh } from "@/components/shared/auto-refresh";
+import { DashboardHomeRealtimeSync } from "@/components/dashboard/dashboard-home-realtime-sync";
 import { formatDateTime, formatOrderCode, ORDER_STATUS_BADGE, ORDER_STATUS_LABELS } from "@/lib/orders/presenter";
 import { getTodayRangeInSaoPaulo } from "@/lib/timezone";
 import { formatBRL } from "@/lib/validation/price";
@@ -256,7 +256,7 @@ export default async function DashboardHomePage() {
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <div className="mb-2 flex justify-end">
-          <AutoRefresh intervalMs={15_000} />
+          {store ? <DashboardHomeRealtimeSync storeId={store.id} /> : null}
         </div>
         <div className="space-y-3 rounded-2xl border border-zinc-200 bg-white/90 p-4 shadow-[0_28px_54px_-40px_rgba(24,24,27,0.58)] backdrop-blur-sm sm:p-6">
           {!store ? (

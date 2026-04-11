@@ -6,7 +6,7 @@ import {
   ORDER_STATUS_LABELS,
   REFUND_STATUS_LABELS,
 } from "@/lib/orders/presenter";
-import { AutoRefresh } from "@/components/shared/auto-refresh";
+import { PublicOrderRealtimeSync } from "@/components/public/public-order-realtime-sync";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { formatBRL } from "@/lib/validation/price";
 import type { OrderStatus, RefundStatus } from "@/types";
@@ -90,10 +90,10 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
           </div>
 
           <p className="mt-2 text-xs text-zinc-500">Use esta tela para acompanhar atualizacoes automaticas do pedido.</p>
-          <AutoRefresh
-            intervalMs={10_000}
+          <PublicOrderRealtimeSync
+            orderId={order.id}
+            publicToken={token}
             enabled={!isTerminalStatus}
-            pausedLabel="Atualizacao automatica pausada para pedido encerrado"
             className="mt-1"
           />
 

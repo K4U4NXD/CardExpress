@@ -1,6 +1,6 @@
 import { OrderRow } from "@/components/dashboard/order-row";
+import { OrdersRealtimeSync } from "@/components/dashboard/orders-realtime-sync";
 import { PageHeader } from "@/components/layout/page-header";
-import { AutoRefresh } from "@/components/shared/auto-refresh";
 import { getUserStore } from "@/lib/auth/store";
 import type { Order, OrderItem, OrderStatus } from "@/types";
 import Link from "next/link";
@@ -176,7 +176,7 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
                 );
               })}
             </div>
-            <AutoRefresh intervalMs={12_000} />
+            {store ? <OrdersRealtimeSync storeId={store.id} /> : null}
           </div>
         }
       />

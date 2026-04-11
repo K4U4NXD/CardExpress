@@ -4,14 +4,44 @@ import { calculateStoreReadiness } from "@/lib/store-readiness";
 import { buildAbsolutePublicStoreUrl, buildPublicStorePath } from "@/lib/public-store-url";
 import { PageHeader } from "@/components/layout/page-header";
 import { AutoRefresh } from "@/components/shared/auto-refresh";
+import { formatDateTime, formatOrderCode, ORDER_STATUS_BADGE, ORDER_STATUS_LABELS } from "@/lib/orders/presenter";
 import { getTodayRangeInSaoPaulo } from "@/lib/timezone";
 import { formatBRL } from "@/lib/validation/price";
 import { headers } from "next/headers";
 import Link from "next/link";
 import type { OrderStatus } from "@/types";
 
+const LOW_STOCK_THRESHOLD = 5;
+const TOP_PRODUCTS_LIMIT = 5;
+const RECENT_ORDERS_LIMIT = 5;
+
 type OrderTotalRow = {
   total_amount: number;
+};
+
+type TopProductOrderItemRow = {
+  name: string;
+  quantity: number;
+};
+
+type TopProductOrderRow = {
+  id: string;
+  order_items?: TopProductOrderItemRow[] | null;
+};
+
+type RecentOrderRow = {
+  id: string;
+  display_code: string | null;
+  order_number: number | null;
+  status: OrderStatus;
+  total_amount: number;
+  created_at: string;
+};
+
+type StockProblemProductRow = {
+  id: string;
+  name: string;
+  stock_quantity: number;
 };
 
 function statusLabel(acceptsOrders: boolean, isReady: boolean) {
@@ -53,6 +83,13 @@ export default async function DashboardHomePage() {
   let readyOrders = 0;
   let finalizedTodayCount = 0;
   let soldToday = 0;
+  let ticketAverageToday = 0;
+  let outOfStockProducts = 0;
+  let lowStockProducts = 0;
+  let outOfStockProductList: StockProblemProductRow[] = [];
+  let lowStockProductList: StockProblemProductRow[] = [];
+  let topProducts: Array<{ name: string; quantity: number }> = [];
+  let recentOrders: RecentOrderRow[] = [];
   let readiness = null as Awaited<ReturnType<typeof calculateStoreReadiness>> | null;
 
   if (store) {
@@ -66,6 +103,12 @@ export default async function DashboardHomePage() {
       preparingOrdersResult,
       readyOrdersResult,
       finalizedTodayResult,
+      outOfStockProductsResult,
+      lowStockProductsResult,
+      outOfStockProductListResult,
+      lowStockProductListResult,
+      topProductsResult,
+      recentOrdersResult,
     ] = await Promise.all([
       supabase
         .from("store_settings")
@@ -105,6 +148,49 @@ export default async function DashboardHomePage() {
         .eq("status", "finalizado" satisfies OrderStatus)
         .gte("finalized_at", startOfTodayIso)
         .lt("finalized_at", startOfTomorrowIso),
+      supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", store.id)
+        .eq("track_stock", true)
+        .lte("stock_quantity", 0),
+      supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", store.id)
+        .eq("track_stock", true)
+        .gt("stock_quantity", 0)
+        .lte("stock_quantity", LOW_STOCK_THRESHOLD),
+      supabase
+        .from("products")
+        .select("id, name, stock_quantity")
+        .eq("store_id", store.id)
+        .eq("track_stock", true)
+        .lte("stock_quantity", 0)
+        .order("stock_quantity", { ascending: true })
+        .order("name", { ascending: true }),
+      supabase
+        .from("products")
+        .select("id, name, stock_quantity")
+        .eq("store_id", store.id)
+        .eq("track_stock", true)
+        .gt("stock_quantity", 0)
+        .lte("stock_quantity", LOW_STOCK_THRESHOLD)
+        .order("stock_quantity", { ascending: true })
+        .order("name", { ascending: true }),
+      supabase
+        .from("orders")
+        .select("id, order_items(name, quantity)")
+        .eq("store_id", store.id)
+        .eq("status", "finalizado" satisfies OrderStatus)
+        .gte("finalized_at", startOfTodayIso)
+        .lt("finalized_at", startOfTomorrowIso),
+      supabase
+        .from("orders")
+        .select("id, display_code, order_number, status, total_amount, created_at")
+        .eq("store_id", store.id)
+        .order("created_at", { ascending: false })
+        .limit(RECENT_ORDERS_LIMIT),
     ]);
 
     acceptsOrders = settingsResult.data?.accepts_orders ?? true;
@@ -118,6 +204,39 @@ export default async function DashboardHomePage() {
     const finalizedTodayRows = (finalizedTodayResult.data ?? []) as OrderTotalRow[];
     finalizedTodayCount = finalizedTodayRows.length;
     soldToday = finalizedTodayRows.reduce((acc, row) => acc + Number(row.total_amount ?? 0), 0);
+    ticketAverageToday = finalizedTodayCount > 0 ? soldToday / finalizedTodayCount : 0;
+
+    outOfStockProducts = outOfStockProductsResult.count ?? 0;
+    lowStockProducts = lowStockProductsResult.count ?? 0;
+    if (!outOfStockProductListResult.error) {
+      outOfStockProductList = (outOfStockProductListResult.data ?? []) as StockProblemProductRow[];
+    }
+    if (!lowStockProductListResult.error) {
+      lowStockProductList = (lowStockProductListResult.data ?? []) as StockProblemProductRow[];
+    }
+
+    if (!topProductsResult.error) {
+      const topOrders = (topProductsResult.data ?? []) as TopProductOrderRow[];
+      const topProductMap = new Map<string, number>();
+
+      for (const order of topOrders) {
+        for (const item of order.order_items ?? []) {
+          const itemName = (item.name ?? "").trim();
+          if (!itemName) continue;
+          const current = topProductMap.get(itemName) ?? 0;
+          topProductMap.set(itemName, current + Math.max(1, Math.floor(Number(item.quantity) || 0)));
+        }
+      }
+
+      topProducts = [...topProductMap.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"))
+        .slice(0, TOP_PRODUCTS_LIMIT)
+        .map(([name, quantity]) => ({ name, quantity }));
+    }
+
+    if (!recentOrdersResult.error) {
+      recentOrders = (recentOrdersResult.data ?? []) as RecentOrderRow[];
+    }
   }
 
   const publicStorePath = store ? buildPublicStorePath(store.slug) : null;
@@ -169,43 +288,177 @@ export default async function DashboardHomePage() {
 
               <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
                 <h2 className="text-sm font-semibold text-zinc-900">Visão operacional</h2>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <article className="cx-kpi-card">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Categorias ativas</p>
-                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{activeCategories}</p>
+                <div className="mt-3 space-y-3">
+                  <div className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Catalogo e estoque</p>
+                    <div className="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      <article className="cx-kpi-card">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Categorias ativas</p>
+                        <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{activeCategories}</p>
+                      </article>
+
+                      <article className="cx-kpi-card">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Produtos visíveis</p>
+                        <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{visibleProducts}</p>
+                      </article>
+
+                      <article className="cx-kpi-card">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Produtos sem estoque</p>
+                        <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{outOfStockProducts}</p>
+                        <p className="mt-1 text-xs text-zinc-500">Somente itens com controle ativo.</p>
+                      </article>
+
+                      <article className="cx-kpi-card">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Estoque baixo</p>
+                        <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{lowStockProducts}</p>
+                        <p className="mt-1 text-xs text-zinc-500">Entre 1 e {LOW_STOCK_THRESHOLD} unidades.</p>
+                      </article>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Fila operacional</p>
+                    <div className="mt-2 grid gap-3 sm:grid-cols-3">
+                      <article className="cx-kpi-card">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Aguardando aceite</p>
+                        <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{waitingOrders}</p>
+                      </article>
+
+                      <article className="cx-kpi-card">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Em preparo</p>
+                        <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{preparingOrders}</p>
+                      </article>
+
+                      <article className="cx-kpi-card">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Prontos para retirada</p>
+                        <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{readyOrders}</p>
+                      </article>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Indicadores do dia</p>
+                    <div className="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      <article className="cx-kpi-card">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Finalizados hoje</p>
+                        <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{finalizedTodayCount}</p>
+                      </article>
+
+                      <article className="cx-kpi-card">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Vendido hoje</p>
+                        <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900">{formatBRL(soldToday)}</p>
+                        <p className="mt-1 text-xs text-zinc-500">Somatório de pedidos finalizados no dia.</p>
+                      </article>
+
+                      <article className="cx-kpi-card">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Ticket médio do dia</p>
+                        <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900">{formatBRL(ticketAverageToday)}</p>
+                        <p className="mt-1 text-xs text-zinc-500">Baseado em pedidos finalizados hoje.</p>
+                      </article>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-sm font-semibold text-zinc-900">Produtos com problema de estoque</h2>
+                  <span className="text-xs text-zinc-500">Controle de estoque ativo</span>
+                </div>
+
+                <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                  <article className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">Sem estoque</p>
+                    {outOfStockProductList.length === 0 ? (
+                      <p className="mt-2 text-sm text-zinc-500">Nenhum produto sem estoque.</p>
+                    ) : (
+                      <ul className="mt-2 space-y-1.5">
+                        {outOfStockProductList.map((product) => (
+                          <li key={product.id} className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-2.5 py-2">
+                            <span className="min-w-0 truncate text-sm text-zinc-800">{product.name}</span>
+                            <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-700 tabular-nums">
+                              estoque {product.stock_quantity}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </article>
 
-                  <article className="cx-kpi-card">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Produtos visíveis</p>
-                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{visibleProducts}</p>
-                  </article>
-
-                  <article className="cx-kpi-card">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Aguardando aceite</p>
-                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{waitingOrders}</p>
-                  </article>
-
-                  <article className="cx-kpi-card">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Em preparo</p>
-                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{preparingOrders}</p>
-                  </article>
-
-                  <article className="cx-kpi-card">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Prontos para retirada</p>
-                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{readyOrders}</p>
-                  </article>
-
-                  <article className="cx-kpi-card">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Finalizados hoje</p>
-                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{finalizedTodayCount}</p>
-                  </article>
-
-                  <article className="cx-kpi-card sm:col-span-2 xl:col-span-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Vendido hoje</p>
-                  <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900">{formatBRL(soldToday)}</p>
-                  <p className="mt-1 text-xs text-zinc-500">Somatório de pedidos finalizados no dia.</p>
+                  <article className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">Estoque baixo</p>
+                    {lowStockProductList.length === 0 ? (
+                      <p className="mt-2 text-sm text-zinc-500">Nenhum produto com estoque baixo.</p>
+                    ) : (
+                      <ul className="mt-2 space-y-1.5">
+                        {lowStockProductList.map((product) => (
+                          <li key={product.id} className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-2.5 py-2">
+                            <span className="min-w-0 truncate text-sm text-zinc-800">{product.name}</span>
+                            <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-700 tabular-nums">
+                              estoque {product.stock_quantity}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </article>
                 </div>
+              </section>
+
+              <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-sm font-semibold text-zinc-900">Top {TOP_PRODUCTS_LIMIT} produtos mais vendidos hoje</h2>
+                  <span className="text-xs text-zinc-500">Pedidos finalizados no dia</span>
+                </div>
+
+                {topProducts.length === 0 ? (
+                  <p className="mt-3 text-sm text-zinc-600">Sem vendas finalizadas no dia para montar o ranking.</p>
+                ) : (
+                  <ul className="mt-3 space-y-2">
+                    {topProducts.map((product, index) => (
+                      <li key={`${product.name}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-zinc-900">{product.name}</p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
+                          {product.quantity} un.
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-sm font-semibold text-zinc-900">Últimos pedidos</h2>
+                  <Link href="/dashboard/pedidos?escopo=todos" className="text-xs font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline">
+                    Ver todos
+                  </Link>
+                </div>
+
+                {recentOrders.length === 0 ? (
+                  <p className="mt-3 text-sm text-zinc-600">Nenhum pedido registrado até o momento.</p>
+                ) : (
+                  <ul className="mt-3 space-y-2">
+                    {recentOrders.map((order) => (
+                      <li key={order.id} className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
+                        <Link href="/dashboard/pedidos?escopo=todos" className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-zinc-900">Pedido {formatOrderCode(order)}</p>
+                            <p className="text-xs text-zinc-500">{formatDateTime(order.created_at)}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${ORDER_STATUS_BADGE[order.status]}`}>
+                              {ORDER_STATUS_LABELS[order.status]}
+                            </span>
+                            <span className="text-sm font-semibold text-zinc-900">{formatBRL(order.total_amount)}</span>
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </section>
 
               {readiness && !readiness.isReady ? (
@@ -218,30 +471,6 @@ export default async function DashboardHomePage() {
                   </ul>
                 </section>
               ) : null}
-
-              <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Atalhos rápidos</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Link
-                    href="/dashboard/pedidos"
-                    className="cx-btn-primary px-3 py-2"
-                  >
-                    Ir para pedidos
-                  </Link>
-                  <Link
-                    href="/dashboard/produtos"
-                    className="cx-btn-secondary px-3 py-2"
-                  >
-                    Ir para produtos
-                  </Link>
-                  <Link
-                    href="/dashboard/configuracoes"
-                    className="cx-btn-secondary px-3 py-2"
-                  >
-                    Ir para configurações
-                  </Link>
-                </div>
-              </section>
 
               <section className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50/80 p-4 shadow-sm sm:p-5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Link público</p>

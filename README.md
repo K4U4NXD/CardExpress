@@ -4,9 +4,9 @@
 
 O **CardExpress** é um sistema web de **cardápio digital com retirada no balcão**, voltado para estabelecimentos de venda rápida, como lanchonetes, barracas, quiosques e pontos de alimentação em feiras e eventos.
 
-O cliente acessa a loja por **QR Code** ou **link público**, visualiza o cardápio, monta o carrinho, inicia o checkout e acompanha o pedido. No estado atual do projeto, o fluxo de pagamento está implementado em **modo de demonstração**: a aplicação cria uma sessão intermediária de checkout e permite **simular a aprovação do pagamento** para converter a sessão em pedido real.
+O cliente acessa a loja por **QR Code** ou **link público**, visualiza o cardápio, monta o carrinho, inicia o checkout e acompanha o pedido. No estado atual do projeto, o fluxo de pagamento permanece em **modo de demonstração**: a aplicação cria uma sessão intermediária de checkout e permite **simular a aprovação do pagamento** para converter a sessão em pedido real.
 
-Além da experiência do cliente, o sistema possui um **painel administrativo do comerciante** para gerenciar categorias, produtos, pedidos e configurações da loja.
+Além da experiência do cliente, o sistema possui um **painel administrativo do comerciante** para gerenciar categorias, produtos, pedidos e configurações da loja, com foco em operação prática e atualização em tempo real nas telas mais relevantes.
 
 Este repositório corresponde ao desenvolvimento do projeto acadêmico **CardExpress**, realizado em grupo.
 
@@ -31,14 +31,14 @@ O projeto já possui uma base funcional sólida, com:
 - gerenciamento operacional de pedidos;
 - tela de configurações da loja;
 - cardápio público dinâmico por `slug`;
-- busca e navegação por categoria no cardápio público;
 - carrinho público com persistência local por loja;
 - checkout público com criação de `checkout_sessions`;
 - simulação de pagamento aprovado para desenvolvimento/demo;
 - conversão de checkout em pedido real;
 - acompanhamento público do pedido por `token`;
 - painel público de retirada;
-- melhorias amplas de UX em desktop e mobile.
+- melhorias amplas de UX em desktop e mobile;
+- **atualização em tempo real** nas rotas operacionais principais.
 
 ---
 
@@ -49,19 +49,40 @@ O projeto já possui uma base funcional sólida, com:
 - cadastro de comerciante;
 - login e logout;
 - proteção das rotas do painel;
-- criação e vínculo de uma loja por conta;
+- criação e vínculo de **uma loja por conta**;
 - leitura da loja autenticada no dashboard.
 
 ### Painel administrativo
 
-- tela inicial do dashboard com resumo operacional da loja;
+- tela inicial do dashboard com **resumo operacional da loja**;
 - navegação lateral no desktop;
 - menu lateral responsivo em mobile;
 - headers compactos/sticky em telas principais;
 - gerenciamento de categorias;
 - gerenciamento de produtos;
 - gerenciamento operacional de pedidos;
-- configurações da loja.
+- configurações da loja;
+- melhorias de legibilidade e organização da Home do dashboard.
+
+### Home do dashboard (`/dashboard`)
+
+- resumo operacional da loja;
+- métricas de:
+  - categorias ativas;
+  - produtos visíveis;
+  - pedidos aguardando aceite;
+  - pedidos em preparo;
+  - pedidos prontos para retirada;
+  - pedidos finalizados no dia;
+  - valor vendido no dia;
+  - ticket médio do dia;
+  - produtos sem estoque;
+  - produtos com estoque baixo;
+- top 5 produtos mais vendidos no dia;
+- lista de últimos pedidos;
+- reorganização visual por grupos operacionais;
+- remoção dos atalhos rápidos;
+- **atualização em tempo real** da Home por loja.
 
 ### Categorias
 
@@ -106,7 +127,7 @@ O projeto já possui uma base funcional sólida, com:
 - busca local por nome/descrição;
 - chips de categoria com opção `Todos`;
 - rolagem horizontal de categorias no mobile;
-- busca e filtros fixos no topo do cardápio para facilitar a navegação;
+- busca e filtros fixos no topo do cardápio;
 - carrinho por loja com `localStorage`;
 - mini barra compacta do carrinho fixa no rodapé;
 - navegação para checkout;
@@ -147,7 +168,8 @@ O projeto já possui uma base funcional sólida, com:
 - histórico ordenado para facilitar consulta;
 - possibilidade de expandir/recolher os itens do pedido;
 - loading, vazio e erro dedicados na rota de pedidos;
-- melhor responsividade no mobile.
+- melhor responsividade no mobile;
+- **Realtime real em `/dashboard/pedidos`**.
 
 ### Acompanhamento público
 
@@ -157,14 +179,17 @@ O projeto já possui uma base funcional sólida, com:
   - `id` do pedido;
   - `public_token` do pedido;
 - exibição pública do status do pedido e timestamps relevantes;
-- painel público `/{slug}/painel` exibindo o pedido mais recente que ficou pronto para retirada.
+- **atualização em tempo real** da página pública do pedido por canal específico do próprio pedido;
+- painel público `/{slug}/painel` exibindo o pedido mais recente que ficou pronto para retirada;
+- **atualização em tempo real** do painel público.
 
 ### Banco de dados
 
 - projeto integrado ao **Supabase**;
-- uso de Auth, Database, RPC e RLS;
+- uso de Auth, Database, RPC, RLS e Realtime;
 - schema versionado localmente em `supabase/migrations/`;
-- fluxo público de checkout e conversão para pedido versionado no repositório.
+- fluxo público de checkout e conversão para pedido versionado no repositório;
+- triggers e broadcasts específicos para atualização em tempo real nas telas-chave.
 
 ---
 
@@ -173,10 +198,9 @@ O projeto já possui uma base funcional sólida, com:
 As principais frentes restantes são:
 
 - integração com **gateway de pagamento real**;
-- substituição da simulação de pagamento por confirmação real de pagamento;
-- possíveis melhorias operacionais adicionais para uso real;
-- ajustes pontuais finais de apresentação;
-- documentação técnica contínua;
+- substituição da simulação de pagamento por confirmação real;
+- eventuais ajustes finais para implantação em ambiente real;
+- documentação técnica final e relatório acadêmico;
 - evolução futura de métricas, relatórios e consultas mais avançadas, se necessário.
 
 ---
@@ -197,6 +221,7 @@ As principais frentes restantes são:
   - Postgres
   - RPC
   - RLS
+  - Realtime
 
 ### Ferramentas auxiliares
 
@@ -226,7 +251,9 @@ As principais frentes restantes são:
 
 ## Variáveis de ambiente
 
-Crie um arquivo `.env.local` na raiz do projeto com base no `.env.local.example`.
+Crie um arquivo `.env.local` na raiz do projeto.
+
+Se o arquivo `.env.local.example` ainda não existir no repositório local, crie-o também e versione-o.
 
 ### `.env.local.example`
 
@@ -235,21 +262,12 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ````
 
-### Criando o `.env.local`
+### `.env.local`
 
-#### Windows
-
-```bash
-copy .env.local.example .env.local
+```env
+NEXT_PUBLIC_SUPABASE_URL=SEU_PROJECT_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=SUA_ANON_KEY
 ```
-
-#### macOS/Linux
-
-```bash
-cp .env.local.example .env.local
-```
-
-Depois, preencha com os dados reais do seu projeto Supabase.
 
 ### Onde encontrar os valores
 
@@ -334,14 +352,19 @@ cardexpress/
 ├─ components/
 │  ├─ auth/
 │  ├─ dashboard/
+│  │  ├─ dashboard-home-realtime-sync.tsx
+│  │  └─ orders-realtime-sync.tsx
 │  ├─ layout/
 │  └─ public/
+│     ├─ public-order-realtime-sync.tsx
+│     └─ public-panel-realtime-sync.tsx
 ├─ lib/
 │  ├─ auth/
 │  ├─ orders/
 │  ├─ public/
 │  ├─ supabase/
 │  ├─ validation/
+│  ├─ timezone.ts
 │  └─ db-errors.ts
 ├─ types/
 ├─ supabase/
@@ -411,7 +434,37 @@ Enquanto a integração com gateway real não foi implementada, o projeto usa um
 2. aparece no painel administrativo da loja;
 3. o comerciante pode aceitar, recusar, marcar como pronto e finalizar;
 4. os itens do pedido e a observação ficam visíveis na operação;
-5. a página pública do pedido reflete o status e os timestamps.
+5. a página pública do pedido reflete o status e os timestamps;
+6. o painel público reflete o pedido mais recente pronto para retirada;
+7. as principais telas operacionais se atualizam em tempo real.
+
+---
+
+## Realtime no projeto
+
+O CardExpress usa Realtime de forma **seletiva**, conforme o contexto de segurança e uso:
+
+### Já implementado
+
+* `/dashboard/pedidos`
+
+  * Realtime em contexto autenticado do comerciante;
+* `/dashboard`
+
+  * broadcast privado por loja para atualizar a Home;
+* `/{slug}/painel`
+
+  * broadcast público mínimo por loja para atualizar o painel público;
+* `/{slug}/pedido/[id]?token=...`
+
+  * broadcast público mínimo por pedido, usando `orderId + publicToken` no tópico.
+
+### Estratégia adotada
+
+* o **payload de Realtime não carrega dados sensíveis** nas rotas públicas;
+* as páginas continuam usando RPCs e lógica server como **fonte da verdade**;
+* os eventos servem principalmente para disparar `refresh` da rota;
+* a implementação evita copiar a mesma estratégia entre áreas autenticadas e públicas sem revisão de segurança.
 
 ---
 
@@ -477,8 +530,6 @@ Na área pública, a loja só deve aparecer como apta a receber pedidos quando:
 * `accepts_orders` está ativo;
 * e existe cardápio público efetivamente disponível para pedido.
 
-Em outras palavras, a aceitação pública de pedidos considera tanto a intenção manual da loja quanto a prontidão operacional refletida no cardápio.
-
 ### Pedido público seguro
 
 O acesso à página pública do pedido depende de:
@@ -486,8 +537,6 @@ O acesso à página pública do pedido depende de:
 * `slug` da loja;
 * `id` do pedido;
 * `token` público do pedido.
-
-Isso evita exposição indevida de pedidos de outras lojas ou de outros clientes.
 
 ### Pagamento confirmado antes do pedido operacional
 
@@ -531,6 +580,12 @@ Referências importantes já utilizadas no projeto:
 * `supabase/migrations/20260403001920_public_checkout_order_flow.sql`
 * `supabase/migrations/20260403120000_sync_product_availability_manual_control.sql`
 * `supabase/migrations/20260405162753_public_ready_panel_keep_last_called_order.sql`
+* `supabase/migrations/20260411163258_enable_realtime_for_orders.sql`
+* `supabase/migrations/20260411170000_broadcast_public_panel_refresh.sql`
+* `supabase/migrations/20260411171000_dashboard_home_realtime_refresh.sql`
+* `supabase/migrations/20260411172000_broadcast_public_order_refresh.sql`
+
+> Se os nomes/timestamps finais das migrations mudarem no seu repositório, atualize esta lista para refletir os arquivos reais versionados.
 
 ---
 
@@ -557,7 +612,8 @@ npx supabase db diff --linked --schema public -f nome_da_migration
 
 * `db pull` e `db diff` exigem Docker Desktop funcionando;
 * sempre que o banco mudar, o ideal é gerar ou revisar uma migration antes de commitar;
-* evitar alterações no Supabase remoto sem refletir isso no repositório.
+* evitar alterações no Supabase remoto sem refletir isso no repositório;
+* quando uma mudança for aplicada manualmente no SQL Editor, ela deve ser **versionada depois em `supabase/migrations/`**.
 
 ---
 
@@ -575,6 +631,7 @@ npm run dev
 
 ```bash
 npm run lint
+npm run build
 ```
 
 Se a mudança envolver banco:
@@ -619,6 +676,8 @@ Se a mudança envolver banco:
 * conversão para pedido real;
 * acompanhamento público do pedido;
 * painel público de retirada;
+* Home do dashboard com métricas operacionais;
+* atualizações em tempo real nas rotas principais;
 * melhorias amplas de responsividade e UX no dashboard e na área pública.
 
 ### Em andamento / pendente
@@ -626,6 +685,7 @@ Se a mudança envolver banco:
 * integração com pagamento real;
 * remoção da simulação de pagamento quando houver gateway;
 * ajustes pontuais para implantação em ambiente real;
+* documentação acadêmica final;
 * evolução futura de relatórios e métricas, se necessário.
 
 ---
@@ -639,9 +699,10 @@ Se a mudança envolver banco:
 5. faça sua alteração;
 6. valide a interface e o fluxo afetado;
 7. rode `npm run lint`;
-8. se alterar banco, registre a migration;
-9. faça commit com mensagem clara;
-10. envie para o GitHub.
+8. rode `npm run build`;
+9. se alterar banco, registre a migration;
+10. faça commit com mensagem clara;
+11. envie para o GitHub.
 
 ---
 
@@ -664,5 +725,7 @@ Responsável principal no contexto atual do desenvolvimento:
 ## Resumo final
 
 O CardExpress já possui uma base sólida para operação de uma loja com cardápio digital e retirada no balcão. O projeto evoluiu para um fluxo público funcional em modo demo, com cardápio, carrinho, checkout, conversão para pedido real, acompanhamento público do pedido e operação administrativa consistente.
+
+Além disso, o projeto passou a contar com atualização em tempo real nas áreas mais relevantes da operação, melhorando o uso prático do sistema e a coerência entre painel administrativo, acompanhamento público e painel de retirada.
 
 A principal evolução futura para uso real é a substituição da simulação atual por uma integração efetiva com gateway de pagamento, mantendo banco, código e migrations alinhados no repositório.

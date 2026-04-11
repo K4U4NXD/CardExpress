@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/layout/page-header";
-import { AutoRefresh } from "@/components/shared/auto-refresh";
+import { PublicPanelRealtimeSync } from "@/components/public/public-panel-realtime-sync";
 import { formatDateTime } from "@/lib/orders/presenter";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
@@ -64,7 +64,7 @@ export default async function PublicReadyPanelPage({ params }: PageProps) {
             </div>
           )}
           <div className="mt-4 flex justify-center">
-            <AutoRefresh intervalMs={9_000} className="text-zinc-400" />
+            <PublicPanelRealtimeSync slug={slug} />
           </div>
         </div>
       </div>

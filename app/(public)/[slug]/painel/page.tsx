@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/layout/page-header";
+import { AutoRefresh } from "@/components/shared/auto-refresh";
 import { formatDateTime } from "@/lib/orders/presenter";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
@@ -51,7 +52,7 @@ export default async function PublicReadyPanelPage({ params }: PageProps) {
           {!order ? (
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-8 text-center text-sm text-zinc-400 shadow-[0_26px_44px_-30px_rgba(0,0,0,0.85)]">
               <p className="text-sm font-medium text-zinc-200">Nenhum pedido pronto no momento.</p>
-              <p className="mt-1 text-xs text-zinc-400">Atualize esta tela para acompanhar novos chamados.</p>
+              <p className="mt-1 text-xs text-zinc-400">Aguardando o proximo chamado.</p>
             </div>
           ) : (
             <div className="rounded-[32px] border border-emerald-300/45 bg-gradient-to-b from-zinc-900 to-black p-10 text-center text-white shadow-[0_0_70px_rgba(16,185,129,0.24)]">
@@ -62,6 +63,9 @@ export default async function PublicReadyPanelPage({ params }: PageProps) {
               </p>
             </div>
           )}
+          <div className="mt-4 flex justify-center">
+            <AutoRefresh intervalMs={9_000} className="text-zinc-400" />
+          </div>
         </div>
       </div>
     </>

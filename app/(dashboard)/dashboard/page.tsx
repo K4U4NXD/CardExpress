@@ -3,6 +3,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { calculateStoreReadiness } from "@/lib/store-readiness";
 import { buildAbsolutePublicStoreUrl, buildPublicStorePath } from "@/lib/public-store-url";
 import { PageHeader } from "@/components/layout/page-header";
+import { AutoRefresh } from "@/components/shared/auto-refresh";
+import { getTodayRangeInSaoPaulo } from "@/lib/timezone";
 import { formatBRL } from "@/lib/validation/price";
 import { headers } from "next/headers";
 import Link from "next/link";
@@ -54,9 +56,7 @@ export default async function DashboardHomePage() {
   let readiness = null as Awaited<ReturnType<typeof calculateStoreReadiness>> | null;
 
   if (store) {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const startOfTodayIso = startOfToday.toISOString();
+    const { startOfTodayIso, startOfTomorrowIso } = getTodayRangeInSaoPaulo(new Date());
 
     const [
       settingsResult,
@@ -103,7 +103,8 @@ export default async function DashboardHomePage() {
         .select("total_amount")
         .eq("store_id", store.id)
         .eq("status", "finalizado" satisfies OrderStatus)
-        .gte("finalized_at", startOfTodayIso),
+        .gte("finalized_at", startOfTodayIso)
+        .lt("finalized_at", startOfTomorrowIso),
     ]);
 
     acceptsOrders = settingsResult.data?.accepts_orders ?? true;
@@ -135,6 +136,9 @@ export default async function DashboardHomePage() {
       />
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-2 flex justify-end">
+          <AutoRefresh intervalMs={15_000} />
+        </div>
         <div className="space-y-3 rounded-2xl border border-zinc-200 bg-white/90 p-4 shadow-[0_28px_54px_-40px_rgba(24,24,27,0.58)] backdrop-blur-sm sm:p-6">
           {!store ? (
             <div className="space-y-2 text-left">

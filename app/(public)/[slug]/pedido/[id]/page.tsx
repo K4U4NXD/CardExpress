@@ -6,6 +6,7 @@ import {
   ORDER_STATUS_LABELS,
   REFUND_STATUS_LABELS,
 } from "@/lib/orders/presenter";
+import { AutoRefresh } from "@/components/shared/auto-refresh";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { formatBRL } from "@/lib/validation/price";
 import type { OrderStatus, RefundStatus } from "@/types";
@@ -65,6 +66,7 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
   const statusLabel = ORDER_STATUS_LABELS[order.status];
   const statusBadge = ORDER_STATUS_BADGE[order.status];
   const refundLabel = REFUND_STATUS_LABELS[order.refund_status];
+  const isTerminalStatus = order.status === "finalizado" || order.status === "recusado";
 
   return (
     <>
@@ -87,7 +89,13 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
             ) : null}
           </div>
 
-          <p className="mt-2 text-xs text-zinc-500">Use esta tela para acompanhar atualizacoes do pedido em tempo real.</p>
+          <p className="mt-2 text-xs text-zinc-500">Use esta tela para acompanhar atualizacoes automaticas do pedido.</p>
+          <AutoRefresh
+            intervalMs={10_000}
+            enabled={!isTerminalStatus}
+            pausedLabel="Atualizacao automatica pausada para pedido encerrado"
+            className="mt-1"
+          />
 
           <div className="mt-3 space-y-2 text-sm text-zinc-700">
             <p>Total: {formatBRL(order.total_amount)}</p>

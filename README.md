@@ -2,11 +2,11 @@
 
 ## Sobre o projeto
 
-O **CardExpress** é um sistema web de **cardápio digital com retirada no balcão**, voltado para estabelecimentos de venda rápida, como lanchonetes, barracas, quiosques e pontos de alimentação em feiras e eventos.
+O **CardExpress** é um sistema web de **cardápio digital com retirada no balcão**, voltado para estabelecimentos de venda rápida, como lanchonetes, quiosques, barracas, trailers e pontos de alimentação em feiras e eventos.
 
-O cliente acessa a loja por **QR Code** ou **link público**, visualiza o cardápio, monta o carrinho, inicia o checkout e acompanha o pedido. No estado atual do projeto, o fluxo de pagamento permanece em **modo de demonstração**: a aplicação cria uma sessão intermediária de checkout e permite **simular a aprovação do pagamento** para converter a sessão em pedido real.
+O cliente acessa a loja por **QR Code** ou **link público**, visualiza o cardápio, monta o carrinho, segue para o checkout e acompanha o pedido. No estado atual do projeto, o pagamento permanece em **modo demo**: a aplicação cria uma sessão intermediária de checkout e permite **simular a aprovação do pagamento** para converter a sessão em pedido real.
 
-Além da experiência do cliente, o sistema possui um **painel administrativo do comerciante** para gerenciar categorias, produtos, pedidos e configurações da loja, com foco em operação prática e atualização em tempo real nas telas mais relevantes.
+Além da experiência do cliente, o sistema possui um **painel administrativo do comerciante** para gerenciar categorias, produtos, pedidos e configurações da loja, com foco em operação prática, coerência de estoque e **atualização em tempo real** nas telas mais relevantes.
 
 Este repositório corresponde ao desenvolvimento do projeto acadêmico **CardExpress**, realizado em grupo.
 
@@ -37,8 +37,11 @@ O projeto já possui uma base funcional sólida, com:
 - conversão de checkout em pedido real;
 - acompanhamento público do pedido por `token`;
 - painel público de retirada;
+- controle de estoque integrado ao fluxo de pedidos;
+- status operacionais de pedido incluindo **recusado** e **cancelado**;
+- devolução de estoque em transições terminais aplicáveis;
 - melhorias amplas de UX em desktop e mobile;
-- **atualização em tempo real** nas rotas operacionais principais.
+- **atualização em tempo real** nas rotas operacionais e públicas principais.
 
 ---
 
@@ -69,7 +72,7 @@ O projeto já possui uma base funcional sólida, com:
 - resumo operacional da loja;
 - métricas de:
   - categorias ativas;
-  - produtos visíveis;
+  - produtos visíveis no cardápio;
   - pedidos aguardando aceite;
   - pedidos em preparo;
   - pedidos prontos para retirada;
@@ -82,7 +85,7 @@ O projeto já possui uma base funcional sólida, com:
 - lista de últimos pedidos;
 - reorganização visual por grupos operacionais;
 - remoção dos atalhos rápidos;
-- **atualização em tempo real** da Home por loja.
+- **atualização em tempo real** por loja.
 
 ### Categorias
 
@@ -91,7 +94,8 @@ O projeto já possui uma base funcional sólida, com:
 - ativar e desativar;
 - reordenar;
 - excluir categoria quando não houver produtos vinculados;
-- criação com formulário recolhido por padrão para melhor organização da tela.
+- criação com formulário recolhido por padrão para melhor organização da tela;
+- **atualização automática em tempo real** na tela de categorias.
 
 ### Produtos
 
@@ -104,7 +108,8 @@ O projeto já possui uma base funcional sólida, com:
 - excluir produto;
 - badges operacionais refinados;
 - exibição mais clara de estoque, disponibilidade e visibilidade pública;
-- criação com formulário recolhido por padrão.
+- criação com formulário recolhido por padrão;
+- **atualização automática em tempo real** na tela de produtos.
 
 ### Configurações da loja
 
@@ -112,12 +117,15 @@ O projeto já possui uma base funcional sólida, com:
 - edição de telefone;
 - exibição do `slug` em modo somente leitura;
 - exibição e cópia do link público da loja;
+- QR Code do cardápio público;
 - mensagem pública da loja;
 - controle manual de aceitação de pedidos;
 - resumo de prontidão operacional;
 - botão salvar habilitado apenas quando há alterações;
 - descarte de alterações;
-- validações coerentes de formulário.
+- validações coerentes de formulário;
+- **atualização automática em tempo real** da tela quando não há alterações locais não salvas;
+- proteção para não sobrescrever formulário `dirty` durante refresh.
 
 ### Área pública da loja
 
@@ -131,7 +139,9 @@ O projeto já possui uma base funcional sólida, com:
 - carrinho por loja com `localStorage`;
 - mini barra compacta do carrinho fixa no rodapé;
 - navegação para checkout;
-- coerência entre status público da loja e cardápio efetivamente disponível.
+- coerência entre status público da loja e cardápio efetivamente disponível;
+- **atualização automática em tempo real** do cardápio público;
+- reconciliação automática do carrinho quando preço ou disponibilidade mudam.
 
 ### Checkout público
 
@@ -142,7 +152,9 @@ O projeto já possui uma base funcional sólida, com:
 - criação de `checkout_sessions` e `checkout_session_items` via RPC;
 - limpeza do carrinho somente após sucesso real da criação da sessão;
 - botão temporário para **simular pagamento aprovado** em ambiente de desenvolvimento/demo;
-- persistência local de nome e telefone no navegador para facilitar compras futuras no mesmo dispositivo.
+- persistência local de nome e telefone no navegador para facilitar compras futuras no mesmo dispositivo;
+- reconciliação automática do checkout com o cardápio atual;
+- **atualização automática em tempo real** do checkout para refletir mudanças de preço, disponibilidade e status da loja.
 
 ### Pedidos
 
@@ -153,6 +165,7 @@ O projeto já possui uma base funcional sólida, com:
   - ativos;
   - finalizados;
   - recusados;
+  - cancelados;
   - todos;
 - transições operacionais com regras de status;
 - ações de:
@@ -160,7 +173,13 @@ O projeto já possui uma base funcional sólida, com:
   - recusar pedido;
   - marcar como pronto para retirada;
   - finalizar pedido;
-- atualização de timestamps operacionais (`accepted_at`, `ready_at`, `finalized_at`, `rejected_at`);
+  - cancelar pedido em `em_preparo`;
+- atualização de timestamps operacionais:
+  - `accepted_at`
+  - `ready_at`
+  - `finalized_at`
+  - `rejected_at`
+  - `cancelled_at`
 - separação entre **status operacional** e **status de reembolso**;
 - itens do pedido visíveis na operação;
 - observação do pedido quando existir;
@@ -169,7 +188,15 @@ O projeto já possui uma base funcional sólida, com:
 - possibilidade de expandir/recolher os itens do pedido;
 - loading, vazio e erro dedicados na rota de pedidos;
 - melhor responsividade no mobile;
-- **Realtime real em `/dashboard/pedidos`**.
+- **atualização em tempo real** em `/dashboard/pedidos`.
+
+### Regras de estoque no fluxo de pedidos
+
+- o estoque é abatido quando a `checkout_session` paga é convertida em pedido real;
+- ao **recusar** um pedido em `aguardando_aceite`, o sistema devolve o estoque;
+- ao **cancelar** um pedido em `em_preparo`, o sistema devolve o estoque;
+- o reembolso financeiro real **não** foi implementado nesta fase;
+- no modo demo, o reembolso continua apenas como estado operacional simulado.
 
 ### Acompanhamento público
 
@@ -179,6 +206,7 @@ O projeto já possui uma base funcional sólida, com:
   - `id` do pedido;
   - `public_token` do pedido;
 - exibição pública do status do pedido e timestamps relevantes;
+- suporte a estados terminais, incluindo **recusado** e **cancelado**;
 - **atualização em tempo real** da página pública do pedido por canal específico do próprio pedido;
 - painel público `/{slug}/painel` exibindo o pedido mais recente que ficou pronto para retirada;
 - **atualização em tempo real** do painel público.
@@ -189,7 +217,7 @@ O projeto já possui uma base funcional sólida, com:
 - uso de Auth, Database, RPC, RLS e Realtime;
 - schema versionado localmente em `supabase/migrations/`;
 - fluxo público de checkout e conversão para pedido versionado no repositório;
-- triggers e broadcasts específicos para atualização em tempo real nas telas-chave.
+- triggers, funções e broadcasts específicos para atualização em tempo real nas telas-chave.
 
 ---
 
@@ -352,12 +380,9 @@ cardexpress/
 ├─ components/
 │  ├─ auth/
 │  ├─ dashboard/
-│  │  ├─ dashboard-home-realtime-sync.tsx
-│  │  └─ orders-realtime-sync.tsx
 │  ├─ layout/
-│  └─ public/
-│     ├─ public-order-realtime-sync.tsx
-│     └─ public-panel-realtime-sync.tsx
+│  ├─ public/
+│  └─ shared/
 ├─ lib/
 │  ├─ auth/
 │  ├─ orders/
@@ -408,7 +433,8 @@ cardexpress/
 3. carrega categorias e produtos disponíveis;
 4. permite busca local e navegação por categoria;
 5. monta o carrinho no navegador com `localStorage` por loja;
-6. segue para `/{slug}/checkout`.
+6. segue para `/{slug}/checkout`;
+7. se preço, disponibilidade ou status da loja mudarem, a interface reconcilia o carrinho com o cardápio atual.
 
 ### 2. Fluxo do checkout
 
@@ -417,7 +443,8 @@ cardexpress/
 3. chama a RPC `create_checkout_session_by_slug(...)`;
 4. o servidor valida loja, itens, disponibilidade e estoque;
 5. cria `checkout_sessions` e `checkout_session_items`;
-6. a interface exibe a sessão criada como aguardando pagamento.
+6. a interface exibe a sessão criada como aguardando pagamento;
+7. o checkout continua reagindo ao cardápio atual enquanto estiver aberto.
 
 ### 3. Fluxo atual de pagamento (modo demo)
 
@@ -432,7 +459,13 @@ Enquanto a integração com gateway real não foi implementada, o projeto usa um
 
 1. o pedido entra em `orders` com status `aguardando_aceite`;
 2. aparece no painel administrativo da loja;
-3. o comerciante pode aceitar, recusar, marcar como pronto e finalizar;
+3. o comerciante pode:
+
+   * aceitar;
+   * recusar;
+   * marcar como pronto para retirada;
+   * finalizar;
+   * cancelar em `em_preparo`;
 4. os itens do pedido e a observação ficam visíveis na operação;
 5. a página pública do pedido reflete o status e os timestamps;
 6. o painel público reflete o pedido mais recente pronto para retirada;
@@ -442,16 +475,36 @@ Enquanto a integração com gateway real não foi implementada, o projeto usa um
 
 ## Realtime no projeto
 
-O CardExpress usa Realtime de forma **seletiva**, conforme o contexto de segurança e uso:
+O CardExpress usa Realtime de forma **seletiva**, conforme o contexto de segurança e uso.
 
 ### Já implementado
 
-* `/dashboard/pedidos`
+#### Área autenticada
 
-  * Realtime em contexto autenticado do comerciante;
 * `/dashboard`
 
   * broadcast privado por loja para atualizar a Home;
+* `/dashboard/pedidos`
+
+  * atualização em tempo real da operação de pedidos;
+* `/dashboard/produtos`
+
+  * atualização em tempo real da listagem operacional;
+* `/dashboard/categorias`
+
+  * atualização em tempo real da listagem operacional;
+* `/dashboard/configuracoes`
+
+  * atualização em tempo real do estado operacional da loja, com proteção para não sobrescrever alterações locais não salvas.
+
+#### Área pública
+
+* `/{slug}`
+
+  * broadcast público mínimo por loja para atualizar cardápio, disponibilidade e mensagem pública;
+* `/{slug}/checkout`
+
+  * atualização em tempo real do checkout com reconciliação do carrinho;
 * `/{slug}/painel`
 
   * broadcast público mínimo por loja para atualizar o painel público;
@@ -464,7 +517,8 @@ O CardExpress usa Realtime de forma **seletiva**, conforme o contexto de seguran
 * o **payload de Realtime não carrega dados sensíveis** nas rotas públicas;
 * as páginas continuam usando RPCs e lógica server como **fonte da verdade**;
 * os eventos servem principalmente para disparar `refresh` da rota;
-* a implementação evita copiar a mesma estratégia entre áreas autenticadas e públicas sem revisão de segurança.
+* a implementação distingue contexto público e autenticado com revisão de segurança;
+* o frontend utiliza debounce, recuperação de conexão e atualização automática nas páginas principais.
 
 ---
 
@@ -569,23 +623,13 @@ O projeto utiliza Supabase como backend principal.
 * `create_checkout_session_by_slug`
 * `convert_paid_checkout_session_to_order`
 * `simulate_checkout_payment_success`
+* `transition_order_to_terminal`
 
-### Migrations importantes
+### Migrations
 
 Consulte a pasta `supabase/migrations/` para o histórico versionado do banco.
 
-Referências importantes já utilizadas no projeto:
-
-* `supabase/migrations/20260331203339_remote_schema.sql`
-* `supabase/migrations/20260403001920_public_checkout_order_flow.sql`
-* `supabase/migrations/20260403120000_sync_product_availability_manual_control.sql`
-* `supabase/migrations/20260405162753_public_ready_panel_keep_last_called_order.sql`
-* `supabase/migrations/20260411163258_enable_realtime_for_orders.sql`
-* `supabase/migrations/20260411170000_broadcast_public_panel_refresh.sql`
-* `supabase/migrations/20260411171000_dashboard_home_realtime_refresh.sql`
-* `supabase/migrations/20260411172000_broadcast_public_order_refresh.sql`
-
-> Se os nomes/timestamps finais das migrations mudarem no seu repositório, atualize esta lista para refletir os arquivos reais versionados.
+> Como parte do desenvolvimento, algumas alterações foram aplicadas manualmente no Supabase e depois versionadas no repositório. Sempre confirme se o histórico remoto e o local continuam coerentes.
 
 ---
 
@@ -608,12 +652,26 @@ npx supabase db pull
 npx supabase db diff --linked --schema public -f nome_da_migration
 ```
 
+Para aplicar migrations pendentes no remoto:
+
+```bash
+npx supabase db push
+```
+
 ### Observações importantes
 
 * `db pull` e `db diff` exigem Docker Desktop funcionando;
 * sempre que o banco mudar, o ideal é gerar ou revisar uma migration antes de commitar;
 * evitar alterações no Supabase remoto sem refletir isso no repositório;
-* quando uma mudança for aplicada manualmente no SQL Editor, ela deve ser **versionada depois em `supabase/migrations/`**.
+* quando uma mudança for aplicada manualmente no SQL Editor, ela deve ser **versionada depois em `supabase/migrations/`**;
+* se o remoto já tiver recebido uma alteração manualmente e o `db push` acusar objeto já existente, revise o histórico com:
+
+  ```bash
+  npx supabase migration list
+  npx supabase migration repair <timestamp> --status applied
+  ```
+
+  e depois tente novamente o `db push`.
 
 ---
 
@@ -677,7 +735,9 @@ Se a mudança envolver banco:
 * acompanhamento público do pedido;
 * painel público de retirada;
 * Home do dashboard com métricas operacionais;
-* atualizações em tempo real nas rotas principais;
+* atualização em tempo real nas páginas principais;
+* suporte a pedido **cancelado**;
+* devolução de estoque em **recusa** e **cancelamento**;
 * melhorias amplas de responsividade e UX no dashboard e na área pública.
 
 ### Em andamento / pendente
@@ -726,6 +786,6 @@ Responsável principal no contexto atual do desenvolvimento:
 
 O CardExpress já possui uma base sólida para operação de uma loja com cardápio digital e retirada no balcão. O projeto evoluiu para um fluxo público funcional em modo demo, com cardápio, carrinho, checkout, conversão para pedido real, acompanhamento público do pedido e operação administrativa consistente.
 
-Além disso, o projeto passou a contar com atualização em tempo real nas áreas mais relevantes da operação, melhorando o uso prático do sistema e a coerência entre painel administrativo, acompanhamento público e painel de retirada.
+Além disso, o projeto passou a contar com atualização em tempo real nas áreas mais relevantes da operação, melhoria de coerência entre painel administrativo e área pública, reconciliação do carrinho e do checkout com o cardápio atual e tratamento de estados operacionais importantes como **recusa** e **cancelamento** com devolução de estoque.
 
 A principal evolução futura para uso real é a substituição da simulação atual por uma integração efetiva com gateway de pagamento, mantendo banco, código e migrations alinhados no repositório.

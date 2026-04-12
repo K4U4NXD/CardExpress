@@ -2,27 +2,7 @@ import { DashboardProductsView } from "@/components/dashboard/dashboard-products
 import { PageHeader } from "@/components/layout/page-header";
 import { getUserStore } from "@/lib/auth/store";
 import type { Category, Product } from "@/types";
-
-const AVISOS: Record<string, string> = {
-  criado: "Produto criado com sucesso.",
-  atualizado: "Produto atualizado com sucesso.",
-  desativado: "Produto desativado com sucesso.",
-  ativado: "Produto ativado com sucesso.",
-  "venda-pausada": "Venda do produto pausada com sucesso.",
-  "venda-liberada": "Venda do produto liberada com sucesso.",
-  reordenado: "Produto reordenado.",
-  excluido: "Produto excluído com sucesso.",
-  "erro-campos": "Preencha nome, preço e categoria.",
-  "erro-loja": "Não foi possível identificar sua loja.",
-  "erro-permissao": "Não foi possível concluir a ação. Tente novamente.",
-};
-
-type PageProps = {
-  searchParams: Promise<{ aviso?: string; erro?: string }>;
-};
-
-export default async function DashboardProductsPage({ searchParams }: PageProps) {
-  const q = await searchParams;
+export default async function DashboardProductsPage() {
   const { supabase, store } = await getUserStore();
 
   let products: Product[] = [];
@@ -50,9 +30,6 @@ export default async function DashboardProductsPage({ searchParams }: PageProps)
     categories = (catData ?? []) as Category[];
   }
 
-  const avisoText = q.aviso ? AVISOS[q.aviso] : null;
-  const erroText = q.erro ? decodeURIComponent(q.erro) : null;
-
   if (!store) {
     return (
       <>
@@ -65,23 +42,6 @@ export default async function DashboardProductsPage({ searchParams }: PageProps)
         />
 
         <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
-          {erroText ? (
-            <p
-              className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-              role="alert"
-            >
-              {erroText}
-            </p>
-          ) : null}
-          {avisoText ? (
-            <p
-              className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
-              role="status"
-            >
-              {avisoText}
-            </p>
-          ) : null}
-
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900 shadow-sm">
             Nenhuma loja vinculada à sua conta. Conclua o cadastro antes de gerenciar produtos.
           </div>
@@ -95,8 +55,6 @@ export default async function DashboardProductsPage({ searchParams }: PageProps)
       storeId={store.id}
       categories={categories}
       products={products}
-      avisoText={avisoText}
-      erroText={erroText}
     />
   );
 }

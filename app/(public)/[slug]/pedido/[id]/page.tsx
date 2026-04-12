@@ -7,6 +7,7 @@ import {
   REFUND_STATUS_LABELS,
 } from "@/lib/orders/presenter";
 import { PublicOrderRealtimeSync } from "@/components/public/public-order-realtime-sync";
+import { PublicOrderStatusAlert } from "@/components/public/public-order-status-alert";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { formatBRL } from "@/lib/validation/price";
 import type { OrderStatus, RefundStatus } from "@/types";
@@ -91,6 +92,7 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
           </div>
 
           <p className="mt-2 text-xs text-zinc-500">Use esta tela para acompanhar atualizacoes automaticas do pedido.</p>
+          <PublicOrderStatusAlert orderId={order.id} publicToken={token} status={order.status} />
           <PublicOrderRealtimeSync
             orderId={order.id}
             publicToken={token}

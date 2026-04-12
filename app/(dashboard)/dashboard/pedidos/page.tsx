@@ -1,19 +1,10 @@
-import { OrderRow } from "@/components/dashboard/order-row";
+import { NewOrderSoundToggle } from "@/components/dashboard/new-order-sound-toggle";
+import { OrdersLiveList } from "@/components/dashboard/orders-live-list";
 import { OrdersRealtimeSync } from "@/components/dashboard/orders-realtime-sync";
 import { PageHeader } from "@/components/layout/page-header";
 import { getUserStore } from "@/lib/auth/store";
 import type { Order, OrderItem, OrderStatus } from "@/types";
 import Link from "next/link";
-
-const AVISOS: Record<string, string> = {
-  em_preparo: "Pedido aceito e enviado para preparo.",
-  recusado: "Pedido recusado e estoque devolvido.",
-  cancelado: "Pedido cancelado e estoque devolvido.",
-  pronto_para_retirada: "Pedido marcado como pronto para retirada.",
-  finalizado: "Pedido finalizado com sucesso.",
-  "erro-loja": "Não foi possível identificar sua loja.",
-  "erro-pedido": "Não foi possível concluir a ação. Tente novamente.",
-};
 
 const ACTIVE_STATUSES: OrderStatus[] = ["aguardando_aceite", "em_preparo", "pronto_para_retirada"];
 const HISTORICAL_STATUSES: OrderStatus[] = ["finalizado", "recusado", "cancelado"];
@@ -94,7 +85,7 @@ function applyScopeOrdering<T extends OrderableQuery<T>>(query: T, scope: Orders
 }
 
 type PageProps = {
-  searchParams: Promise<{ aviso?: string; erro?: string; escopo?: string }>;
+  searchParams: Promise<{ escopo?: string }>;
 };
 
 type DashboardOrder = Order & {
@@ -149,8 +140,6 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
     }
   }
 
-  const avisoText = params.aviso ? AVISOS[params.aviso] : null;
-  const erroText = params.erro ? decodeURIComponent(params.erro) : null;
   const selectedScopeLabel = SCOPE_LABELS[selectedScope];
   const isOperationalView = selectedScope === "ativos";
 
@@ -187,24 +176,12 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
               })}
             </div>
             {store ? <OrdersRealtimeSync storeId={store.id} /> : null}
+            {store ? <NewOrderSoundToggle /> : null}
           </div>
         }
       />
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        {erroText ? (
-          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
-            {erroText}
-          </p>
-        ) : null}
-        {avisoText ? (
-          <p
-            className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
-            role="status"
-          >
-            {avisoText}
-          </p>
-        ) : null}
         {itemsUnavailable ? (
           <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
             Itens do pedido nao estao acessiveis nesta consulta. Exibindo apenas os dados gerais.
@@ -255,11 +232,11 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
                     {orders.length} pedido(s) em {selectedScopeLabel}. Exibindo ate 50 registros.
                   </p>
                 </div>
-                <div className="mt-4 space-y-3">
-                  {orders.map((order) => (
-                    <OrderRow key={order.id} order={order} />
-                  ))}
-                </div>
+                <OrdersLiveList
+                  storeId={store.id}
+                  orders={orders}
+                  canPrunePending={selectedScope === "ativos" || selectedScope === "todos"}
+                />
               </div>
             )}
           </div>

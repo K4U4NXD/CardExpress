@@ -2,24 +2,7 @@ import { DashboardCategoriesView } from "@/components/dashboard/dashboard-catego
 import { PageHeader } from "@/components/layout/page-header";
 import { getUserStore } from "@/lib/auth/store";
 import type { Category } from "@/types";
-
-const AVISOS: Record<string, string> = {
-  criada: "Categoria criada com sucesso.",
-  "nome-atualizado": "Categoria atualizada com sucesso.",
-  "estado-alterado": "Categoria atualizada com sucesso.",
-  reordenada: "Categoria reordenada.",
-  excluida: "Categoria excluída com sucesso.",
-  "erro-nome": "Informe um nome válido para salvar.",
-  "erro-loja": "Não foi possível identificar sua loja.",
-  "erro-permissao": "Não foi possível concluir a ação. Tente novamente.",
-};
-
-type PageProps = {
-  searchParams: Promise<{ aviso?: string; erro?: string }>;
-};
-
-export default async function DashboardCategoriesPage({ searchParams }: PageProps) {
-  const q = await searchParams;
+export default async function DashboardCategoriesPage() {
   const { supabase, store } = await getUserStore();
 
   let categories: Category[] = [];
@@ -35,9 +18,6 @@ export default async function DashboardCategoriesPage({ searchParams }: PageProp
     categories = (data ?? []) as Category[];
   }
 
-  const avisoText = q.aviso ? AVISOS[q.aviso] : null;
-  const erroText = q.erro ? decodeURIComponent(q.erro) : null;
-
   if (!store) {
     return (
       <>
@@ -51,23 +31,6 @@ export default async function DashboardCategoriesPage({ searchParams }: PageProp
         />
 
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          {erroText ? (
-            <p
-              className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-              role="alert"
-            >
-              {erroText}
-            </p>
-          ) : null}
-          {avisoText ? (
-            <p
-              className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
-              role="status"
-            >
-              {avisoText}
-            </p>
-          ) : null}
-
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900 shadow-sm">
             Nenhuma loja vinculada à sua conta. Conclua o cadastro antes de gerenciar categorias.
           </div>
@@ -80,8 +43,6 @@ export default async function DashboardCategoriesPage({ searchParams }: PageProp
     <DashboardCategoriesView
       storeId={store.id}
       categories={categories}
-      avisoText={avisoText}
-      erroText={erroText}
     />
   );
 }

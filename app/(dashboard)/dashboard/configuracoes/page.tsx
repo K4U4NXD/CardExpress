@@ -5,7 +5,6 @@ import { formatPostgrestError } from "@/lib/db-errors";
 import { buildAbsolutePublicStoreUrl, buildPublicStorePath } from "@/lib/public-store-url";
 import { calculateStoreReadiness, type StoreReadinessResult } from "@/lib/store-readiness";
 import { headers } from "next/headers";
-import Link from "next/link";
 
 const FALLBACK_READINESS: StoreReadinessResult = {
   isReady: false,
@@ -64,32 +63,6 @@ export default async function DashboardSettingsPage() {
         compact
         stickyTopClassName="top-14 md:top-0"
         maxWidthClassName="max-w-6xl"
-        actions={
-          publicStoreUrl ? (
-            <Link
-              href={publicStoreUrl}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="cx-btn-secondary hidden items-center px-3 py-2 sm:inline-flex"
-            >
-              Ver cardápio público
-            </Link>
-          ) : null
-        }
-        bottomContent={
-          publicStoreUrl ? (
-            <div className="flex sm:hidden">
-              <Link
-                href={publicStoreUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="cx-btn-secondary inline-flex w-full items-center justify-center px-3 py-2 sm:w-auto"
-              >
-                Ver cardápio público
-              </Link>
-            </div>
-          ) : null
-        }
       />
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">

@@ -15,6 +15,7 @@ import {
   ORDER_STATUS_LABELS,
   REFUND_STATUS_LABELS,
 } from "@/lib/orders/presenter";
+import { getOrderCardElementId } from "@/lib/orders/new-order-notifications";
 import { formatBRL } from "@/lib/validation/price";
 import type { Order, OrderItem } from "@/types";
 import { useState } from "react";
@@ -28,6 +29,12 @@ type DashboardOrder = Order & {
 
 type OrderRowProps = {
   order: DashboardOrder;
+  isNewlyArrived?: boolean;
+  isStrongNewHighlight?: boolean;
+  isSoftNewHighlight?: boolean;
+  strongPulseNonce?: number;
+  isFocusedByJump?: boolean;
+  onAcknowledgeNew?: (orderId: string) => void;
 };
 
 type ActionButtonProps = {
@@ -56,7 +63,15 @@ function ActionButton({ label, className }: ActionButtonProps) {
   );
 }
 
-export function OrderRow({ order }: OrderRowProps) {
+export function OrderRow({
+  order,
+  isNewlyArrived = false,
+  isStrongNewHighlight = false,
+  isSoftNewHighlight = false,
+  strongPulseNonce = 0,
+  isFocusedByJump = false,
+  onAcknowledgeNew,
+}: OrderRowProps) {
   const statusBadge = ORDER_STATUS_BADGE[order.status];
   const statusLabel = ORDER_STATUS_LABELS[order.status];
   const refundLabel = REFUND_STATUS_LABELS[order.refund_status];
@@ -123,6 +138,42 @@ export function OrderRow({ order }: OrderRowProps) {
   const actions = actionsByStatus[order.status];
   const accentClass = accentClassByStatus[order.status];
 
+  const strongPulseClass = isStrongNewHighlight
+    ? strongPulseNonce % 2 === 0
+      ? "cx-order-strong-pulse-a"
+      : "cx-order-strong-pulse-b"
+    : "";
+
+  const strongBadgePulseClass = isStrongNewHighlight
+    ? strongPulseNonce % 2 === 0
+      ? "cx-order-strong-badge-pulse-a"
+      : "cx-order-strong-badge-pulse-b"
+    : "";
+
+  const highlightClass = isStrongNewHighlight
+    ? `border-l-[9px] border-amber-500 ring-2 ring-amber-300 bg-[linear-gradient(180deg,rgba(254,215,170,0.56)_0%,rgba(255,247,237,0.86)_48%,rgba(255,255,255,1)_100%)] shadow-[0_32px_72px_-36px_rgba(245,158,11,0.82)] ${strongPulseClass}`
+    : isSoftNewHighlight
+      ? "border-l-[6px] border-amber-400 ring-1 ring-amber-200 bg-[linear-gradient(180deg,rgba(254,243,199,0.7)_0%,rgba(255,255,255,1)_88%)] shadow-[0_22px_46px_-34px_rgba(245,158,11,0.46)]"
+      : isNewlyArrived
+        ? "border-l-[5px] border-amber-300 bg-amber-50/45"
+      : "";
+
+  const jumpFocusClass = isFocusedByJump ? "ring-2 ring-sky-300 ring-offset-1" : "";
+
+  const newBadgeClass = isStrongNewHighlight
+    ? `rounded-full border border-amber-600 bg-amber-200 px-2.5 py-0.5 text-xs font-extrabold tracking-[0.01em] text-amber-950 ${strongBadgePulseClass}`
+    : isSoftNewHighlight
+      ? "rounded-full border border-amber-400 bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900"
+      : "rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800";
+
+  const handleAcknowledgeNew = () => {
+    if (!isNewlyArrived) {
+      return;
+    }
+
+    onAcknowledgeNew?.(order.id);
+  };
+
   const timeline: Array<{ label: string; value: string | null | undefined; always?: boolean }> = [
     { label: "Recebido", value: order.placed_at, always: true },
     { label: "Aceito", value: order.accepted_at },
@@ -134,7 +185,12 @@ export function OrderRow({ order }: OrderRowProps) {
   ];
 
   return (
-    <article className={`rounded-2xl border border-zinc-200 border-l-4 ${accentClass} bg-white p-4 shadow-[0_18px_36px_-30px_rgba(24,24,27,0.4)] sm:p-5`}>
+    <article
+      id={getOrderCardElementId(order.id)}
+      onMouseEnter={handleAcknowledgeNew}
+      onFocusCapture={handleAcknowledgeNew}
+      className={`relative rounded-2xl border border-zinc-200 border-l-4 ${accentClass} ${highlightClass} ${jumpFocusClass} bg-white p-4 shadow-[0_18px_36px_-30px_rgba(24,24,27,0.4)] transition sm:p-5`}
+    >
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1 space-y-2">
@@ -142,6 +198,11 @@ export function OrderRow({ order }: OrderRowProps) {
               <span className="inline-flex items-center rounded-lg bg-zinc-900 px-2.5 py-1 text-sm font-semibold text-white">
                 {formatOrderCode(order)}
               </span>
+              {isNewlyArrived ? (
+                <span className={newBadgeClass}>
+                  Novo pedido
+                </span>
+              ) : null}
               <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>{statusLabel}</span>
               {order.refund_status && order.refund_status !== "none" ? (
                 <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">

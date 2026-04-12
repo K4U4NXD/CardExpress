@@ -189,6 +189,12 @@ O projeto já possui uma base funcional sólida, com:
 - loading, vazio e erro dedicados na rota de pedidos;
 - melhor responsividade no mobile;
 - **atualização em tempo real** em `/dashboard/pedidos`.
+- toast global para novo pedido aguardando aceite;
+- badge na sidebar em Pedidos;
+- destaque local do card novo com fase forte e fase leve;
+- som de novo pedido no dashboard;
+- deduplicação de toasts;
+- correção de UX para não depender de reload da página.
 
 ### Regras de estoque no fluxo de pedidos
 
@@ -210,6 +216,9 @@ O projeto já possui uma base funcional sólida, com:
 - **atualização em tempo real** da página pública do pedido por canal específico do próprio pedido;
 - painel público `/{slug}/painel` exibindo o pedido mais recente que ficou pronto para retirada;
 - **atualização em tempo real** do painel público.
+- a página pública do pedido agora tem alerta amigável e som suave em mudança real de status;
+- o painel público passou a exibir não só o pedido mais recente pronto, mas também os últimos chamados vindos do sistema;
+- o painel público tem controle de som e o histórico recente agora é persistente por RPC, não mais local ao navegador.
 
 ### Banco de dados
 
@@ -624,6 +633,7 @@ O projeto utiliza Supabase como backend principal.
 * `convert_paid_checkout_session_to_order`
 * `simulate_checkout_payment_success`
 * `transition_order_to_terminal`
+* `get_recent_called_orders_for_store`
 
 ### Migrations
 

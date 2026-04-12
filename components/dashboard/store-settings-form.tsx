@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 
 import {
@@ -15,6 +15,7 @@ import {
   validateStoreSettingsInput,
 } from "@/lib/validation/store-settings";
 import { buildAbsoluteUrlFromOrigin } from "@/lib/public-store-url";
+import { useToast } from "@/components/shared/toast-provider";
 
 type StoreSettingsFormProps = {
   initialValues: StoreSettingsFormValues & {
@@ -28,7 +29,6 @@ type StoreSettingsFormProps = {
 
 const INITIAL_STATE: StoreSettingsActionState = {};
 
-type CopyStatus = "idle" | "ok" | "error";
 type QrDownloadStatus = "idle" | "error";
 
 function normalizeFormValues(values: StoreSettingsFormValues): StoreSettingsFormValues {
@@ -68,11 +68,13 @@ export function StoreSettingsForm({
   const [state, formAction, pending] = useActionState(saveStoreSettingsAction, INITIAL_STATE);
   const [values, setValues] = useState<StoreSettingsFormValues>(initialSnapshot);
   const [savedSnapshot, setSavedSnapshot] = useState<StoreSettingsFormValues>(initialSnapshot);
-  const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
   const [qrDownloadStatus, setQrDownloadStatus] = useState<QrDownloadStatus>("idle");
   const [hideServerFeedback, setHideServerFeedback] = useState(false);
   const [hasPendingRefresh, setHasPendingRefresh] = useState(false);
   const [manualRefreshToken, setManualRefreshToken] = useState(0);
+  const lastToastKeyRef = useRef<string | null>(null);
+  const { enqueueToast } = useToast();
+  const serverFeedbackVisible = !hideServerFeedback;
 
   useEffect(() => {
     if (state?.values) {
@@ -87,6 +89,57 @@ export function StoreSettingsForm({
     setSavedSnapshot(initialSnapshot);
     setValues(initialSnapshot);
   }, [initialSnapshot]);
+
+  useEffect(() => {
+    if (!serverFeedbackVisible) {
+      return;
+    }
+
+    if (!state.error && !state.success) {
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setHideServerFeedback(true);
+    }, 4800);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [serverFeedbackVisible, state.error, state.success]);
+
+  useEffect(() => {
+    if (!state.error && !state.success) {
+      return;
+    }
+
+    if (!serverFeedbackVisible) {
+      return;
+    }
+
+    const nextKey = `${state.error ?? ""}|${state.success ?? ""}`;
+    if (lastToastKeyRef.current === nextKey) {
+      return;
+    }
+
+    lastToastKeyRef.current = nextKey;
+
+    if (state.error) {
+      enqueueToast({
+        tone: "error",
+        title: "Falha ao salvar configuracoes",
+        text: state.error,
+      });
+    }
+
+    if (state.success) {
+      enqueueToast({
+        tone: "success",
+        title: "Configuracoes atualizadas",
+        text: state.success,
+      });
+    }
+  }, [enqueueToast, serverFeedbackVisible, state.error, state.success]);
 
   const readiness = state.readiness ?? initialReadiness;
   const validation = useMemo(
@@ -110,7 +163,6 @@ export function StoreSettingsForm({
   const saveDisabled = pending || !isDirty || hasClientValidationError;
   const isRefreshBlocked = pending || isDirty;
   const acceptsToggleDisabled = pending || (!readiness.isReady && !values.accepts_orders);
-  const serverFeedbackVisible = !hideServerFeedback;
   const canonicalPublicUrl = useMemo(() => {
     if (typeof window === "undefined") {
       return initialValues.public_url;
@@ -135,17 +187,7 @@ export function StoreSettingsForm({
 
   function handleDiscardChanges() {
     setValues(savedSnapshot);
-    setCopyStatus("idle");
     setHideServerFeedback(true);
-  }
-
-  async function handleCopyPublicLink() {
-    try {
-      await navigator.clipboard.writeText(canonicalPublicUrl);
-      setCopyStatus("ok");
-    } catch {
-      setCopyStatus("error");
-    }
   }
 
   function handleDownloadPublicQrCode() {
@@ -171,7 +213,10 @@ export function StoreSettingsForm({
     <form
       action={formAction}
       className="space-y-6 rounded-2xl border border-zinc-200 bg-white/96 p-4 shadow-[0_24px_44px_-34px_rgba(24,24,27,0.55)] sm:p-6"
-      onSubmit={() => setHideServerFeedback(false)}
+      onSubmit={() => {
+        setHideServerFeedback(false);
+        lastToastKeyRef.current = null;
+      }}
     >
       <DashboardSettingsRealtimeSync
         slug={initialValues.slug}
@@ -202,21 +247,6 @@ export function StoreSettingsForm({
         <h2 className="text-sm font-semibold text-zinc-900">Dados básicos da loja</h2>
         <p className="mt-1 text-xs text-zinc-500">Edite nome, telefone e mensagem pública exibida para clientes.</p>
       </div>
-
-      {serverFeedbackVisible && state.error ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
-          {state.error}
-        </p>
-      ) : null}
-
-      {serverFeedbackVisible && state.success ? (
-        <p
-          className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
-          role="status"
-        >
-          {state.success}
-        </p>
-      ) : null}
 
       {forcedAcceptsOrdersOff && !readiness.isReady ? (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -273,40 +303,6 @@ export function StoreSettingsForm({
           />
         </div>
 
-        <div>
-          <label htmlFor="settings-store-public-url" className="block text-sm font-medium text-zinc-800">
-            Link público da loja (somente leitura)
-          </label>
-          <div className="mt-1 flex gap-2">
-            <input
-              id="settings-store-public-url"
-              type="text"
-              readOnly
-              value={initialValues.public_path}
-              className="w-full cursor-not-allowed rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-700"
-            />
-            <button
-              type="button"
-              onClick={handleCopyPublicLink}
-              className="cx-btn-secondary shrink-0 px-3 py-2"
-            >
-              Copiar
-            </button>
-            <a
-              href={canonicalPublicUrl}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="cx-btn-secondary shrink-0 px-3 py-2"
-            >
-              Abrir
-            </a>
-          </div>
-          {copyStatus === "ok" ? <p className="mt-1 text-xs text-emerald-700">Link copiado.</p> : null}
-          {copyStatus === "error" ? (
-            <p className="mt-1 text-xs text-red-700">Não foi possível copiar automaticamente.</p>
-          ) : null}
-        </div>
-
         <div className="sm:col-span-2 rounded-xl border border-zinc-200 bg-zinc-50/85 p-4">
           <p className="text-sm font-medium text-zinc-800">QR Code do cardápio público</p>
           <p className="mt-1 text-xs text-zinc-600">Use para compartilhar o link da loja em balcão, mesa ou embalagem.</p>
@@ -333,15 +329,8 @@ export function StoreSettingsForm({
                 >
                   Baixar QR Code
                 </button>
-                <a
-                  href={canonicalPublicUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="cx-btn-secondary px-3 py-2"
-                >
-                  Abrir destino
-                </a>
               </div>
+              <p className="text-[11px] text-zinc-500">Destino: {initialValues.public_path}</p>
               <p className="text-[11px] text-zinc-500">Arquivo exportado em PNG com nome baseado no slug da loja.</p>
             </div>
           </div>

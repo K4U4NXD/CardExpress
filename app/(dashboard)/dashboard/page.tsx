@@ -1,13 +1,10 @@
-import { CopyButton } from "@/components/layout/copy-button";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { calculateStoreReadiness } from "@/lib/store-readiness";
-import { buildAbsolutePublicStoreUrl, buildPublicStorePath } from "@/lib/public-store-url";
 import { PageHeader } from "@/components/layout/page-header";
 import { DashboardHomeRealtimeSync } from "@/components/dashboard/dashboard-home-realtime-sync";
 import { formatDateTime, formatOrderCode, ORDER_STATUS_BADGE, ORDER_STATUS_LABELS } from "@/lib/orders/presenter";
 import { getTodayRangeInSaoPaulo } from "@/lib/timezone";
 import { formatBRL } from "@/lib/validation/price";
-import { headers } from "next/headers";
 import Link from "next/link";
 import type { OrderStatus } from "@/types";
 
@@ -52,7 +49,6 @@ function statusLabel(acceptsOrders: boolean, isReady: boolean) {
 
 export default async function DashboardHomePage() {
   const supabase = await createServerSupabaseClient();
-  const requestHeaders = await headers();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -239,8 +235,6 @@ export default async function DashboardHomePage() {
     }
   }
 
-  const publicStorePath = store ? buildPublicStorePath(store.slug) : null;
-  const publicStoreUrl = publicStorePath ? buildAbsolutePublicStoreUrl(publicStorePath, requestHeaders) : null;
   const operationStatus = statusLabel(acceptsOrders, readiness?.isReady ?? false);
 
   return (
@@ -472,27 +466,6 @@ export default async function DashboardHomePage() {
                 </section>
               ) : null}
 
-              <section className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50/80 p-4 shadow-sm sm:p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Link público</p>
-                <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
-                  <span className="max-w-full truncate rounded-xl border border-zinc-200 bg-zinc-100 px-2.5 py-2 text-sm text-zinc-700">
-                    {publicStorePath}
-                  </span>
-                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                    {publicStoreUrl ? <CopyButton text={publicStoreUrl} /> : null}
-                    {publicStoreUrl ? (
-                      <a
-                        href={publicStoreUrl}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="cx-btn-secondary px-3 py-2"
-                      >
-                        Abrir cardápio público
-                      </a>
-                    ) : null}
-                  </div>
-                </div>
-              </section>
             </div>
           )}
         </div>

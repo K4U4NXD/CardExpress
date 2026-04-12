@@ -9,6 +9,7 @@ import {
   readPublicCartFromStorage,
   writePublicCartToStorage,
 } from "@/lib/public/cart";
+import { reconcileCartWithMenu } from "@/lib/public/cart-reconcile";
 import { formatBRL } from "@/lib/validation/price";
 import type { PublicCartItem, PublicMenuRpcRow } from "@/types";
 
@@ -41,20 +42,9 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
   const [activeCategory, setActiveCategory] = useState<string>("todos");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const productById = useMemo(() => {
-    const map = new Map<string, MenuProduct>();
-
-    for (const section of sections) {
-      for (const product of section.products) {
-        map.set(product.id, product);
-      }
-    }
-
-    return map;
-  }, [sections]);
-
   const [cartItems, setCartItems] = useState<PublicCartItem[]>([]);
   const [hasHydratedCart, setHasHydratedCart] = useState(false);
+  const [cartSyncMessage, setCartSyncMessage] = useState<string | null>(null);
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
 
   const categoryFilters = useMemo(
@@ -89,13 +79,22 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
 
     const loaded = readPublicCartFromStorage(cartStorageKey);
 
-    const sanitized = loaded
-      .filter((item) => productById.has(item.product_id))
-      .map((item) => ({ ...item, quantity: Math.max(1, Math.floor(item.quantity)) }));
+    const reconciled = reconcileCartWithMenu(loaded, menuRows, acceptsOrders);
 
-    setCartItems(sanitized);
+    setCartItems(reconciled.items);
+
+    if (reconciled.removedCount > 0) {
+      setCartSyncMessage("Alguns itens deixaram de estar disponíveis e foram removidos do seu pedido.");
+    } else if (reconciled.priceUpdatedCount > 0) {
+      setCartSyncMessage("O preço de alguns itens foi atualizado.");
+    } else if (reconciled.updatedCount > 0) {
+      setCartSyncMessage("Seu carrinho foi atualizado com base no cardápio atual.");
+    } else {
+      setCartSyncMessage(null);
+    }
+
     setHasHydratedCart(true);
-  }, [cartStorageKey, productById]);
+  }, [acceptsOrders, cartStorageKey, menuRows]);
 
   useEffect(() => {
     if (!hasHydratedCart) {
@@ -242,6 +241,12 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
               })}
               </div>
             </div>
+
+            {cartSyncMessage ? (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="status">
+                {cartSyncMessage}
+              </p>
+            ) : null}
           </div>
         </section>
       ) : null}
@@ -400,7 +405,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
         </div>
 
         {!acceptsOrders ? (
-          <p className="mx-auto max-w-4xl px-4 pb-2 text-[11px] text-amber-700 sm:px-6">Pedidos pausados temporariamente pelo estabelecimento.</p>
+          <p className="mx-auto max-w-4xl px-4 pb-2 text-[11px] text-amber-700 sm:px-6">A loja pausou temporariamente os pedidos.</p>
         ) : null}
       </div>
     </div>

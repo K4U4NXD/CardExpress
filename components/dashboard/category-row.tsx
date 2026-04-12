@@ -7,16 +7,28 @@ import {
   updateCategoryNameAction,
 } from "@/app/actions/categories";
 import type { Category } from "@/types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type CategoryRowProps = {
   category: Category;
+  onEditingChange?: (categoryId: string, isEditing: boolean) => void;
   isFirst: boolean;
   isLast: boolean;
 };
 
-export function CategoryRow({ category, isFirst, isLast }: CategoryRowProps) {
+export function CategoryRow({ category, onEditingChange, isFirst, isLast }: CategoryRowProps) {
   const [editing, setEditing] = useState(false);
+
+  const setEditingState = (isEditing: boolean) => {
+    setEditing(isEditing);
+    onEditingChange?.(category.id, isEditing);
+  };
+
+  useEffect(() => {
+    return () => {
+      onEditingChange?.(category.id, false);
+    };
+  }, [category.id, onEditingChange]);
 
   return (
     <div className="flex flex-col gap-2.5 rounded-xl border border-zinc-200/80 bg-zinc-50/65 p-3 sm:gap-3 sm:p-3.5 sm:flex-row sm:items-center sm:justify-between">
@@ -45,7 +57,7 @@ export function CategoryRow({ category, isFirst, isLast }: CategoryRowProps) {
               </button>
               <button
                 type="button"
-                onClick={() => setEditing(false)}
+                onClick={() => setEditingState(false)}
                 className="cx-btn-secondary px-3 py-1.5 text-xs sm:text-sm"
               >
                 Cancelar
@@ -72,7 +84,7 @@ export function CategoryRow({ category, isFirst, isLast }: CategoryRowProps) {
           <div className="grid grid-cols-2 gap-1.5">
             <button
               type="button"
-              onClick={() => setEditing(true)}
+              onClick={() => setEditingState(true)}
               className="cx-btn-secondary w-full justify-center px-2.5 py-1.5 text-xs"
             >
               Editar
@@ -144,7 +156,7 @@ export function CategoryRow({ category, isFirst, isLast }: CategoryRowProps) {
           <>
             <button
               type="button"
-              onClick={() => setEditing(true)}
+              onClick={() => setEditingState(true)}
               className="cx-btn-secondary px-3 py-1.5"
             >
               Editar

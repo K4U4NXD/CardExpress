@@ -9,13 +9,14 @@ import {
 } from "@/app/actions/products";
 import { formatBRL, formatPriceForInput } from "@/lib/validation/price";
 import type { Product } from "@/types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { CategoryOption } from "./create-product-form";
 
 type ProductRowProps = {
   product: Product;
   categoryName: string;
   categoryOptions: CategoryOption[];
+  onEditingChange?: (productId: string, isEditing: boolean) => void;
   isFirst: boolean;
   isLast: boolean;
 };
@@ -24,11 +25,24 @@ export function ProductRow({
   product,
   categoryName,
   categoryOptions,
+  onEditingChange,
   isFirst,
   isLast,
 }: ProductRowProps) {
   const [editing, setEditing] = useState(false);
   const [trackStock, setTrackStock] = useState(product.track_stock);
+
+  const setEditingState = (isEditing: boolean) => {
+    setEditing(isEditing);
+    onEditingChange?.(product.id, isEditing);
+  };
+
+  useEffect(() => {
+    return () => {
+      onEditingChange?.(product.id, false);
+    };
+  }, [onEditingChange, product.id]);
+
   const isVisibleOnPublicMenu =
     product.is_active && product.is_available && (!product.track_stock || product.stock_quantity > 0);
   const isLowStock = product.track_stock && product.stock_quantity > 0 && product.stock_quantity <= 5;
@@ -111,7 +125,7 @@ export function ProductRow({
                 type="button"
                 onClick={() => {
                   setTrackStock(product.track_stock);
-                  setEditing(true);
+                  setEditingState(true);
                 }}
                 className="cx-btn-secondary px-2.5 py-1.5 text-xs"
               >
@@ -183,7 +197,7 @@ export function ProductRow({
                   type="button"
                   onClick={() => {
                     setTrackStock(product.track_stock);
-                    setEditing(true);
+                    setEditingState(true);
                   }}
                   className="cx-btn-secondary px-3 py-2"
                 >
@@ -367,7 +381,7 @@ export function ProductRow({
             </button>
             <button
               type="button"
-              onClick={() => setEditing(false)}
+              onClick={() => setEditingState(false)}
               className="cx-btn-secondary px-3 py-2"
             >
               Cancelar

@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { PublicCheckoutClient } from "@/components/public/public-checkout-client";
+import { PublicMenuRealtimeSync } from "@/components/public/public-menu-realtime-sync";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { PublicMenuRpcRow, PublicStoreRpcRow } from "@/types";
 import { notFound } from "next/navigation";
@@ -73,9 +74,16 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
           {store.public_message ? (
             <p className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700">{store.public_message}</p>
           ) : null}
+
+          <PublicMenuRealtimeSync slug={store.slug} className="mt-4" />
         </section>
 
-        <PublicCheckoutClient slug={store.slug} storeName={store.name} acceptsOrders={canAcceptPublicOrders} />
+        <PublicCheckoutClient
+          slug={store.slug}
+          storeName={store.name}
+          acceptsOrders={canAcceptPublicOrders}
+          menuRows={menuRows}
+        />
       </div>
     </>
   );

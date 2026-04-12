@@ -5,13 +5,13 @@ import type { Category } from "@/types";
 
 const AVISOS: Record<string, string> = {
   criada: "Categoria criada com sucesso.",
-  "nome-atualizado": "Nome da categoria atualizado.",
-  "estado-alterado": "Status da categoria atualizado.",
-  reordenada: "Ordem das categorias atualizada.",
+  "nome-atualizado": "Categoria atualizada com sucesso.",
+  "estado-alterado": "Categoria atualizada com sucesso.",
+  reordenada: "Categoria reordenada.",
   excluida: "Categoria excluída com sucesso.",
   "erro-nome": "Informe um nome válido para salvar.",
   "erro-loja": "Não foi possível identificar sua loja.",
-  "erro-permissao": "Categoria não encontrada ou você não tem permissão.",
+  "erro-permissao": "Não foi possível concluir a ação. Tente novamente.",
 };
 
 type PageProps = {
@@ -76,5 +76,12 @@ export default async function DashboardCategoriesPage({ searchParams }: PageProp
     );
   }
 
-  return <DashboardCategoriesView categories={categories} avisoText={avisoText} erroText={erroText} />;
+  return (
+    <DashboardCategoriesView
+      storeId={store.id}
+      categories={categories}
+      avisoText={avisoText}
+      erroText={erroText}
+    />
+  );
 }

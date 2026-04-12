@@ -9,12 +9,15 @@ import {
   clearPublicCartFromStorage,
   getPublicCartStorageKey,
   readPublicCartFromStorage,
+  writePublicCartToStorage,
 } from "@/lib/public/cart";
+import { reconcileCartWithMenu } from "@/lib/public/cart-reconcile";
 import { formatDateTime } from "@/lib/orders/presenter";
 import { formatBRL } from "@/lib/validation/price";
 import type {
   CheckoutRpcItemInput,
   CreateCheckoutSessionRpcRow,
+  PublicMenuRpcRow,
   PublicCheckoutCartItem,
   SimulateCheckoutPaymentSuccessRpcRow,
 } from "@/types";
@@ -23,14 +26,16 @@ type PublicCheckoutClientProps = {
   slug: string;
   storeName: string;
   acceptsOrders: boolean;
+  menuRows: PublicMenuRpcRow[];
 };
 
-export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicCheckoutClientProps) {
+export function PublicCheckoutClient({ slug, storeName, acceptsOrders, menuRows }: PublicCheckoutClientProps) {
   const router = useRouter();
   const cartStorageKey = getPublicCartStorageKey(slug);
   const customerStorageKey = `${cartStorageKey}:customer`;
 
   const [cartItems, setCartItems] = useState<PublicCheckoutCartItem[]>([]);
+  const [cartSyncMessage, setCartSyncMessage] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
@@ -41,8 +46,35 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
   const [success, setSuccess] = useState<CreateCheckoutSessionRpcRow | null>(null);
 
   useEffect(() => {
-    setCartItems(normalizeCheckoutItems(readPublicCartFromStorage(cartStorageKey)));
-  }, [cartStorageKey]);
+    const loaded = readPublicCartFromStorage(cartStorageKey);
+    const reconciled = reconcileCartWithMenu(loaded, menuRows, acceptsOrders);
+    const normalized = normalizeCheckoutItems(reconciled.items);
+
+    setCartItems(normalized);
+
+    if (!normalized.length) {
+      clearPublicCartFromStorage(cartStorageKey);
+    } else {
+      writePublicCartToStorage(cartStorageKey, normalized);
+    }
+
+    if (reconciled.removedCount > 0) {
+      setCartSyncMessage("Alguns itens deixaram de estar disponíveis e foram removidos do seu pedido.");
+      return;
+    }
+
+    if (reconciled.priceUpdatedCount > 0) {
+      setCartSyncMessage("O preço de alguns itens foi atualizado.");
+      return;
+    }
+
+    if (reconciled.updatedCount > 0) {
+      setCartSyncMessage("Seu carrinho foi atualizado com base no cardápio atual.");
+      return;
+    }
+
+    setCartSyncMessage(null);
+  }, [acceptsOrders, cartStorageKey, menuRows]);
 
   useEffect(() => {
     try {
@@ -98,7 +130,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
     phoneIsValid &&
     !isSubmitting;
   const submitHint = !acceptsOrders
-    ? "A loja pausou os pedidos no momento."
+    ? "A loja pausou temporariamente os pedidos."
     : totalItems <= 0
       ? "Adicione itens no cardapio para continuar."
       : !customerNameTrimmed
@@ -114,7 +146,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
     setErrorMessage(null);
 
     if (!acceptsOrders) {
-      setErrorMessage("Esta loja nao esta aceitando pedidos no momento.");
+      setErrorMessage("A loja pausou temporariamente os pedidos.");
       return;
     }
 
@@ -287,6 +319,12 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
         </div>
         <p className="mt-1 text-xs text-zinc-500">Confira os itens antes de criar a sessao de checkout.</p>
 
+        {cartSyncMessage ? (
+          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
+            {cartSyncMessage}
+          </p>
+        ) : null}
+
         {cartItems.length > 0 ? (
           <div className="mt-4 space-y-3">
             {cartItems.map((item) => (
@@ -381,7 +419,7 @@ export function PublicCheckoutClient({ slug, storeName, acceptsOrders }: PublicC
           </div>
 
           {!acceptsOrders ? (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">A loja nao esta aceitando pedidos no momento.</p>
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">A loja pausou temporariamente os pedidos.</p>
           ) : null}
 
           {errorMessage ? (

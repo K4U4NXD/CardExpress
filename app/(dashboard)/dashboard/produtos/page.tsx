@@ -5,16 +5,16 @@ import type { Category, Product } from "@/types";
 
 const AVISOS: Record<string, string> = {
   criado: "Produto criado com sucesso.",
-  atualizado: "Produto atualizado.",
-  desativado: "Produto desativado.",
-  ativado: "Produto ativado.",
-  "venda-pausada": "Venda do produto pausada.",
-  "venda-liberada": "Produto disponibilizado para venda.",
-  reordenado: "Ordem dos produtos atualizada.",
+  atualizado: "Produto atualizado com sucesso.",
+  desativado: "Produto desativado com sucesso.",
+  ativado: "Produto ativado com sucesso.",
+  "venda-pausada": "Venda do produto pausada com sucesso.",
+  "venda-liberada": "Venda do produto liberada com sucesso.",
+  reordenado: "Produto reordenado.",
   excluido: "Produto excluído com sucesso.",
   "erro-campos": "Preencha nome, preço e categoria.",
   "erro-loja": "Não foi possível identificar sua loja.",
-  "erro-permissao": "Produto não encontrado ou sem permissão.",
+  "erro-permissao": "Não foi possível concluir a ação. Tente novamente.",
 };
 
 type PageProps = {
@@ -91,6 +91,12 @@ export default async function DashboardProductsPage({ searchParams }: PageProps)
   }
 
   return (
-    <DashboardProductsView categories={categories} products={products} avisoText={avisoText} erroText={erroText} />
+    <DashboardProductsView
+      storeId={store.id}
+      categories={categories}
+      products={products}
+      avisoText={avisoText}
+      erroText={erroText}
+    />
   );
 }

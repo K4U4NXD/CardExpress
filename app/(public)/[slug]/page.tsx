@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/layout/page-header";
+import { PublicMenuRealtimeSync } from "@/components/public/public-menu-realtime-sync";
 import { PublicStoreMenuClient } from "@/components/public/public-store-menu-client";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { PublicMenuRpcRow, PublicStoreRpcRow } from "@/types";
@@ -67,6 +68,8 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
           {store.public_message ? (
             <p className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700">{store.public_message}</p>
           ) : null}
+
+          <PublicMenuRealtimeSync slug={store.slug} className="mt-4" />
         </section>
 
         <div className="pb-24 sm:pb-20">

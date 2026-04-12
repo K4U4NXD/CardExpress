@@ -43,7 +43,7 @@ function mapUnknownError(error: unknown): string {
   if (error && typeof error === "object" && "message" in error) {
     return formatPostgrestError(error as { message?: string; code?: string; details?: string });
   }
-  return "Não foi possível salvar as configurações da loja.";
+  return "Não foi possível concluir a ação. Tente novamente.";
 }
 
 export async function saveStoreSettingsAction(

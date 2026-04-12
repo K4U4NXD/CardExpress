@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 
+import { DashboardProductsRealtimeSync } from "@/components/dashboard/dashboard-products-realtime-sync";
 import { CreateProductForm } from "@/components/dashboard/create-product-form";
 import { ProductRow } from "@/components/dashboard/product-row";
 import { PageHeader } from "@/components/layout/page-header";
 import type { Category, Product } from "@/types";
 
 type DashboardProductsViewProps = {
+  storeId: string;
   categories: Category[];
   products: Product[];
   avisoText: string | null;
@@ -15,6 +17,7 @@ type DashboardProductsViewProps = {
 };
 
 export function DashboardProductsView({
+  storeId,
   categories,
   products,
   avisoText,
@@ -53,6 +56,8 @@ export function DashboardProductsView({
       />
 
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+        <DashboardProductsRealtimeSync storeId={storeId} className="mb-3" />
+
         {erroText ? (
           <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
             {erroText}

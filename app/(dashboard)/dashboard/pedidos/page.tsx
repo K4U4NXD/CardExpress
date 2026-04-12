@@ -6,13 +6,13 @@ import type { Order, OrderItem, OrderStatus } from "@/types";
 import Link from "next/link";
 
 const AVISOS: Record<string, string> = {
-  em_preparo: "Pedido aceito: movido para preparo.",
-  recusado: "Pedido recusado.",
-  cancelado: "Pedido cancelado durante o preparo.",
-  pronto_para_retirada: "Pedido marcado como pronto.",
-  finalizado: "Pedido finalizado.",
+  em_preparo: "Pedido aceito e enviado para preparo.",
+  recusado: "Pedido recusado e estoque devolvido.",
+  cancelado: "Pedido cancelado e estoque devolvido.",
+  pronto_para_retirada: "Pedido marcado como pronto para retirada.",
+  finalizado: "Pedido finalizado com sucesso.",
   "erro-loja": "Não foi possível identificar sua loja.",
-  "erro-pedido": "Pedido não encontrado ou sem permissão.",
+  "erro-pedido": "Não foi possível concluir a ação. Tente novamente.",
 };
 
 const ACTIVE_STATUSES: OrderStatus[] = ["aguardando_aceite", "em_preparo", "pronto_para_retirada"];

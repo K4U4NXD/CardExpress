@@ -8,6 +8,7 @@ import {
   type StoreSettingsActionState,
   type StoreSettingsFormValues,
 } from "@/app/actions/store-settings";
+import { DashboardSettingsRealtimeSync } from "@/components/dashboard/dashboard-settings-realtime-sync";
 import type { StoreReadinessResult } from "@/lib/store-readiness";
 import {
   STORE_PUBLIC_MESSAGE_MAX_LENGTH,
@@ -70,6 +71,8 @@ export function StoreSettingsForm({
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
   const [qrDownloadStatus, setQrDownloadStatus] = useState<QrDownloadStatus>("idle");
   const [hideServerFeedback, setHideServerFeedback] = useState(false);
+  const [hasPendingRefresh, setHasPendingRefresh] = useState(false);
+  const [manualRefreshToken, setManualRefreshToken] = useState(0);
 
   useEffect(() => {
     if (state?.values) {
@@ -105,6 +108,7 @@ export function StoreSettingsForm({
   const hasClientValidationError =
     validation.hasErrors || Boolean(readinessToggleError);
   const saveDisabled = pending || !isDirty || hasClientValidationError;
+  const isRefreshBlocked = pending || isDirty;
   const acceptsToggleDisabled = pending || (!readiness.isReady && !values.accepts_orders);
   const serverFeedbackVisible = !hideServerFeedback;
   const canonicalPublicUrl = useMemo(() => {
@@ -169,6 +173,31 @@ export function StoreSettingsForm({
       className="space-y-6 rounded-2xl border border-zinc-200 bg-white/96 p-4 shadow-[0_24px_44px_-34px_rgba(24,24,27,0.55)] sm:p-6"
       onSubmit={() => setHideServerFeedback(false)}
     >
+      <DashboardSettingsRealtimeSync
+        slug={initialValues.slug}
+        blockAutoRefresh={isRefreshBlocked}
+        refreshNowToken={manualRefreshToken}
+        onPendingRefreshChange={setHasPendingRefresh}
+      />
+
+      {hasPendingRefresh ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p>Há atualizações nesta página.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setHasPendingRefresh(false);
+                setManualRefreshToken((value) => value + 1);
+              }}
+              className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
+            >
+              Atualizar agora
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div>
         <h2 className="text-sm font-semibold text-zinc-900">Dados básicos da loja</h2>
         <p className="mt-1 text-xs text-zinc-500">Edite nome, telefone e mensagem pública exibida para clientes.</p>

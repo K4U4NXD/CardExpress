@@ -4,20 +4,20 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { getRealtimeConnectionLabel, useRealtimeRefresh } from "@/components/shared/use-realtime-refresh";
 import { useCallback } from "react";
 
-type PublicPanelRealtimeSyncProps = {
+type PublicMenuRealtimeSyncProps = {
   slug: string;
   className?: string;
 };
 
 const REFRESH_DEBOUNCE_MS = 700;
 
-export function PublicPanelRealtimeSync({ slug, className }: PublicPanelRealtimeSyncProps) {
+export function PublicMenuRealtimeSync({ slug, className }: PublicMenuRealtimeSyncProps) {
   const subscribe = useCallback(({ onSignal, onChannelStatus }: { onSignal: () => void; onChannelStatus: (status: string) => void }) => {
     const supabase = createBrowserSupabaseClient();
 
     const channel = supabase
-      .channel(`public:panel:${slug}`)
-      .on("broadcast", { event: "panel_refresh" }, onSignal)
+      .channel(`public:menu:${slug}`)
+      .on("broadcast", { event: "menu_refresh" }, onSignal)
       .subscribe(onChannelStatus);
 
     return () => {
@@ -30,7 +30,7 @@ export function PublicPanelRealtimeSync({ slug, className }: PublicPanelRealtime
     debounceMs: REFRESH_DEBOUNCE_MS,
   });
 
-  const mergedClassName = ["text-[11px] leading-4 text-zinc-400", className].filter(Boolean).join(" ");
+  const mergedClassName = ["text-[11px] leading-4 text-zinc-500", className].filter(Boolean).join(" ");
 
   return (
     <p className={mergedClassName} aria-live="polite">

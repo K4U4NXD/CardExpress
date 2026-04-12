@@ -4,16 +4,18 @@ import { useState } from "react";
 
 import { CategoryRow } from "@/components/dashboard/category-row";
 import { CreateCategoryForm } from "@/components/dashboard/create-category-form";
+import { DashboardProductsRealtimeSync } from "@/components/dashboard/dashboard-products-realtime-sync";
 import { PageHeader } from "@/components/layout/page-header";
 import type { Category } from "@/types";
 
 type DashboardCategoriesViewProps = {
+  storeId: string;
   categories: Category[];
   avisoText: string | null;
   erroText: string | null;
 };
 
-export function DashboardCategoriesView({ categories, avisoText, erroText }: DashboardCategoriesViewProps) {
+export function DashboardCategoriesView({ storeId, categories, avisoText, erroText }: DashboardCategoriesViewProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
@@ -37,6 +39,8 @@ export function DashboardCategoriesView({ categories, avisoText, erroText }: Das
       />
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        <DashboardProductsRealtimeSync storeId={storeId} className="mb-3" />
+
         {erroText ? (
           <p
             className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"

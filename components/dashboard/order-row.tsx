@@ -2,6 +2,7 @@
 
 import {
   acceptOrderAction,
+  cancelOrderAction,
   finalizeOrderAction,
   markReadyAction,
   rejectOrderAction,
@@ -35,7 +36,7 @@ type ActionButtonProps = {
 };
 
 type OrderAction = {
-  key: "accept" | "reject" | "ready" | "finalize";
+  key: "accept" | "reject" | "ready" | "cancel" | "finalize";
   label: string;
   action: (formData: FormData) => Promise<void>;
   className: string;
@@ -70,6 +71,7 @@ export function OrderRow({ order }: OrderRowProps) {
     pronto_para_retirada: "border-l-emerald-400",
     finalizado: "border-l-zinc-300",
     recusado: "border-l-rose-300",
+    cancelado: "border-l-orange-300",
   };
 
   const actionsByStatus: Record<Order["status"], OrderAction[]> = {
@@ -96,6 +98,13 @@ export function OrderRow({ order }: OrderRowProps) {
         className:
           "rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50",
       },
+      {
+        key: "cancel",
+        label: "Cancelar pedido",
+        action: cancelOrderAction,
+        className:
+          "rounded-xl border border-orange-200 bg-white px-3 py-2 text-sm font-medium text-orange-800 transition hover:bg-orange-50",
+      },
     ],
     pronto_para_retirada: [
       {
@@ -108,6 +117,7 @@ export function OrderRow({ order }: OrderRowProps) {
     ],
     finalizado: [],
     recusado: [],
+    cancelado: [],
   };
 
   const actions = actionsByStatus[order.status];
@@ -119,6 +129,7 @@ export function OrderRow({ order }: OrderRowProps) {
     { label: "Pronto", value: order.ready_at },
     { label: "Finalizado", value: order.finalized_at },
     { label: "Recusado", value: order.rejected_at },
+    { label: "Cancelado", value: order.cancelled_at },
     { label: "Atualizado", value: order.updated_at, always: true },
   ];
 

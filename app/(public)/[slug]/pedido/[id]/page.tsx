@@ -28,6 +28,7 @@ type PublicOrderRow = {
   ready_at: string | null;
   finalized_at: string | null;
   rejected_at: string | null;
+  cancelled_at: string | null;
   total_amount: number;
   note: string | null;
 };
@@ -66,7 +67,7 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
   const statusLabel = ORDER_STATUS_LABELS[order.status];
   const statusBadge = ORDER_STATUS_BADGE[order.status];
   const refundLabel = REFUND_STATUS_LABELS[order.refund_status];
-  const isTerminalStatus = order.status === "finalizado" || order.status === "recusado";
+  const isTerminalStatus = order.status === "finalizado" || order.status === "recusado" || order.status === "cancelado";
 
   return (
     <>
@@ -119,6 +120,9 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
             </p>
             <p>
               Recusado: <span className="text-zinc-900">{formatDateTime(order.rejected_at)}</span>
+            </p>
+            <p>
+              Cancelado: <span className="text-zinc-900">{formatDateTime(order.cancelled_at)}</span>
             </p>
           </div>
         </div>

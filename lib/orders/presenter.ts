@@ -6,6 +6,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   pronto_para_retirada: "Pronto para retirada",
   finalizado: "Finalizado",
   recusado: "Recusado",
+  cancelado: "Cancelado",
 };
 
 export const ORDER_STATUS_BADGE: Record<OrderStatus, string> = {
@@ -14,6 +15,7 @@ export const ORDER_STATUS_BADGE: Record<OrderStatus, string> = {
   pronto_para_retirada: "bg-emerald-100 text-emerald-800",
   finalizado: "bg-zinc-200 text-zinc-700",
   recusado: "bg-rose-100 text-rose-800",
+  cancelado: "bg-orange-100 text-orange-800",
 };
 
 export const REFUND_STATUS_LABELS: Record<RefundStatus, string> = {

@@ -8,6 +8,7 @@ import Link from "next/link";
 const AVISOS: Record<string, string> = {
   em_preparo: "Pedido aceito: movido para preparo.",
   recusado: "Pedido recusado.",
+  cancelado: "Pedido cancelado durante o preparo.",
   pronto_para_retirada: "Pedido marcado como pronto.",
   finalizado: "Pedido finalizado.",
   "erro-loja": "Não foi possível identificar sua loja.",
@@ -15,15 +16,16 @@ const AVISOS: Record<string, string> = {
 };
 
 const ACTIVE_STATUSES: OrderStatus[] = ["aguardando_aceite", "em_preparo", "pronto_para_retirada"];
-const HISTORICAL_STATUSES: OrderStatus[] = ["finalizado", "recusado"];
+const HISTORICAL_STATUSES: OrderStatus[] = ["finalizado", "recusado", "cancelado"];
 const ALL_DASHBOARD_STATUSES: OrderStatus[] = [...ACTIVE_STATUSES, ...HISTORICAL_STATUSES];
 
-type OrdersScopeFilter = "ativos" | "finalizados" | "recusados" | "todos";
+type OrdersScopeFilter = "ativos" | "finalizados" | "recusados" | "cancelados" | "todos";
 
 const SCOPE_FILTERS: Array<{ value: OrdersScopeFilter; label: string }> = [
   { value: "ativos", label: "Ativos" },
   { value: "finalizados", label: "Finalizados" },
   { value: "recusados", label: "Recusados" },
+  { value: "cancelados", label: "Cancelados" },
   { value: "todos", label: "Todos" },
 ];
 
@@ -31,6 +33,7 @@ const SCOPE_LABELS: Record<OrdersScopeFilter, string> = {
   ativos: "fila operacional",
   finalizados: "historico de finalizados",
   recusados: "historico de recusados",
+  cancelados: "historico de cancelados",
   todos: "visao geral",
 };
 
@@ -46,7 +49,7 @@ function EmptyOrdersIcon() {
 }
 
 function parseScopeFilter(value: string | undefined): OrdersScopeFilter {
-  if (value === "finalizados" || value === "recusados" || value === "todos") {
+  if (value === "finalizados" || value === "recusados" || value === "cancelados" || value === "todos") {
     return value;
   }
   return "ativos";
@@ -55,6 +58,7 @@ function parseScopeFilter(value: string | undefined): OrdersScopeFilter {
 function statusesForScope(scope: OrdersScopeFilter): OrderStatus[] {
   if (scope === "finalizados") return ["finalizado"];
   if (scope === "recusados") return ["recusado"];
+  if (scope === "cancelados") return ["cancelado"];
   if (scope === "todos") return ALL_DASHBOARD_STATUSES;
   return ACTIVE_STATUSES;
 }
@@ -77,6 +81,12 @@ function applyScopeOrdering<T extends OrderableQuery<T>>(query: T, scope: Orders
   if (scope === "recusados") {
     return query
       .order("rejected_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false });
+  }
+
+  if (scope === "cancelados") {
+    return query
+      .order("cancelled_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false });
   }
 
@@ -103,7 +113,7 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
 
   if (store) {
     const baseSelect =
-      "id, store_id, order_number, display_code, status, refund_status, total_amount, note, customer_name, customer_phone, placed_at, accepted_at, ready_at, finalized_at, rejected_at, created_at, updated_at";
+      "id, store_id, order_number, display_code, status, refund_status, total_amount, note, customer_name, customer_phone, placed_at, accepted_at, ready_at, finalized_at, rejected_at, cancelled_at, created_at, updated_at";
 
     const withItemsQuery = applyScopeOrdering(
       supabase

@@ -15,6 +15,7 @@ const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pronto_para_retirada: ["finalizado"],
   finalizado: [],
   recusado: [],
+  cancelado: [],
 };
 
 type MinimalOrder = {
@@ -50,6 +51,42 @@ async function loadOwnedOrder(storeId: string, orderId: string) {
 
 function redirectWithMessage(message: string) {
   redirect(`${PATH}?${message}`);
+}
+
+function revalidateOrderPaths(storeSlug: string, orderId: string) {
+  revalidatePath(PATH);
+  revalidatePath("/dashboard");
+  revalidatePath(`/${storeSlug}`);
+  revalidatePath(`/${storeSlug}/painel`);
+  revalidatePath(`/${storeSlug}/pedido/${orderId}`);
+}
+
+async function transitionOrderToTerminal(orderId: string, targetStatus: "recusado" | "cancelado") {
+  const { store } = await getUserStore();
+  if (!store) {
+    redirectWithMessage("erro=erro-loja");
+  }
+
+  const { order, error } = await loadOwnedOrder(store!.id, orderId);
+  if (error) {
+    redirectWithMessage(`erro=${encodeURIComponent(error)}`);
+  }
+  if (!order) {
+    redirectWithMessage("erro=erro-pedido");
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { error: rpcError } = await supabase.rpc("transition_order_to_terminal", {
+    p_order_id: order!.id,
+    p_target_status: targetStatus,
+  });
+
+  if (rpcError) {
+    redirectWithMessage(`erro=${encodeURIComponent(formatPostgrestError(rpcError))}`);
+  }
+
+  revalidateOrderPaths(store!.slug, order!.id);
+  redirectWithMessage(`aviso=${encodeURIComponent(targetStatus)}`);
 }
 
 async function performTransition(
@@ -113,7 +150,13 @@ export async function acceptOrderAction(formData: FormData) {
 export async function rejectOrderAction(formData: FormData) {
   const orderId = String(formData.get("order_id") ?? "").trim();
   if (!orderId) redirectWithMessage("erro=erro-pedido");
-  await performTransition(orderId, "recusado", { timestampField: "rejected_at", refundStatus: "pendente" });
+  await transitionOrderToTerminal(orderId, "recusado");
+}
+
+export async function cancelOrderAction(formData: FormData) {
+  const orderId = String(formData.get("order_id") ?? "").trim();
+  if (!orderId) redirectWithMessage("erro=erro-pedido");
+  await transitionOrderToTerminal(orderId, "cancelado");
 }
 
 export async function markReadyAction(formData: FormData) {

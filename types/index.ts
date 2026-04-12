@@ -56,7 +56,8 @@ export type OrderStatus =
   | "em_preparo"
   | "pronto_para_retirada"
   | "finalizado"
-  | "recusado";
+  | "recusado"
+  | "cancelado";
 
 /** Status separado para reembolso (não mistura com o status operacional). */
 export type RefundStatus = "none" | "pendente" | "reembolsado" | "falhou";
@@ -79,6 +80,7 @@ export type Order = {
   ready_at: string | null;
   finalized_at: string | null;
   rejected_at: string | null;
+  cancelled_at: string | null;
   created_at: string;
   updated_at: string;
 };

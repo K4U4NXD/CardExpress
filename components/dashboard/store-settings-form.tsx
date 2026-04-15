@@ -72,7 +72,8 @@ export function StoreSettingsForm({
   const [hideServerFeedback, setHideServerFeedback] = useState(false);
   const [hasPendingRefresh, setHasPendingRefresh] = useState(false);
   const [manualRefreshToken, setManualRefreshToken] = useState(0);
-  const lastToastKeyRef = useRef<string | null>(null);
+  const submitAttemptRef = useRef(0);
+  const toastedSubmitAttemptRef = useRef(0);
   const { enqueueToast } = useToast();
   const serverFeedbackVisible = !hideServerFeedback;
 
@@ -113,21 +114,24 @@ export function StoreSettingsForm({
       return;
     }
 
-    if (!serverFeedbackVisible) {
+    if (pending) {
       return;
     }
 
-    const nextKey = `${state.error ?? ""}|${state.success ?? ""}`;
-    if (lastToastKeyRef.current === nextKey) {
+    if (submitAttemptRef.current === 0) {
       return;
     }
 
-    lastToastKeyRef.current = nextKey;
+    if (toastedSubmitAttemptRef.current === submitAttemptRef.current) {
+      return;
+    }
+
+    toastedSubmitAttemptRef.current = submitAttemptRef.current;
 
     if (state.error) {
       enqueueToast({
         tone: "error",
-        title: "Falha ao salvar configuracoes",
+        title: "Falha ao salvar configurações",
         text: state.error,
       });
     }
@@ -135,11 +139,11 @@ export function StoreSettingsForm({
     if (state.success) {
       enqueueToast({
         tone: "success",
-        title: "Configuracoes atualizadas",
+        title: "Configurações atualizadas",
         text: state.success,
       });
     }
-  }, [enqueueToast, serverFeedbackVisible, state.error, state.success]);
+  }, [enqueueToast, pending, state.error, state.success]);
 
   const readiness = state.readiness ?? initialReadiness;
   const validation = useMemo(
@@ -214,8 +218,8 @@ export function StoreSettingsForm({
       action={formAction}
       className="space-y-6 rounded-2xl border border-zinc-200 bg-white/96 p-4 shadow-[0_24px_44px_-34px_rgba(24,24,27,0.55)] sm:p-6"
       onSubmit={() => {
+        submitAttemptRef.current += 1;
         setHideServerFeedback(false);
-        lastToastKeyRef.current = null;
       }}
     >
       <DashboardSettingsRealtimeSync

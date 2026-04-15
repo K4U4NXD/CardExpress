@@ -1,6 +1,8 @@
 import { PageHeader } from "@/components/layout/page-header";
+import { PublicFlowRecoveryBanner } from "@/components/public/public-flow-recovery-banner";
 import { PublicMenuRealtimeSync } from "@/components/public/public-menu-realtime-sync";
 import { PublicStoreMenuClient } from "@/components/public/public-store-menu-client";
+import { getPublicStoreOperationalState } from "@/lib/public/store-operational";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { PublicMenuRpcRow, PublicStoreRpcRow } from "@/types";
 import { notFound } from "next/navigation";
@@ -28,14 +30,17 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
 
   const menuRows: PublicMenuRpcRow[] = Array.isArray(menuResult.data) ? menuResult.data : [];
   const store = storeResult.data;
-  const canAcceptPublicOrders = store.accepts_orders && menuRows.length > 0;
+  const operationalState = getPublicStoreOperationalState({
+    acceptsOrdersSetting: store.accepts_orders,
+    visibleMenuItems: menuRows.length,
+  });
 
   return (
     <>
       <PageHeader
         title={store.name}
         description={
-          canAcceptPublicOrders
+          operationalState.canPlaceOrders
             ? "Cardapio digital atualizado para pedidos com retirada."
             : "Pedidos indisponiveis no momento."
         }
@@ -44,6 +49,8 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
       />
 
       <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+        <PublicFlowRecoveryBanner slug={store.slug} />
+
         <section className="rounded-2xl border border-zinc-200 bg-white/95 p-4 shadow-[0_24px_44px_-34px_rgba(24,24,27,0.55)] sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1">
@@ -58,12 +65,18 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
 
             <span
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                canAcceptPublicOrders ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                operationalState.canPlaceOrders ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
               }`}
             >
-              {canAcceptPublicOrders ? "Loja aceitando pedidos" : "Pedidos indisponiveis no momento"}
+              {operationalState.summaryLabel}
             </span>
           </div>
+
+          {operationalState.unavailableMessage ? (
+            <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800" role="status">
+              {operationalState.unavailableMessage}
+            </p>
+          ) : null}
 
           {store.public_message ? (
             <p className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700">{store.public_message}</p>
@@ -73,7 +86,12 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
         </section>
 
         <div className="pb-24 sm:pb-20">
-          <PublicStoreMenuClient slug={store.slug} acceptsOrders={canAcceptPublicOrders} menuRows={menuRows} />
+          <PublicStoreMenuClient
+            slug={store.slug}
+            acceptsOrders={operationalState.canPlaceOrders}
+            ordersUnavailableMessage={operationalState.unavailableMessage}
+            menuRows={menuRows}
+          />
         </div>
       </div>
     </>

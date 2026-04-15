@@ -14,7 +14,7 @@ import {
 } from "@/lib/orders/new-order-notifications";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/shared/toast-provider";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type AwaitingOrderRow = {
@@ -32,6 +32,16 @@ type DashboardGlobalOrderAlertsProps = {
 const NEW_ORDER_TOAST_DURATION_MS = 13000;
 const POLL_INTERVAL_MS_FALLBACK = 120000;
 
+type OrdersScopeFilter = "ativos" | "finalizados" | "recusados" | "cancelados" | "todos";
+
+function parseOrdersScope(value: string | null): OrdersScopeFilter {
+  if (value === "finalizados" || value === "recusados" || value === "cancelados" || value === "todos") {
+    return value;
+  }
+
+  return "ativos";
+}
+
 function formatOrderLabel(order: AwaitingOrderRow) {
   const displayCode = order.display_code?.trim();
   if (displayCode) {
@@ -48,6 +58,7 @@ function formatOrderLabel(order: AwaitingOrderRow) {
 export function DashboardGlobalOrderAlerts({ storeId, onPendingCountChange }: DashboardGlobalOrderAlertsProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { enqueueToast } = useToast();
 
   const [pendingCount, setPendingCount] = useState(0);
@@ -55,6 +66,8 @@ export function DashboardGlobalOrderAlerts({ storeId, onPendingCountChange }: Da
   const baseTitleRef = useRef<string | null>(null);
   const isCheckingRef = useRef(false);
   const isOrdersRoute = useMemo(() => pathname.startsWith("/dashboard/pedidos"), [pathname]);
+  const currentOrdersScope = useMemo(() => parseOrdersScope(searchParams.get("escopo")), [searchParams]);
+  const shouldRouteToActiveOrders = !isOrdersRoute || currentOrdersScope !== "ativos";
 
   useEffect(() => {
     baseTitleRef.current = document.title.replace(/^\(\d+\)\s*/, "");
@@ -170,7 +183,7 @@ export function DashboardGlobalOrderAlerts({ storeId, onPendingCountChange }: Da
         text:
           newOrders.length === 1
             ? `Pedido ${focusOrderLabel} chegou agora.`
-            : `Pedido ${focusOrderLabel} chegou agora. Ha mais ${newOrders.length - 1} novo(s) pedido(s).`,
+            : `Pedido ${focusOrderLabel} chegou agora. Há mais ${newOrders.length - 1} novo(s) pedido(s).`,
         emphasis: "new-order",
         durationMs: NEW_ORDER_TOAST_DURATION_MS,
         action: {
@@ -178,8 +191,8 @@ export function DashboardGlobalOrderAlerts({ storeId, onPendingCountChange }: Da
           onClick: () => {
             requestOrderCardFocus(storeId, focusOrderId);
 
-            if (!isOrdersRoute) {
-              router.push("/dashboard/pedidos");
+            if (shouldRouteToActiveOrders) {
+              router.push("/dashboard/pedidos?escopo=ativos");
             }
           },
         },
@@ -189,7 +202,7 @@ export function DashboardGlobalOrderAlerts({ storeId, onPendingCountChange }: Da
     } finally {
       isCheckingRef.current = false;
     }
-  }, [enqueueToast, isOrdersRoute, router, storeId]);
+  }, [enqueueToast, router, shouldRouteToActiveOrders, storeId]);
 
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();

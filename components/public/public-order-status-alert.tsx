@@ -32,11 +32,11 @@ function resolveStatusMessage(status: OrderStatus) {
   }
 
   if (status === "em_preparo") {
-    return "Agora ele esta em preparo.";
+    return "Seu pedido agora está em preparo.";
   }
 
   if (status === "pronto_para_retirada") {
-    return "Seu pedido esta pronto para retirada.";
+    return "Seu pedido está pronto para retirada.";
   }
 
   if (status === "finalizado") {
@@ -151,7 +151,7 @@ export function PublicOrderStatusAlert({ orderId, publicToken, status }: PublicO
   return (
     <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p>Som de atualizacoes indisponivel ate uma interacao nesta pagina.</p>
+        <p>Som de atualizações indisponível até uma interação nesta página.</p>
         <button
           type="button"
           onClick={() => {
@@ -173,7 +173,7 @@ export function PublicOrderStatusAlert({ orderId, publicToken, status }: PublicO
           }}
           className="rounded-md border border-sky-300 bg-white px-2.5 py-1 font-semibold text-sky-800 transition hover:bg-sky-100"
         >
-          Ativar som das atualizacoes
+          Ativar som das atualizações
         </button>
       </div>
     </div>

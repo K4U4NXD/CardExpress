@@ -1,6 +1,7 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { PublicCheckoutClient } from "@/components/public/public-checkout-client";
 import { PublicMenuRealtimeSync } from "@/components/public/public-menu-realtime-sync";
+import { getPublicStoreOperationalState } from "@/lib/public/store-operational";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { PublicMenuRpcRow, PublicStoreRpcRow } from "@/types";
 import { notFound } from "next/navigation";
@@ -29,7 +30,10 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   }
 
   const menuRows: PublicMenuRpcRow[] = Array.isArray(menuResult.data) ? menuResult.data : [];
-  const canAcceptPublicOrders = store.accepts_orders && menuRows.length > 0;
+  const operationalState = getPublicStoreOperationalState({
+    acceptsOrdersSetting: store.accepts_orders,
+    visibleMenuItems: menuRows.length,
+  });
 
   return (
     <>
@@ -58,16 +62,16 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
 
             <span
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                canAcceptPublicOrders ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                operationalState.canPlaceOrders ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
               }`}
             >
-              {canAcceptPublicOrders ? "Loja aceitando pedidos" : "Pedidos indisponiveis no momento"}
+              {operationalState.summaryLabel}
             </span>
           </div>
 
-          {!canAcceptPublicOrders ? (
-            <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              Esta loja nao esta aceitando pedidos neste momento.
+          {operationalState.unavailableMessage ? (
+            <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800" role="status">
+              {operationalState.unavailableMessage}
             </p>
           ) : null}
 
@@ -81,7 +85,8 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
         <PublicCheckoutClient
           slug={store.slug}
           storeName={store.name}
-          acceptsOrders={canAcceptPublicOrders}
+          acceptsOrders={operationalState.canPlaceOrders}
+          ordersUnavailableMessage={operationalState.unavailableMessage}
           menuRows={menuRows}
         />
       </div>

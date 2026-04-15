@@ -42,6 +42,13 @@ O projeto já possui uma base funcional sólida, com:
 - devolução de estoque em transições terminais aplicáveis;
 - melhorias amplas de UX em desktop e mobile;
 - **atualização em tempo real** nas rotas operacionais e públicas principais.
+- painel público com versão WEB e modo TV dedicado;
+- recuperação pública sem login por `slug`, com persistência local de checkout e pedidos;
+- retomada de múltiplos pedidos em andamento no mesmo aparelho;
+- ações de copiar/compartilhar link no checkout criado e no pedido público;
+- checkout com ajuste de quantidade diretamente no resumo;
+- destaque visual de itens problemáticos no checkout quando houver conflito de estoque/disponibilidade;
+- cancelamento de checkout integrado ao fluxo público;
 
 ---
 
@@ -142,6 +149,9 @@ O projeto já possui uma base funcional sólida, com:
 - coerência entre status público da loja e cardápio efetivamente disponível;
 - **atualização automática em tempo real** do cardápio público;
 - reconciliação automática do carrinho quando preço ou disponibilidade mudam.
+- retomada automática de checkout e pedidos em andamento no mesmo dispositivo;
+- suporte a múltiplos pedidos em andamento por loja no banner de recuperação;
+- ações de copiar/compartilhar link nas telas públicas relevantes;
 
 ### Checkout público
 
@@ -155,6 +165,11 @@ O projeto já possui uma base funcional sólida, com:
 - persistência local de nome e telefone no navegador para facilitar compras futuras no mesmo dispositivo;
 - reconciliação automática do checkout com o cardápio atual;
 - **atualização automática em tempo real** do checkout para refletir mudanças de preço, disponibilidade e status da loja.
+- recuperação local da `checkout_session` no mesmo aparelho;
+- botão para cancelar checkout quando a sessão ainda estiver pendente;
+- controles de aumentar e diminuir quantidade diretamente no resumo do checkout;
+- destaque visual de itens com problema de estoque ou indisponibilidade;
+- mensagens públicas mais específicas para conflitos de disponibilidade/estoque;
 
 ### Pedidos
 
@@ -219,6 +234,10 @@ O projeto já possui uma base funcional sólida, com:
 - a página pública do pedido agora tem alerta amigável e som suave em mudança real de status;
 - o painel público passou a exibir não só o pedido mais recente pronto, mas também os últimos chamados vindos do sistema;
 - o painel público tem controle de som e o histórico recente agora é persistente por RPC, não mais local ao navegador.
+- ações de copiar/compartilhar link do pedido público;
+- retomada pública sem login com persistência local por loja;
+- painel público com modo TV em `/{slug}/painel/tv`;
+- painel WEB e painel TV com layouts distintos para operação e exibição;
 
 ### Banco de dados
 
@@ -430,6 +449,7 @@ cardexpress/
 * `/{slug}/checkout` → checkout público;
 * `/{slug}/pedido/[id]?token=...` → acompanhamento público do pedido;
 * `/{slug}/painel` → painel público de retirada.
+* `/{slug}/painel/tv` → painel público em modo TV/monitor;
 
 ---
 
@@ -634,6 +654,7 @@ O projeto utiliza Supabase como backend principal.
 * `simulate_checkout_payment_success`
 * `transition_order_to_terminal`
 * `get_recent_called_orders_for_store`
+* `cancel_checkout_session_by_token`
 
 ### Migrations
 

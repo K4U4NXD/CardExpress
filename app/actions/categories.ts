@@ -13,12 +13,16 @@ function revalidateStoreViews(storeSlug: string) {
   revalidatePath(`/${storeSlug}`);
 }
 
+function buildFlashToken() {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export type CategoryFormState = {
   error?: string;
 };
 
 function redirectWithNotice(notice: string) {
-  redirect(`${PATH}?aviso=${encodeURIComponent(notice)}`);
+  redirect(`${PATH}?aviso=${encodeURIComponent(notice)}&flash=${buildFlashToken()}`);
 }
 
 async function categoryOwnedOrNull(

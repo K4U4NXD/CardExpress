@@ -16,6 +16,7 @@ import type { PublicCartItem, PublicMenuRpcRow } from "@/types";
 type PublicStoreMenuClientProps = {
   slug: string;
   acceptsOrders: boolean;
+  ordersUnavailableMessage?: string | null;
   menuRows: PublicMenuRpcRow[];
 };
 
@@ -34,8 +35,9 @@ type MenuSection = {
   products: MenuProduct[];
 };
 
-export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicStoreMenuClientProps) {
+export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMessage, menuRows }: PublicStoreMenuClientProps) {
   const cartStorageKey = getPublicCartStorageKey(slug);
+  const unavailableMessage = ordersUnavailableMessage ?? "A loja pausou temporariamente os pedidos.";
 
   const sections = useMemo(() => groupMenuByCategory(menuRows), [menuRows]);
   const hasProducts = sections.length > 0;
@@ -315,7 +317,8 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
                             <button
                               type="button"
                               onClick={() => decreaseQuantity(product.id)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                              disabled={!acceptsOrders}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               -
                             </button>
@@ -323,7 +326,8 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
                             <button
                               type="button"
                               onClick={() => increaseQuantity(product.id)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                              disabled={!acceptsOrders}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               +
                             </button>
@@ -332,7 +336,8 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
                           <button
                             type="button"
                             onClick={() => addProduct(product)}
-                            className="cx-btn-primary w-fit px-3 py-2"
+                            disabled={!acceptsOrders}
+                            className="cx-btn-primary w-fit px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             Adicionar
                           </button>
@@ -405,7 +410,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, menuRows }: PublicS
         </div>
 
         {!acceptsOrders ? (
-          <p className="mx-auto max-w-4xl px-4 pb-2 text-[11px] text-amber-700 sm:px-6">A loja pausou temporariamente os pedidos.</p>
+          <p className="mx-auto max-w-4xl px-4 pb-2 text-[11px] text-amber-700 sm:px-6">{unavailableMessage}</p>
         ) : null}
       </div>
     </div>

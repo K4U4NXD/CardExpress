@@ -6,6 +6,7 @@ import {
   ORDER_STATUS_LABELS,
   REFUND_STATUS_LABELS,
 } from "@/lib/orders/presenter";
+import { PublicOrderRecoveryTools } from "@/components/public/public-order-recovery-tools";
 import { PublicOrderRealtimeSync } from "@/components/public/public-order-realtime-sync";
 import { PublicOrderStatusAlert } from "@/components/public/public-order-status-alert";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -98,6 +99,14 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
             publicToken={token}
             enabled={!isTerminalStatus}
             className="mt-1"
+          />
+
+          <PublicOrderRecoveryTools
+            slug={store.slug}
+            orderId={order.id}
+            publicToken={token}
+            status={order.status}
+            displayCode={order.display_code}
           />
 
           <div className="mt-3 space-y-2 text-sm text-zinc-700">

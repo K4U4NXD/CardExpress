@@ -53,6 +53,14 @@ function redirectWithMessage(message: string) {
   redirect(`${PATH}?${message}`);
 }
 
+function buildFlashToken() {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function redirectWithNotice(notice: string) {
+  redirectWithMessage(`aviso=${encodeURIComponent(notice)}&flash=${buildFlashToken()}`);
+}
+
 function revalidateOrderPaths(storeSlug: string, orderId: string) {
   revalidatePath(PATH);
   revalidatePath("/dashboard");
@@ -86,7 +94,7 @@ async function transitionOrderToTerminal(orderId: string, targetStatus: "recusad
   }
 
   revalidateOrderPaths(store!.slug, order!.id);
-  redirectWithMessage(`aviso=${encodeURIComponent(targetStatus)}`);
+  redirectWithNotice(targetStatus);
 }
 
 async function performTransition(
@@ -138,7 +146,7 @@ async function performTransition(
   revalidatePath(PATH);
   revalidatePath(`/${store!.slug}/painel`);
   revalidatePath(`/${store!.slug}/pedido/${order!.id}`);
-  redirectWithMessage(`aviso=${encodeURIComponent(targetStatus)}`);
+  redirectWithNotice(targetStatus);
 }
 
 export async function acceptOrderAction(formData: FormData) {

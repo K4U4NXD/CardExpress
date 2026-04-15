@@ -13,8 +13,8 @@ const AVISO_BY_ROUTE_PREFIX: Array<{ prefix: string; messages: Record<string, st
       cancelado: "Pedido cancelado e estoque devolvido.",
       pronto_para_retirada: "Pedido marcado como pronto para retirada.",
       finalizado: "Pedido finalizado com sucesso.",
-      "erro-loja": "Nao foi possivel identificar sua loja.",
-      "erro-pedido": "Nao foi possivel concluir a acao. Tente novamente.",
+      "erro-loja": "Não foi possível identificar sua loja.",
+      "erro-pedido": "Não foi possível concluir a ação. Tente novamente.",
     },
   },
   {
@@ -27,10 +27,10 @@ const AVISO_BY_ROUTE_PREFIX: Array<{ prefix: string; messages: Record<string, st
       "venda-pausada": "Venda do produto pausada com sucesso.",
       "venda-liberada": "Venda do produto liberada com sucesso.",
       reordenado: "Produto reordenado.",
-      excluido: "Produto excluido com sucesso.",
-      "erro-campos": "Preencha nome, preco e categoria.",
-      "erro-loja": "Nao foi possivel identificar sua loja.",
-      "erro-permissao": "Nao foi possivel concluir a acao. Tente novamente.",
+      excluido: "Produto excluído com sucesso.",
+      "erro-campos": "Preencha nome, preço e categoria.",
+      "erro-loja": "Não foi possível identificar sua loja.",
+      "erro-permissao": "Não foi possível concluir a ação. Tente novamente.",
     },
   },
   {
@@ -40,10 +40,10 @@ const AVISO_BY_ROUTE_PREFIX: Array<{ prefix: string; messages: Record<string, st
       "nome-atualizado": "Categoria atualizada com sucesso.",
       "estado-alterado": "Categoria atualizada com sucesso.",
       reordenada: "Categoria reordenada.",
-      excluida: "Categoria excluida com sucesso.",
-      "erro-nome": "Informe um nome valido para salvar.",
-      "erro-loja": "Nao foi possivel identificar sua loja.",
-      "erro-permissao": "Nao foi possivel concluir a acao. Tente novamente.",
+      excluida: "Categoria excluída com sucesso.",
+      "erro-nome": "Informe um nome válido para salvar.",
+      "erro-loja": "Não foi possível identificar sua loja.",
+      "erro-permissao": "Não foi possível concluir a ação. Tente novamente.",
     },
   },
 ];
@@ -60,7 +60,7 @@ function resolveAvisoText(pathname: string, aviso: string): string {
     }
   }
 
-  return "Acao concluida com sucesso.";
+  return "Ação concluída com sucesso.";
 }
 
 function safeDecode(value: string) {
@@ -81,6 +81,10 @@ function hashToBase36(input: string) {
   return hash.toString(36);
 }
 
+function isWarningAviso(aviso: string) {
+  return aviso.startsWith("erro-");
+}
+
 export function DashboardQueryFlash() {
   const pathname = usePathname();
   const router = useRouter();
@@ -91,14 +95,15 @@ export function DashboardQueryFlash() {
 
   const aviso = searchParams.get("aviso");
   const erro = searchParams.get("erro");
+  const flash = searchParams.get("flash");
 
   const uniqueKey = useMemo(() => {
     if (!aviso && !erro) {
       return null;
     }
 
-    return `${pathname}|${aviso ?? ""}|${erro ?? ""}`;
-  }, [aviso, erro, pathname]);
+    return `${pathname}|${aviso ?? ""}|${erro ?? ""}|${flash ?? ""}`;
+  }, [aviso, erro, flash, pathname]);
 
   useEffect(() => {
     if (uniqueKey !== null) {
@@ -118,10 +123,12 @@ export function DashboardQueryFlash() {
     const erroToastId = `query-erro-${hashToBase36(`${uniqueKey}|erro`)}`;
 
     if (aviso) {
+      const warningAviso = isWarningAviso(aviso);
+
       enqueueToast({
         id: avisoToastId,
-        tone: "success",
-        title: "Alteracao aplicada",
+        tone: warningAviso ? "warning" : "success",
+        title: warningAviso ? "Ação não concluída" : "Ação concluída",
         text: resolveAvisoText(pathname, aviso),
       });
     }
@@ -130,7 +137,7 @@ export function DashboardQueryFlash() {
       enqueueToast({
         id: erroToastId,
         tone: "error",
-        title: "Falha ao concluir acao",
+        title: "Falha ao concluir ação",
         text: safeDecode(erro),
       });
     }
@@ -138,6 +145,7 @@ export function DashboardQueryFlash() {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("aviso");
     params.delete("erro");
+    params.delete("flash");
 
     const nextHref = params.toString() ? `${pathname}?${params.toString()}` : pathname;
     router.replace(nextHref, { scroll: false });

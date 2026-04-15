@@ -119,6 +119,8 @@ export type PublicMenuRpcRow = {
   product_description: string | null;
   product_price: number | string | null;
   product_image_url: string | null;
+  track_stock?: boolean | null;
+  stock_quantity?: number | string | null;
 };
 
 /** Item persistido no carrinho público (localStorage). */
@@ -164,4 +166,15 @@ export type SimulateCheckoutPaymentSuccessRpcRow = {
   order_number: number | null;
   display_code: string | null;
   order_status: string | null;
+};
+
+/** Retorno da RPC public.cancel_checkout_session_by_token. */
+export type CancelCheckoutSessionRpcRow = {
+  checkout_session_id: string;
+  checkout_public_token?: string | null;
+  checkout_status?: string | null;
+  status?: string | null;
+  cancelled_at?: string | null;
+  expires_at?: string | null;
+  converted_at?: string | null;
 };

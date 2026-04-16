@@ -8,6 +8,7 @@ out/
 # Env (nunca commitar segredos)
 .env
 .env*.local
+.env.e2e
 
 # Debug / OS
 npm-debug.log*
@@ -17,3 +18,8 @@ npm-debug.log*
 # IDE
 .idea/
 .vscode/
+
+# Playwright
+playwright-report/
+test-results/
+tests/e2e/.auth/

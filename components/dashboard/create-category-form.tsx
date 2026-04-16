@@ -26,7 +26,7 @@ export function CreateCategoryForm({ onCancel }: CreateCategoryFormProps) {
   };
 
   return (
-    <form action={formAction} className="space-y-3">
+    <form action={formAction} data-testid="create-category-form" className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="min-w-0 flex-1">
           <label htmlFor="new-category-name" className="block text-sm font-medium text-zinc-800">
@@ -48,6 +48,7 @@ export function CreateCategoryForm({ onCancel }: CreateCategoryFormProps) {
           <button
             type="submit"
             disabled={pending}
+            data-testid="submit-create-category"
             className="cx-btn-primary w-full px-4 py-2 disabled:opacity-60 sm:w-auto"
           >
             {pending ? "Salvando…" : "Adicionar"}

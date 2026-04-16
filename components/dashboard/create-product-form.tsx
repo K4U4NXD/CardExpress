@@ -18,7 +18,7 @@ export function CreateProductForm({ categories, onCancel }: CreateProductFormPro
   const disabled = categories.length === 0;
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} data-testid="create-product-form" className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label htmlFor="product-name" className="block text-sm font-medium text-zinc-800">
@@ -31,6 +31,7 @@ export function CreateProductForm({ categories, onCancel }: CreateProductFormPro
             required
             disabled={disabled}
             placeholder="Ex.: Refrigerante 350ml"
+            data-testid="product-name-input"
             className="cx-input mt-1 disabled:bg-zinc-100"
           />
         </div>
@@ -57,6 +58,7 @@ export function CreateProductForm({ categories, onCancel }: CreateProductFormPro
             required
             disabled={disabled}
             placeholder="Ex.: 8,90"
+            data-testid="product-price-input"
             className="cx-input mt-1 disabled:bg-zinc-100"
           />
         </div>
@@ -69,6 +71,7 @@ export function CreateProductForm({ categories, onCancel }: CreateProductFormPro
             name="category_id"
             required
             disabled={disabled}
+            data-testid="product-category-select"
             className="cx-select mt-1 disabled:bg-zinc-100"
           >
             <option value="">Selecione…</option>
@@ -88,6 +91,7 @@ export function CreateProductForm({ categories, onCancel }: CreateProductFormPro
               checked={trackStock}
               onChange={(e) => setTrackStock(e.target.checked)}
               disabled={disabled}
+              data-testid="product-track-stock-toggle"
               className="rounded border-zinc-300"
             />
             Controlar estoque?
@@ -104,6 +108,7 @@ export function CreateProductForm({ categories, onCancel }: CreateProductFormPro
                 min={0}
                 step={1}
                 disabled={disabled}
+                data-testid="product-stock-input"
                 className="cx-input mt-1 max-w-xs disabled:bg-zinc-100"
               />
               <p className="mt-1 text-xs text-zinc-500">
@@ -160,6 +165,7 @@ export function CreateProductForm({ categories, onCancel }: CreateProductFormPro
         <button
           type="submit"
           disabled={pending || disabled}
+          data-testid="submit-create-product"
           className="cx-btn-primary px-4 py-2 disabled:opacity-60"
         >
           {pending ? "Salvando…" : "Adicionar produto"}

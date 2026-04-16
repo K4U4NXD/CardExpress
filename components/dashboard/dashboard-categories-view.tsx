@@ -29,6 +29,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
           <button
             type="button"
             onClick={() => setIsCreateOpen((open) => !open)}
+            data-testid="open-create-category"
             className="cx-btn-secondary px-3 py-2"
           >
             {isCreateOpen ? "Fechar" : "Nova categoria"}

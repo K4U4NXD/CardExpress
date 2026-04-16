@@ -40,6 +40,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
           <button
             type="button"
             onClick={() => setIsCreateOpen((open) => !open)}
+            data-testid="open-create-product"
             className="cx-btn-secondary px-3 py-2"
           >
             {isCreateOpen ? "Fechar" : "Novo produto"}

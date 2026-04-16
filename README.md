@@ -380,6 +380,53 @@ Inicia a aplicação já compilada em modo de produção.
 
 Executa a checagem estática com ESLint.
 
+### `npm run test:e2e`
+
+Executa a suíte E2E/smoke com Playwright.
+
+### `npm run test:e2e:headed`
+
+Executa a suíte E2E em modo visual (headed).
+
+### `npm run test:e2e:ui`
+
+Abre o runner interativo do Playwright.
+
+---
+
+## Testes E2E (Playwright)
+
+### Pré-requisitos
+
+1. Copie `.env.e2e.example` para `.env.e2e` e preencha as credenciais de um comerciante existente.
+2. Garanta que a conta usada tenha loja vinculada e permissão para operar no dashboard.
+3. Instale os navegadores do Playwright (primeira execução):
+
+```bash
+npx playwright install chromium
+```
+
+### Variáveis mínimas
+
+```env
+CARDEXPRESS_E2E_EMAIL=
+CARDEXPRESS_E2E_PASSWORD=
+```
+
+Variáveis opcionais: `PLAYWRIGHT_BASE_URL`, `CARDEXPRESS_E2E_CUSTOMER_NAME`, `CARDEXPRESS_E2E_CUSTOMER_PHONE`, `CARDEXPRESS_E2E_RUN_ID`.
+
+### Execução
+
+```bash
+npm run test:e2e
+```
+
+Para checar descoberta da suíte sem execução completa:
+
+```bash
+npm run test:e2e -- --list
+```
+
 ---
 
 ## Estrutura do projeto

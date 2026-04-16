@@ -131,6 +131,7 @@ export function PublicReadyPanelClient({
           </p>
 
           <p
+            data-testid="panel-latest-display-code"
             className={`mt-4 font-black leading-none tracking-tight ${
               latestCalled ? "text-[clamp(7rem,28vw,18rem)] text-emerald-300" : "text-[clamp(5rem,20vw,12rem)] text-zinc-500"
             }`}
@@ -232,7 +233,10 @@ export function PublicReadyPanelClient({
           {latestCalled ? "Pedido chamado agora" : "Aguardando próximo chamado"}
         </p>
 
-        <p className={`mt-5 font-black tracking-tight ${latestCalled ? "text-7xl sm:text-8xl text-emerald-300" : "text-6xl text-zinc-500"}`}>
+        <p
+          data-testid="panel-latest-display-code"
+          className={`mt-5 font-black tracking-tight ${latestCalled ? "text-7xl sm:text-8xl text-emerald-300" : "text-6xl text-zinc-500"}`}
+        >
           {latestDisplayCode}
         </p>
 

@@ -213,6 +213,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Buscar por nome ou descricao"
+                data-testid="menu-search-input"
                 className="cx-input"
               />
               {searchQuery ? (
@@ -235,6 +236,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
                     key={filter.value}
                     type="button"
                     onClick={() => setActiveCategory(filter.value)}
+                    data-testid={`menu-category-filter-${filter.value}`}
                     className={active ? "cx-chip-active" : "cx-chip"}
                   >
                     {filter.label}
@@ -268,7 +270,11 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
                 const quantity = cartItem?.quantity ?? 0;
 
                 return (
-                  <article key={product.id} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_42px_-32px_rgba(24,24,27,0.5)]">
+                  <article
+                    key={product.id}
+                    data-testid={`menu-product-${product.id}`}
+                    className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_42px_-32px_rgba(24,24,27,0.5)]"
+                  >
                     <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                       {product.image_url ? (
                         <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
@@ -318,6 +324,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
                               type="button"
                               onClick={() => decreaseQuantity(product.id)}
                               disabled={!acceptsOrders}
+                              data-testid={`menu-decrease-${product.id}`}
                               className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               -
@@ -327,6 +334,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
                               type="button"
                               onClick={() => increaseQuantity(product.id)}
                               disabled={!acceptsOrders}
+                              data-testid={`menu-increase-${product.id}`}
                               className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               +
@@ -337,6 +345,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
                             type="button"
                             onClick={() => addProduct(product)}
                             disabled={!acceptsOrders}
+                            data-testid={`menu-add-${product.id}`}
                             className="cx-btn-primary w-fit px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             Adicionar
@@ -401,6 +410,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
             ) : (
               <Link
                 href={`/${slug}/checkout`}
+                data-testid="menu-go-checkout"
                 className="cx-btn-primary px-3 py-2 text-xs sm:px-4 sm:text-sm"
               >
                 Ir para checkout

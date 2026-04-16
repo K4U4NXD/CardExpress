@@ -382,6 +382,7 @@ export function StoreSettingsForm({
             checked={values.accepts_orders}
             disabled={acceptsToggleDisabled}
             onChange={(event) => updateField("accepts_orders", event.target.checked)}
+            data-testid="settings-accepts-orders-toggle"
             className="rounded border-zinc-300"
           />
           Loja aceitando pedidos
@@ -433,6 +434,7 @@ export function StoreSettingsForm({
         <button
           type="submit"
           disabled={saveDisabled}
+          data-testid="settings-save-button"
           className="cx-btn-primary px-4 py-2 disabled:opacity-60"
         >
           {pending ? "Salvando..." : "Salvar configurações"}

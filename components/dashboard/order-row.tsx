@@ -40,6 +40,7 @@ type OrderRowProps = {
 type ActionButtonProps = {
   label: string;
   className: string;
+  dataTestId?: string;
 };
 
 type OrderAction = {
@@ -49,13 +50,14 @@ type OrderAction = {
   className: string;
 };
 
-function ActionButton({ label, className }: ActionButtonProps) {
+function ActionButton({ label, className, dataTestId }: ActionButtonProps) {
   const { pending } = useFormStatus();
 
   return (
     <button
       type="submit"
       disabled={pending}
+      data-testid={dataTestId}
       className={`${className} disabled:cursor-not-allowed disabled:opacity-40`}
     >
       {pending ? "Processando..." : label}
@@ -187,6 +189,7 @@ export function OrderRow({
   return (
     <article
       id={getOrderCardElementId(order.id)}
+      data-testid={`order-row-${order.id}`}
       onMouseEnter={handleAcknowledgeNew}
       onFocusCapture={handleAcknowledgeNew}
       className={`relative rounded-2xl border border-zinc-200 border-l-4 ${accentClass} ${highlightClass} ${jumpFocusClass} bg-white p-4 shadow-[0_18px_36px_-30px_rgba(24,24,27,0.4)] transition sm:p-5`}
@@ -235,7 +238,11 @@ export function OrderRow({
                 actions.map((actionItem) => (
                   <form key={actionItem.key} action={actionItem.action} className="inline">
                     <input type="hidden" name="order_id" value={order.id} />
-                    <ActionButton label={actionItem.label} className={actionItem.className} />
+                    <ActionButton
+                      label={actionItem.label}
+                      className={actionItem.className}
+                      dataTestId={`order-action-${actionItem.key}-${order.id}`}
+                    />
                   </form>
                 ))
               )}

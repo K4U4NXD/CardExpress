@@ -729,6 +729,7 @@ export function PublicCheckoutClient({
             type="button"
             onClick={handleSimulatePaymentApproved}
             disabled={simulationActionDisabled}
+            data-testid="checkout-simulate-payment"
             className="inline-flex items-center rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSimulatingPayment
@@ -749,6 +750,7 @@ export function PublicCheckoutClient({
               type="button"
               onClick={() => void handleCancelCheckout()}
               disabled={isCancellingCheckout || isSimulatingPayment}
+              data-testid="checkout-cancel-session"
               className="cx-btn-secondary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isCancellingCheckout ? "Cancelando checkout..." : "Cancelar checkout"}
@@ -801,6 +803,8 @@ export function PublicCheckoutClient({
             {cartItems.map((item) => (
               <div
                 key={item.product_id}
+                data-testid={`checkout-cart-item-${item.product_id}`}
+                data-problematic={stockIssueProductIdsSet.has(item.product_id) ? "true" : "false"}
                 className={`flex items-start justify-between gap-3 rounded-xl border px-3 py-2 ${
                   stockIssueProductIdsSet.has(item.product_id)
                     ? "border-red-200 bg-red-50"
@@ -820,6 +824,7 @@ export function PublicCheckoutClient({
                       type="button"
                       onClick={() => decreaseItemQuantity(item.product_id)}
                       disabled={isSubmitting}
+                      data-testid={`checkout-item-decrease-${item.product_id}`}
                       className="inline-flex h-6 w-6 items-center justify-center rounded border border-zinc-300 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label={`Diminuir quantidade de ${item.name}`}
                     >
@@ -832,6 +837,7 @@ export function PublicCheckoutClient({
                       type="button"
                       onClick={() => increaseItemQuantity(item.product_id)}
                       disabled={isSubmitting}
+                      data-testid={`checkout-item-increase-${item.product_id}`}
                       className="inline-flex h-6 w-6 items-center justify-center rounded border border-zinc-300 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label={`Aumentar quantidade de ${item.name}`}
                     >
@@ -840,7 +846,10 @@ export function PublicCheckoutClient({
                   </div>
 
                   {stockIssueProductIdsSet.has(item.product_id) ? (
-                    <p className="mt-1 text-[11px] font-medium text-red-700">
+                    <p
+                      data-testid={`checkout-item-problem-${item.product_id}`}
+                      className="mt-1 text-[11px] font-medium text-red-700"
+                    >
                       {stockIssueItemMessages[item.product_id] ?? "Ajuste a quantidade deste item para continuar."}
                     </p>
                   ) : null}
@@ -889,6 +898,7 @@ export function PublicCheckoutClient({
               required
               value={customerName}
               onChange={(event) => setCustomerName(event.target.value)}
+              data-testid="checkout-customer-name"
               className="cx-input mt-1"
               placeholder="Ex.: Maria Silva"
             />
@@ -904,6 +914,7 @@ export function PublicCheckoutClient({
               required
               value={customerPhone}
               onChange={(event) => setCustomerPhone(event.target.value)}
+              data-testid="checkout-customer-phone"
               className="cx-input mt-1"
               placeholder="(11) 99999-9999"
             />
@@ -924,6 +935,7 @@ export function PublicCheckoutClient({
               rows={3}
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
+              data-testid="checkout-notes"
               className="cx-textarea mt-1"
               placeholder="Ex.: sem cebola, retirar no balcao"
             />
@@ -938,6 +950,7 @@ export function PublicCheckoutClient({
           <button
             type="submit"
             disabled={!canSubmit}
+            data-testid="checkout-create-session"
             className="cx-btn-primary w-full px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Criando sessao..." : "Criar sessao de checkout"}

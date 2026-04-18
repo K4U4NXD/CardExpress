@@ -362,8 +362,11 @@ export function StoreSettingsForm({
 
         <div className="mt-3 flex flex-wrap gap-4 text-xs text-zinc-600">
           <p>Categorias ativas: {readiness.activeCategories}</p>
-          <p>Produtos aptos no cardápio público: {readiness.activeAvailableProducts}</p>
+          <p>Produtos aptos para compra no cardápio público: {readiness.activeAvailableProducts}</p>
         </div>
+        <p className="mt-2 text-xs text-zinc-500">
+          Itens sem estoque podem continuar visíveis no cardápio, mas não entram na prontidão operacional.
+        </p>
 
         {!readiness.isReady ? (
           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-amber-900">

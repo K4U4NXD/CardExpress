@@ -119,8 +119,8 @@ export type PublicMenuRpcRow = {
   product_description: string | null;
   product_price: number | string | null;
   product_image_url: string | null;
-  track_stock?: boolean | null;
-  stock_quantity?: number | string | null;
+  track_stock: boolean | null;
+  stock_quantity: number | string | null;
 };
 
 /** Item persistido no carrinho público (localStorage). */

@@ -73,7 +73,7 @@ export default async function DashboardHomePage() {
 
   let acceptsOrders = true;
   let activeCategories = 0;
-  let visibleProducts = 0;
+  let purchasableProducts = 0;
   let waitingOrders = 0;
   let preparingOrders = 0;
   let readyOrders = 0;
@@ -192,7 +192,7 @@ export default async function DashboardHomePage() {
     acceptsOrders = settingsResult.data?.accepts_orders ?? true;
     readiness = readinessResult;
     activeCategories = activeCategoriesResult.count ?? 0;
-    visibleProducts = readinessResult?.activeAvailableProducts ?? 0;
+    purchasableProducts = readinessResult?.activeAvailableProducts ?? 0;
     waitingOrders = waitingOrdersResult.count ?? 0;
     preparingOrders = preparingOrdersResult.count ?? 0;
     readyOrders = readyOrdersResult.count ?? 0;
@@ -280,11 +280,23 @@ export default async function DashboardHomePage() {
                 </div>
               </section>
 
+              {readiness && !readiness.isReady ? (
+                <section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-sm font-semibold text-amber-900">Pendências operacionais</p>
+                  <p className="mt-1 text-xs text-amber-800">Resolva estes pontos para liberar pedidos e manter a operação estável.</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
+                    {readiness.pendingItems.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+
               <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
                 <h2 className="text-sm font-semibold text-zinc-900">Visão operacional</h2>
                 <div className="mt-3 space-y-3">
                   <div className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Catalogo e estoque</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Catálogo e estoque</p>
                     <div className="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                       <article className="cx-kpi-card">
                         <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Categorias ativas</p>
@@ -292,8 +304,8 @@ export default async function DashboardHomePage() {
                       </article>
 
                       <article className="cx-kpi-card">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Produtos visíveis</p>
-                        <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{visibleProducts}</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Produtos aptos para compra</p>
+                        <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-zinc-900 tabular-nums">{purchasableProducts}</p>
                       </article>
 
                       <article className="cx-kpi-card">
@@ -366,7 +378,7 @@ export default async function DashboardHomePage() {
                     {outOfStockProductList.length === 0 ? (
                       <p className="mt-2 text-sm text-zinc-500">Nenhum produto sem estoque.</p>
                     ) : (
-                      <ul className="mt-2 space-y-1.5">
+                      <ul className="mt-2 max-h-64 space-y-1.5 overflow-y-auto pr-1">
                         {outOfStockProductList.map((product) => (
                           <li key={product.id} className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-2.5 py-2">
                             <span className="min-w-0 truncate text-sm text-zinc-800">{product.name}</span>
@@ -384,7 +396,7 @@ export default async function DashboardHomePage() {
                     {lowStockProductList.length === 0 ? (
                       <p className="mt-2 text-sm text-zinc-500">Nenhum produto com estoque baixo.</p>
                     ) : (
-                      <ul className="mt-2 space-y-1.5">
+                      <ul className="mt-2 max-h-64 space-y-1.5 overflow-y-auto pr-1">
                         {lowStockProductList.map((product) => (
                           <li key={product.id} className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-2.5 py-2">
                             <span className="min-w-0 truncate text-sm text-zinc-800">{product.name}</span>
@@ -454,17 +466,6 @@ export default async function DashboardHomePage() {
                   </ul>
                 )}
               </section>
-
-              {readiness && !readiness.isReady ? (
-                <section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                  <p className="text-sm font-semibold text-amber-900">Pendências para operar</p>
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
-                    {readiness.pendingItems.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </section>
-              ) : null}
 
             </div>
           )}

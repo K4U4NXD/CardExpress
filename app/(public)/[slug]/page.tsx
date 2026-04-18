@@ -32,7 +32,7 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
   const store = storeResult.data;
   const operationalState = getPublicStoreOperationalState({
     acceptsOrdersSetting: store.accepts_orders,
-    visibleMenuItems: menuRows.length,
+    menuRows,
   });
 
   return (

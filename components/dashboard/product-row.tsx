@@ -2,7 +2,6 @@
 
 import {
   deleteProductAction,
-  moveProductAction,
   toggleProductActiveAction,
   toggleProductAvailabilityAction,
   updateProductAction,
@@ -19,6 +18,10 @@ type ProductRowProps = {
   onEditingChange?: (productId: string, isEditing: boolean) => void;
   isFirst: boolean;
   isLast: boolean;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  isMoveBusy?: boolean;
+  hasMoveIssue?: boolean;
 };
 
 export function ProductRow({
@@ -28,6 +31,10 @@ export function ProductRow({
   onEditingChange,
   isFirst,
   isLast,
+  onMoveUp,
+  onMoveDown,
+  isMoveBusy = false,
+  hasMoveIssue = false,
 }: ProductRowProps) {
   const [editing, setEditing] = useState(false);
   const [trackStock, setTrackStock] = useState(product.track_stock);
@@ -43,14 +50,46 @@ export function ProductRow({
     };
   }, [onEditingChange, product.id]);
 
-  const isVisibleOnPublicMenu =
+  const isVisibleOnPublicMenu = product.is_active && product.is_available;
+  const isPurchasableNow =
     product.is_active && product.is_available && (!product.track_stock || product.stock_quantity > 0);
   const isLowStock = product.track_stock && product.stock_quantity > 0 && product.stock_quantity <= 5;
+  const stockSummary = product.track_stock
+    ? `${product.stock_quantity} ${product.stock_quantity === 1 ? "unidade" : "unidades"}`
+    : "sem controle de estoque";
 
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-3 md:p-4 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)]">
       {!editing ? (
         <div className="space-y-2.5 md:space-y-3">
+          <div className="mb-0.5 flex items-center justify-between md:hidden">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Ordem na lista</p>
+            <div
+              className={`inline-flex items-center gap-1 rounded-lg border bg-white px-1 py-1 ${
+                hasMoveIssue ? "border-red-300" : "border-zinc-200"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={onMoveUp}
+                disabled={isFirst || isMoveBusy}
+                aria-label={`Mover produto ${product.name} para cima`}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-zinc-600 transition hover:border-zinc-200 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:text-zinc-300"
+              >
+                <span aria-hidden>↑</span>
+              </button>
+              <button
+                type="button"
+                onClick={onMoveDown}
+                disabled={isLast || isMoveBusy}
+                aria-label={`Mover produto ${product.name} para baixo`}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-zinc-600 transition hover:border-zinc-200 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:text-zinc-300"
+              >
+                <span aria-hidden>↓</span>
+              </button>
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-start justify-between gap-2.5 md:gap-3">
             <div className="min-w-0 flex-1 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
@@ -64,12 +103,12 @@ export function ProductRow({
                   {product.description}
                 </p>
               ) : (
-                <p className="text-xs text-zinc-400">Sem descricao cadastrada.</p>
+                <p className="text-xs text-zinc-400">Sem descrição cadastrada.</p>
               )}
             </div>
 
             <div className="shrink-0 rounded-lg md:rounded-xl border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 md:px-3 md:py-2 text-right">
-              <p className="hidden md:block text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Preco</p>
+              <p className="hidden md:block text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Preço</p>
               <p className="text-base font-semibold leading-tight text-zinc-900 sm:text-lg">{formatBRL(product.price)}</p>
             </div>
           </div>
@@ -91,88 +130,65 @@ export function ProductRow({
                 {product.is_available ? "Venda liberada" : "Venda pausada"}
               </span>
             ) : null}
-            <span
-              className={`rounded-full px-2 md:px-2.5 py-0.5 font-medium ${
-                isVisibleOnPublicMenu ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-900"
-              }`}
-            >
-              {isVisibleOnPublicMenu ? "Visivel no cardapio" : "Oculto no cardapio"}
-            </span>
-            <span className="rounded-full bg-zinc-100 px-2 md:px-2.5 py-0.5 font-medium text-zinc-700">
-              {product.track_stock ? "Controla estoque" : "Sem controle de estoque"}
-            </span>
-            {product.track_stock ? (
-              <>
-                <span className="rounded-full bg-zinc-100 px-2 md:px-2.5 py-0.5 font-medium text-zinc-700">
-                  Estoque: {product.stock_quantity}
-                </span>
-                {product.stock_quantity <= 0 ? (
-                  <span className="rounded-full bg-amber-100 px-2 md:px-2.5 py-0.5 font-medium text-amber-900">
-                    Estoque zerado
-                  </span>
-                ) : isLowStock ? (
-                  <span className="rounded-full bg-orange-100 px-2 md:px-2.5 py-0.5 font-medium text-orange-900">
-                    Estoque baixo
-                  </span>
-                ) : null}
-              </>
+            {product.track_stock && product.stock_quantity <= 0 ? (
+              <span className="rounded-full bg-amber-100 px-2 md:px-2.5 py-0.5 font-medium text-amber-900">
+                Sem estoque
+              </span>
+            ) : product.track_stock && isLowStock ? (
+              <span className="rounded-full bg-orange-100 px-2 md:px-2.5 py-0.5 font-medium text-orange-900">
+                Estoque baixo
+              </span>
             ) : null}
           </div>
 
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2 text-xs text-zinc-600">
+            <p>
+              <span className="font-medium text-zinc-700">Cardápio público:</span>{" "}
+              {isVisibleOnPublicMenu ? "visível" : "oculto"}
+            </p>
+            <p className="mt-1">
+              <span className="font-medium text-zinc-700">Compra agora:</span>{" "}
+              {isPurchasableNow ? "apta" : "indisponível"}
+            </p>
+            <p className="mt-1">
+              <span className="font-medium text-zinc-700">Estoque:</span> {stockSummary}
+            </p>
+          </div>
+
           <div className="md:hidden border-t border-zinc-200/80 pt-2.5">
-            <div className="flex flex-wrap gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => {
                   setTrackStock(product.track_stock);
                   setEditingState(true);
                 }}
-                className="cx-btn-secondary px-2.5 py-1.5 text-xs"
+                className="cx-btn-secondary w-full justify-center px-2.5 py-1.5 text-xs"
               >
                 Editar
               </button>
+              <form action={toggleProductActiveAction} className="w-full">
+                <input type="hidden" name="product_id" value={product.id} />
+                <button type="submit" className="cx-btn-secondary w-full justify-center px-2.5 py-1.5 text-xs">
+                  {product.is_active ? "Desativar" : "Ativar"}
+                </button>
+              </form>
+
               {product.is_active ? (
-                <form action={toggleProductAvailabilityAction} className="inline">
+                <form action={toggleProductAvailabilityAction} className="col-span-2">
                   <input type="hidden" name="product_id" value={product.id} />
                   <button
                     type="submit"
-                    className="rounded-xl border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-medium text-emerald-800 transition hover:bg-emerald-50"
+                    className="w-full rounded-xl border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-medium text-emerald-800 transition hover:bg-emerald-50"
                   >
                     {product.is_available ? "Pausar venda" : "Disponibilizar"}
                   </button>
                 </form>
               ) : null}
-              <form action={toggleProductActiveAction} className="inline">
-                <input type="hidden" name="product_id" value={product.id} />
-                <button type="submit" className="cx-btn-secondary px-2.5 py-1.5 text-xs">
-                  {product.is_active ? "Desativar" : "Ativar"}
-                </button>
-              </form>
-              <form action={moveProductAction} className="inline">
-                <input type="hidden" name="product_id" value={product.id} />
-                <input type="hidden" name="direction" value="up" />
-                <button
-                  type="submit"
-                  disabled={isFirst}
-                  className="cx-btn-secondary px-2.5 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Subir
-                </button>
-              </form>
-              <form action={moveProductAction} className="inline">
-                <input type="hidden" name="product_id" value={product.id} />
-                <input type="hidden" name="direction" value="down" />
-                <button
-                  type="submit"
-                  disabled={isLast}
-                  className="cx-btn-secondary px-2.5 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Descer
-                </button>
-              </form>
+
               <form
                 action={deleteProductAction}
-                className="inline"
+                className="col-span-2"
                 onSubmit={(event) => {
                   if (!confirm(`Excluir o produto "${product.name}"? Esta ação não pode ser desfeita.`)) {
                     event.preventDefault();
@@ -182,7 +198,7 @@ export function ProductRow({
                 <input type="hidden" name="product_id" value={product.id} />
                 <button
                   type="submit"
-                  className="rounded-xl border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50"
+                  className="w-full rounded-xl border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50"
                 >
                   Excluir
                 </button>
@@ -191,7 +207,7 @@ export function ProductRow({
           </div>
 
           <div className="hidden md:block rounded-xl border border-zinc-200 bg-zinc-50/80 p-2.5">
-            <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+            <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -218,31 +234,6 @@ export function ProductRow({
                   <input type="hidden" name="product_id" value={product.id} />
                   <button type="submit" className="cx-btn-secondary px-3 py-2">
                     {product.is_active ? "Desativar" : "Ativar"}
-                  </button>
-                </form>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <form action={moveProductAction} className="inline">
-                  <input type="hidden" name="product_id" value={product.id} />
-                  <input type="hidden" name="direction" value="up" />
-                  <button
-                    type="submit"
-                    disabled={isFirst}
-                    className="cx-btn-secondary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Subir
-                  </button>
-                </form>
-                <form action={moveProductAction} className="inline">
-                  <input type="hidden" name="product_id" value={product.id} />
-                  <input type="hidden" name="direction" value="down" />
-                  <button
-                    type="submit"
-                    disabled={isLast}
-                    className="cx-btn-secondary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Descer
                   </button>
                 </form>
               </div>
@@ -342,8 +333,8 @@ export function ProductRow({
                   className="cx-input mt-1 max-w-xs"
                 />
                 <p className="mt-1 text-xs text-zinc-500">
-                  Com controle de estoque, a visibilidade publica depende da quantidade. A pausa/liberacao manual da
-                  venda e feita no botao da listagem de produtos.
+                  Com controle de estoque, o produto continua visível no cardápio, mas pode ficar indisponível para
+                  compra quando zerar. A pausa/liberação manual da venda é feita no botão da listagem de produtos.
                 </p>
               </div>
             ) : (

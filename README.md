@@ -50,6 +50,20 @@ O projeto já possui uma base funcional sólida, com:
 - destaque visual de itens problemáticos no checkout quando houver conflito de estoque/disponibilidade;
 - cancelamento de checkout integrado ao fluxo público;
 
+### Validação recente do fluxo crítico
+
+Além da validação manual contínua, o projeto passou a contar com uma suíte **E2E/smoke com Playwright** cobrindo o fluxo crítico do MVP.
+
+Cenários validados localmente:
+- fluxo público feliz;
+- reflexo operacional no dashboard e no painel público;
+- bloqueio operacional de checkout/conversão quando a loja pausa pedidos;
+- tratamento de bordas de estoque com múltiplos itens problemáticos;
+- cancelamento de checkout e recovery público sem ressuscitar sessão inválida.
+- visibilidade pública de produto sem estoque com bloqueio de compra;
+
+Com isso, o CardExpress passou a ter uma proteção automatizada inicial contra regressões nas rotas e interações mais importantes do sistema.
+
 ---
 
 ## O que já está implementado
@@ -79,7 +93,7 @@ O projeto já possui uma base funcional sólida, com:
 - resumo operacional da loja;
 - métricas de:
   - categorias ativas;
-  - produtos visíveis no cardápio;
+  - produtos aptos para compra;
   - pedidos aguardando aceite;
   - pedidos em preparo;
   - pedidos prontos para retirada;
@@ -99,7 +113,8 @@ O projeto já possui uma base funcional sólida, com:
 - criar categoria;
 - editar nome;
 - ativar e desativar;
-- reordenar;
+- reordenar com **drag and drop no desktop**;
+- reordenar no mobile com fluxo compacto e confiável por controles de ordenação;
 - excluir categoria quando não houver produtos vinculados;
 - criação com formulário recolhido por padrão para melhor organização da tela;
 - **atualização automática em tempo real** na tela de categorias.
@@ -111,7 +126,8 @@ O projeto já possui uma base funcional sólida, com:
 - ativar e desativar;
 - controlar disponibilidade separadamente da ativação;
 - suporte a controle de estoque com `track_stock` e `stock_quantity`;
-- reordenar;
+- reordenar com **drag and drop no desktop**;
+- reordenar no mobile com fluxo compacto e confiável por controles de ordenação;
 - excluir produto;
 - badges operacionais refinados;
 - exibição mais clara de estoque, disponibilidade e visibilidade pública;
@@ -138,7 +154,8 @@ O projeto já possui uma base funcional sólida, com:
 
 - rota pública `/{slug}` carregando dados reais da loja;
 - exibição de categorias e produtos disponíveis;
-- filtro automático de produtos inativos, indisponíveis ou sem estoque, quando aplicável;
+- filtro automático de produtos inativos ou com venda indisponível;
+- produtos sem estoque continuam visíveis no cardápio público, porém bloqueados para compra;
 - busca local por nome/descrição;
 - chips de categoria com opção `Todos`;
 - rolagem horizontal de categorias no mobile;
@@ -169,6 +186,7 @@ O projeto já possui uma base funcional sólida, com:
 - botão para cancelar checkout quando a sessão ainda estiver pendente;
 - controles de aumentar e diminuir quantidade diretamente no resumo do checkout;
 - destaque visual de itens com problema de estoque ou indisponibilidade;
+- identificação antecipada de conflitos de estoque no carrinho e no checkout, antes da criação da sessão;
 - mensagens públicas mais específicas para conflitos de disponibilidade/estoque;
 
 ### Pedidos
@@ -642,16 +660,21 @@ O projeto separa dois conceitos em produtos:
 Quando `track_stock = true`:
 
 * o sistema passa a considerar `stock_quantity`;
-* produtos sem estoque podem deixar de aparecer no cardápio público;
+* produtos sem estoque continuam visíveis no cardápio público, mas ficam bloqueados para compra;
+* o carrinho e o checkout refletem conflitos de estoque de forma antecipada;
 * a conversão do checkout em pedido também valida estoque no servidor.
 
 ### Visibilidade pública do produto
 
-Um produto só aparece no cardápio público quando:
+Um produto aparece no cardápio público quando:
 
 * está ativo;
-* está com venda liberada;
-* e possui estoque positivo, quando houver controle de estoque.
+* está com venda liberada.
+
+Quando houver controle de estoque:
+
+* produtos com estoque positivo ficam aptos para compra;
+* produtos sem estoque continuam visíveis, mas aparecem como indisponíveis para novos itens/incrementos.
 
 ### Disponibilidade pública efetiva da loja
 
@@ -817,6 +840,8 @@ Se a mudança envolver banco:
 * suporte a pedido **cancelado**;
 * devolução de estoque em **recusa** e **cancelamento**;
 * melhorias amplas de responsividade e UX no dashboard e na área pública.
+* produtos sem estoque visíveis no cardápio, porém bloqueados para compra;
+* reordenação de categorias e produtos com drag and drop no desktop e fluxo compacto de reorder no mobile;
 
 ### Em andamento / pendente
 

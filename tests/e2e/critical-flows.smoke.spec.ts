@@ -12,6 +12,7 @@ import {
   extractPublicOrderIdFromUrl,
   goToPublicCheckout,
   loginAsMerchant,
+  productCardByName,
   readStoreSlugFromSettings,
   setStoreAcceptsOrders,
   simulatePaymentAndWaitForOrderPage,
@@ -56,6 +57,11 @@ const seedData = {
       price: "6,00",
       stock: 1,
     },
+    outOfStockVisible: {
+      name: `E2E Sem Estoque ${runId}`,
+      price: "9,90",
+      stock: 0,
+    },
   },
 };
 
@@ -83,6 +89,7 @@ test.describe.serial("CardExpress critical smoke", () => {
       await createProductIfMissing(page, seedData.categoryName, seedData.products.happySecondary);
       await createProductIfMissing(page, seedData.categoryName, seedData.products.edgeStockOne);
       await createProductIfMissing(page, seedData.categoryName, seedData.products.edgeStockTwo);
+      await createProductIfMissing(page, seedData.categoryName, seedData.products.outOfStockVisible);
       await setStoreAcceptsOrders(page, true);
 
       await context.storageState({ path: authStatePath });
@@ -237,7 +244,7 @@ test.describe.serial("CardExpress critical smoke", () => {
 
       await publicPage.getByTestId("checkout-simulate-payment").click();
       await expect(publicPage).toHaveURL(new RegExp(`/${storeSlug}/checkout(?:\\?.*)?$`));
-      await expect(publicPage.getByText(/bloquead|indisponivel|aceitando pedidos|temporariamente/i)).toBeVisible({
+      await expect(publicPage.getByText(/bloquead|indispon[ií]vel|aceitando pedidos|temporariamente/i)).toBeVisible({
         timeout: 15_000,
       });
 
@@ -356,6 +363,31 @@ test.describe.serial("CardExpress critical smoke", () => {
       }, storeSlug);
 
       expect(hasCheckoutInRecovery).toBe(false);
+    } finally {
+      await publicContext.close();
+    }
+  });
+
+  test("Cenario 6 - produto com estoque 0 visivel e bloqueado para compra", async ({ browser }) => {
+    const publicContext = await browser.newContext();
+    const publicPage = await publicContext.newPage();
+
+    try {
+      await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
+
+      const outOfStockCard = productCardByName(publicPage, seedData.products.outOfStockVisible.name);
+      await expect(outOfStockCard).toBeVisible({ timeout: 15_000 });
+      await expect(outOfStockCard.locator('[data-testid^="menu-stock-badge-"]')).toContainText(/Sem estoque/i);
+      await expect(outOfStockCard.locator('[data-testid^="menu-out-of-stock-"]')).toContainText(/indispon[ií]vel/i);
+
+      const addOutOfStockButton = outOfStockCard.locator('[data-testid^="menu-add-"]');
+      await expect(addOutOfStockButton).toBeDisabled();
+
+      await addMenuProductQuantity(publicPage, seedData.products.happyPrimary.name, 1);
+      await expect(publicPage.getByTestId("menu-go-checkout")).toBeVisible();
+
+      await goToPublicCheckout(publicPage, storeSlug);
+      await expect(publicPage.locator('[data-testid^="checkout-cart-item-"]').first()).toBeVisible({ timeout: 10_000 });
     } finally {
       await publicContext.close();
     }

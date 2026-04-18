@@ -1,9 +1,11 @@
 import type { PublicCartItem, PublicMenuRpcRow } from "@/types";
+import { isPublicMenuRowPurchasableNow } from "@/lib/public/store-operational";
 
 type MenuCatalogItem = {
   product_id: string;
   name: string;
   unit_price: number;
+  isPurchasableNow: boolean;
 };
 
 export type CartReconcileResult = {
@@ -11,6 +13,7 @@ export type CartReconcileResult = {
   removedCount: number;
   updatedCount: number;
   priceUpdatedCount: number;
+  unavailableForPurchaseCount: number;
   canCheckout: boolean;
 };
 
@@ -31,6 +34,7 @@ function buildMenuCatalog(menuRows: PublicMenuRpcRow[]) {
       product_id: row.product_id,
       name: row.product_name,
       unit_price: unitPrice,
+      isPurchasableNow: isPublicMenuRowPurchasableNow(row),
     });
   }
 
@@ -47,6 +51,7 @@ export function reconcileCartWithMenu(
   let removedCount = 0;
   let updatedCount = 0;
   let priceUpdatedCount = 0;
+  const unavailableForPurchaseIds = new Set<string>();
 
   for (const item of items) {
     const menuItem = catalog.get(item.product_id);
@@ -79,6 +84,11 @@ export function reconcileCartWithMenu(
     const current = byProductId.get(normalizedItem.product_id);
     if (!current) {
       byProductId.set(normalizedItem.product_id, normalizedItem);
+
+      if (!menuItem.isPurchasableNow) {
+        unavailableForPurchaseIds.add(normalizedItem.product_id);
+      }
+
       continue;
     }
 
@@ -90,12 +100,14 @@ export function reconcileCartWithMenu(
   }
 
   const reconciledItems = Array.from(byProductId.values());
+  const hasPurchasableItems = reconciledItems.some((item) => catalog.get(item.product_id)?.isPurchasableNow === true);
 
   return {
     items: reconciledItems,
     removedCount,
     updatedCount,
     priceUpdatedCount,
-    canCheckout: acceptsOrders && reconciledItems.length > 0,
+    unavailableForPurchaseCount: unavailableForPurchaseIds.size,
+    canCheckout: acceptsOrders && hasPurchasableItems,
   };
 }

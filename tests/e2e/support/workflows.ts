@@ -154,6 +154,10 @@ export async function createProductIfMissing(page: Page, categoryName: string, p
   await expect.poll(
     async () => {
       return await categorySelect.evaluate((select, expectedName) => {
+        if (!(select instanceof HTMLSelectElement)) {
+          return null;
+        }
+
         const options = Array.from(select.options);
         const match = options.find((option) => option.textContent?.trim().toLocaleLowerCase("pt-BR") === expectedName);
         return match?.value ?? null;
@@ -166,6 +170,10 @@ export async function createProductIfMissing(page: Page, categoryName: string, p
   ).not.toBeNull();
 
   const matchedCategoryOptionValue = await categorySelect.evaluate((select, expectedName) => {
+    if (!(select instanceof HTMLSelectElement)) {
+      return null;
+    }
+
     const options = Array.from(select.options);
     const match = options.find((option) => option.textContent?.trim().toLocaleLowerCase("pt-BR") === expectedName);
     return match?.value ?? null;

@@ -20,7 +20,7 @@ import {
   saveCheckoutRecovery,
   saveOrderRecovery,
 } from "@/lib/public/flow-recovery";
-import { getPublicStoreOperationalState } from "@/lib/public/store-operational";
+import { getPublicStoreOperationalState, isPublicMenuRowPurchasableNow } from "@/lib/public/store-operational";
 import { formatDateTime } from "@/lib/orders/presenter";
 import { formatBRL } from "@/lib/validation/price";
 import type {
@@ -80,6 +80,19 @@ export function PublicCheckoutClient({
   const [simulationBlockedByOperationalState, setSimulationBlockedByOperationalState] = useState(false);
   const [simulationBlockedBySessionState, setSimulationBlockedBySessionState] = useState(false);
   const [success, setSuccess] = useState<CreateCheckoutSessionRpcRow | null>(null);
+  const menuByProductId = useMemo(() => {
+    const byProductId = new Map<string, PublicMenuRpcRow>();
+
+    for (const row of menuRows) {
+      if (!row.product_id) {
+        continue;
+      }
+
+      byProductId.set(row.product_id, row);
+    }
+
+    return byProductId;
+  }, [menuRows]);
 
   useEffect(() => {
     const loaded = readPublicCartFromStorage(cartStorageKey);
@@ -204,7 +217,42 @@ export function PublicCheckoutClient({
     () => cartItems.reduce((acc, item) => acc + item.unit_price * item.quantity, 0),
     [cartItems]
   );
+  const hasPurchasableItemsInCart = useMemo(
+    () =>
+      cartItems.some((item) => {
+        const menuItem = menuByProductId.get(item.product_id);
+        return Boolean(menuItem && isPublicMenuRowPurchasableNow(menuItem));
+      }),
+    [cartItems, menuByProductId]
+  );
+  const unavailableProductIdsSet = useMemo(() => {
+    const productIds = cartItems
+      .filter((item) => {
+        const menuItem = menuByProductId.get(item.product_id);
+        return Boolean(menuItem && !isPublicMenuRowPurchasableNow(menuItem));
+      })
+      .map((item) => item.product_id);
+
+    return new Set(productIds);
+  }, [cartItems, menuByProductId]);
+  const hasUnavailableItemsInCart = unavailableProductIdsSet.size > 0;
+  const allCartItemsUnavailable = cartItems.length > 0 && unavailableProductIdsSet.size === cartItems.length;
   const stockIssueProductIdsSet = useMemo(() => new Set(stockIssueProductIds), [stockIssueProductIds]);
+  const preflightStockDiagnosis = useMemo(() => diagnoseStockIssue(cartItems, menuRows), [cartItems, menuRows]);
+  const preflightStockFeedback = useMemo(
+    () => buildStockIssueFeedback(preflightStockDiagnosis, false),
+    [preflightStockDiagnosis]
+  );
+  const preflightProblemProductIdsSet = useMemo(
+    () => new Set(preflightStockFeedback?.problemProductIds ?? []),
+    [preflightStockFeedback]
+  );
+  const preflightProblemItemMessages = useMemo(
+    () => preflightStockFeedback?.problemItemMessagesByProductId ?? {},
+    [preflightStockFeedback]
+  );
+  const hasPreflightStockConflict = preflightProblemProductIdsSet.size > 0;
+  const hasBlockingCartIssues = stockIssueProductIdsSet.size > 0 || hasPreflightStockConflict;
 
   useEffect(() => {
     setStockIssueProductIds((current) => current.filter((productId) => cartItems.some((item) => item.product_id === productId)));
@@ -224,7 +272,8 @@ export function PublicCheckoutClient({
   const phoneIsValid = phoneDigits.length === 10 || phoneDigits.length === 11;
   const canSubmit =
     acceptsOrders &&
-    totalItems > 0 &&
+    hasPurchasableItemsInCart &&
+    !hasBlockingCartIssues &&
     customerNameTrimmed.length > 0 &&
     hasPhoneInput &&
     phoneIsValid &&
@@ -232,14 +281,53 @@ export function PublicCheckoutClient({
   const submitHint = !acceptsOrders
     ? unavailableMessage
     : totalItems <= 0
-      ? "Adicione itens no cardapio para continuar."
+      ? "Adicione itens no cardápio para continuar."
+      : !hasPurchasableItemsInCart
+        ? "Seu carrinho tem apenas itens indisponíveis para compra agora."
+      : hasBlockingCartIssues
+        ? "Revise os itens destacados para continuar com o checkout."
       : !customerNameTrimmed
         ? "Informe seu nome completo."
         : !hasPhoneInput
-          ? "Informe seu telefone para receber atualizacoes do pedido."
+          ? "Informe seu telefone para receber atualizações do pedido."
           : !phoneIsValid
-            ? "Revise o telefone: use 10 ou 11 digitos."
+            ? "Revise o telefone: use 10 ou 11 dígitos."
             : null;
+
+  const getUnavailableItemLabel = useCallback(
+    (productId: string) => {
+      const menuItem = menuByProductId.get(productId);
+      if (!menuItem) {
+        return "Indisponível para novos incrementos";
+      }
+
+      if (menuItem.track_stock === true) {
+        const stockQuantity = toInteger(menuItem.stock_quantity);
+        if (stockQuantity !== null && stockQuantity <= 0) {
+          return "Sem estoque";
+        }
+      }
+
+      return "Indisponível para novos incrementos";
+    },
+    [menuByProductId]
+  );
+
+  const canIncreaseCartItem = useCallback(
+    (productId: string) => {
+      if (!acceptsOrders) {
+        return false;
+      }
+
+      const menuItem = menuByProductId.get(productId);
+      if (!menuItem) {
+        return false;
+      }
+
+      return isPublicMenuRowPurchasableNow(menuItem);
+    },
+    [acceptsOrders, menuByProductId]
+  );
 
   const updateCheckoutCart = useCallback(
     (updater: (current: PublicCheckoutCartItem[]) => PublicCheckoutCartItem[]) => {
@@ -257,12 +345,18 @@ export function PublicCheckoutClient({
 
       setErrorMessage(null);
       setCartSyncMessage(null);
+      setStockIssueProductIds([]);
+      setStockIssueItemMessages({});
     },
     [cartStorageKey]
   );
 
   const increaseItemQuantity = useCallback(
     (productId: string) => {
+      if (!canIncreaseCartItem(productId)) {
+        return;
+      }
+
       updateCheckoutCart((current) =>
         current.map((item) =>
           item.product_id === productId
@@ -274,7 +368,7 @@ export function PublicCheckoutClient({
         )
       );
     },
-    [updateCheckoutCart]
+    [canIncreaseCartItem, updateCheckoutCart]
   );
 
   const decreaseItemQuantity = useCallback(
@@ -317,6 +411,16 @@ export function PublicCheckoutClient({
       return;
     }
 
+    if (!hasPurchasableItemsInCart) {
+      setErrorMessage("Seu carrinho tem apenas itens indisponíveis para compra no momento.");
+      return;
+    }
+
+    if (hasBlockingCartIssues) {
+      setErrorMessage("Revise os itens destacados para continuar com o checkout.");
+      return;
+    }
+
     if (!customerNameTrimmed) {
       setErrorMessage("Informe seu nome para continuar.");
       return;
@@ -328,7 +432,7 @@ export function PublicCheckoutClient({
     }
 
     if (!phoneIsValid) {
-      setErrorMessage("Telefone invalido. Informe um numero brasileiro com 10 ou 11 digitos.");
+      setErrorMessage("Telefone inválido. Informe um número brasileiro com 10 ou 11 dígitos.");
       return;
     }
 
@@ -355,7 +459,7 @@ export function PublicCheckoutClient({
       const currentMenuRows = Array.isArray(currentMenuResult.data) ? currentMenuResult.data : [];
       const currentOperationalState = getPublicStoreOperationalState({
         acceptsOrdersSetting: storeResult.data.accepts_orders,
-        visibleMenuItems: currentMenuRows.length,
+        menuRows: currentMenuRows,
       });
 
       if (!currentOperationalState.canPlaceOrders) {
@@ -467,7 +571,7 @@ export function PublicCheckoutClient({
       const menuRowsNow = Array.isArray(menuResult.data) ? menuResult.data : [];
       const operationalState = getPublicStoreOperationalState({
         acceptsOrdersSetting: storeResult.data.accepts_orders,
-        visibleMenuItems: menuRowsNow.length,
+        menuRows: menuRowsNow,
       });
 
       if (!operationalState.canPlaceOrders) {
@@ -784,91 +888,129 @@ export function PublicCheckoutClient({
           <h2 className="text-lg font-semibold text-zinc-900">Resumo do pedido</h2>
           <span className="text-sm text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</span>
         </div>
-        <p className="mt-1 text-xs text-zinc-500">Confira os itens antes de criar a sessao de checkout.</p>
+        <p className="mt-1 text-xs text-zinc-500">Confira os itens antes de criar a sessão de checkout.</p>
 
-        {cartSyncMessage ? (
+        {hasBlockingCartIssues ? (
+          <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="status">
+            Revise os itens destacados para continuar com o checkout.
+          </p>
+        ) : hasUnavailableItemsInCart ? (
+          <p className="mt-3 rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-700" role="status">
+            {allCartItemsUnavailable
+              ? "Seu carrinho está bloqueado para checkout: todos os itens estão indisponíveis para novos incrementos."
+              : "Há itens indisponíveis para novos incrementos no carrinho. Você ainda pode reduzir ou remover esses itens."}
+          </p>
+        ) : cartSyncMessage ? (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
             {cartSyncMessage}
-          </p>
-        ) : null}
-
-        {stockIssueProductIds.length > 0 ? (
-          <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="status">
-            Revise os itens destacados em vermelho para continuar com o checkout.
           </p>
         ) : null}
 
         {cartItems.length > 0 ? (
           <div className="mt-4 space-y-3">
             {cartItems.map((item) => (
+              (() => {
+                const hasServerIssue = stockIssueProductIdsSet.has(item.product_id);
+                const hasPreflightIssue = preflightProblemProductIdsSet.has(item.product_id);
+                const hasBlockingIssue = hasServerIssue || hasPreflightIssue;
+                const hasUnavailableIssue = unavailableProductIdsSet.has(item.product_id);
+                const itemProblemMessage = hasServerIssue
+                  ? stockIssueItemMessages[item.product_id] ?? preflightProblemItemMessages[item.product_id] ?? "Ajuste a quantidade deste item para continuar."
+                  : hasPreflightIssue
+                    ? preflightProblemItemMessages[item.product_id] ?? "Ajuste a quantidade deste item para continuar."
+                    : hasUnavailableIssue
+                      ? getUnavailableItemLabel(item.product_id)
+                      : null;
+
+                return (
               <div
                 key={item.product_id}
                 data-testid={`checkout-cart-item-${item.product_id}`}
-                data-problematic={stockIssueProductIdsSet.has(item.product_id) ? "true" : "false"}
+                data-problematic={hasBlockingIssue || hasUnavailableIssue ? "true" : "false"}
                 className={`flex items-start justify-between gap-3 rounded-xl border px-3 py-2 ${
-                  stockIssueProductIdsSet.has(item.product_id)
+                  hasBlockingIssue
                     ? "border-red-200 bg-red-50"
-                    : "border-zinc-200 bg-zinc-50"
+                    : hasUnavailableIssue
+                      ? "border-zinc-300 bg-zinc-100"
+                      : "border-zinc-200 bg-zinc-50"
                 }`}
               >
                 <div>
-                  <p className={`text-sm font-medium ${stockIssueProductIdsSet.has(item.product_id) ? "text-red-900" : "text-zinc-900"}`}>
+                  <p
+                    className={`text-sm font-medium ${
+                      hasBlockingIssue
+                        ? "text-red-900"
+                        : hasUnavailableIssue
+                          ? "text-zinc-800"
+                          : "text-zinc-900"
+                    }`}
+                  >
                     {item.name}
                   </p>
-                  <p className={stockIssueProductIdsSet.has(item.product_id) ? "text-xs text-red-700" : "text-xs text-zinc-600"}>
+                  <p className={hasBlockingIssue ? "text-xs text-red-700" : "text-xs text-zinc-600"}>
                     {item.quantity} x {formatBRL(item.unit_price)}
                   </p>
 
-                  <div className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-zinc-300 bg-white px-1.5 py-1">
+                  <div className="mt-2 inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-2 py-1.5">
                     <button
                       type="button"
                       onClick={() => decreaseItemQuantity(item.product_id)}
                       disabled={isSubmitting}
                       data-testid={`checkout-item-decrease-${item.product_id}`}
-                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-zinc-300 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-300 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label={`Diminuir quantidade de ${item.name}`}
                     >
                       -
                     </button>
 
-                    <span className="min-w-5 text-center text-xs font-semibold text-zinc-700">{item.quantity}</span>
+                    <span className="min-w-6 text-center text-sm font-semibold text-zinc-800">{item.quantity}</span>
 
                     <button
                       type="button"
                       onClick={() => increaseItemQuantity(item.product_id)}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !canIncreaseCartItem(item.product_id)}
                       data-testid={`checkout-item-increase-${item.product_id}`}
-                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-zinc-300 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-300 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
                       aria-label={`Aumentar quantidade de ${item.name}`}
                     >
                       +
                     </button>
                   </div>
 
-                  {stockIssueProductIdsSet.has(item.product_id) ? (
+                  {itemProblemMessage ? (
                     <p
                       data-testid={`checkout-item-problem-${item.product_id}`}
-                      className="mt-1 text-[11px] font-medium text-red-700"
+                      className={`mt-1 text-[11px] font-medium ${hasBlockingIssue ? "text-red-700" : "text-zinc-600"}`}
                     >
-                      {stockIssueItemMessages[item.product_id] ?? "Ajuste a quantidade deste item para continuar."}
+                      {itemProblemMessage}
                     </p>
                   ) : null}
                 </div>
-                <p className={stockIssueProductIdsSet.has(item.product_id) ? "text-sm font-semibold text-red-900" : "text-sm font-semibold text-zinc-900"}>
+                <p
+                  className={
+                    hasBlockingIssue
+                      ? "text-sm font-semibold text-red-900"
+                      : hasUnavailableIssue
+                        ? "text-sm font-semibold text-zinc-800"
+                        : "text-sm font-semibold text-zinc-900"
+                  }
+                >
                   {formatBRL(item.unit_price * item.quantity)}
                 </p>
               </div>
+                );
+              })()
             ))}
           </div>
         ) : (
           <div className="mt-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4">
-            <p className="text-sm font-medium text-zinc-700">Seu carrinho esta vazio.</p>
-            <p className="mt-1 text-xs text-zinc-500">Adicione produtos no cardapio para continuar.</p>
+            <p className="text-sm font-medium text-zinc-700">Seu carrinho está vazio.</p>
+            <p className="mt-1 text-xs text-zinc-500">Adicione produtos no cardápio para continuar.</p>
             <Link
               href={`/${slug}`}
               className="cx-btn-secondary mt-3 inline-flex px-3 py-1.5 text-xs"
             >
-              Voltar ao cardapio
+              Voltar ao cardápio
             </Link>
           </div>
         )}
@@ -879,7 +1021,7 @@ export function PublicCheckoutClient({
             <span className="font-semibold text-zinc-900">{formatBRL(localTotalAmount)}</span>
           </div>
           <p className="mt-1 text-xs text-zinc-500">
-            O valor oficial e recalculado no servidor no momento da criacao da sessao.
+            O valor oficial é recalculado no servidor no momento da criação da sessão.
           </p>
         </div>
       </section>
@@ -920,7 +1062,7 @@ export function PublicCheckoutClient({
             />
             {customerPhoneTrimmed.length > 0 && !phoneIsValid ? (
               <p className="mt-1 text-xs text-red-700">
-                Telefone invalido. Informe um numero brasileiro com 10 ou 11 digitos.
+                Telefone inválido. Informe um número brasileiro com 10 ou 11 dígitos.
               </p>
             ) : null}
             <p className="mt-1 text-xs text-zinc-500">Nome e telefone ficam salvos neste aparelho para próximos pedidos.</p>
@@ -928,7 +1070,7 @@ export function PublicCheckoutClient({
 
           <div>
             <label htmlFor="checkout-notes" className="block text-sm font-medium text-zinc-800">
-              Observacoes do pedido (opcional)
+              Observações do pedido (opcional)
             </label>
             <textarea
               id="checkout-notes"
@@ -937,7 +1079,7 @@ export function PublicCheckoutClient({
               onChange={(event) => setNotes(event.target.value)}
               data-testid="checkout-notes"
               className="cx-textarea mt-1"
-              placeholder="Ex.: sem cebola, retirar no balcao"
+              placeholder="Ex.: sem cebola, retirar no balcão"
             />
           </div>
 
@@ -953,7 +1095,7 @@ export function PublicCheckoutClient({
             data-testid="checkout-create-session"
             className="cx-btn-primary w-full px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? "Criando sessao..." : "Criar sessao de checkout"}
+            {isSubmitting ? "Criando sessão..." : "Criar sessão de checkout"}
           </button>
 
           {!canSubmit && !isSubmitting && !errorMessage && submitHint ? (
@@ -962,7 +1104,9 @@ export function PublicCheckoutClient({
         </form>
 
         <p className="mt-3 text-xs text-zinc-500">
-          Ao continuar, os itens do carrinho serao registrados em uma nova sessao de checkout.
+          {totalItems > 0 && !hasPurchasableItemsInCart
+            ? "Com os itens atuais, não é possível criar uma nova sessão de checkout. Ajuste o carrinho para continuar."
+            : "Ao continuar, os itens do carrinho serão registrados em uma nova sessão de checkout."}
         </p>
       </section>
     </div>

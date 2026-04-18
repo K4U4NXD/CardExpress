@@ -32,7 +32,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const menuRows: PublicMenuRpcRow[] = Array.isArray(menuResult.data) ? menuResult.data : [];
   const operationalState = getPublicStoreOperationalState({
     acceptsOrdersSetting: store.accepts_orders,
-    visibleMenuItems: menuRows.length,
+    menuRows,
   });
 
   return (

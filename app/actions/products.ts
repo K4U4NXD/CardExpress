@@ -375,6 +375,81 @@ export async function moveProductAction(formData: FormData) {
   redirectWithNotice("reordenado");
 }
 
+export type ReorderProductsActionResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function reorderProductsAction(orderedProductIds: string[]): Promise<ReorderProductsActionResult> {
+  if (!Array.isArray(orderedProductIds) || orderedProductIds.length === 0) {
+    return { ok: false, error: "Não foi possível identificar a nova ordem dos produtos." };
+  }
+
+  const cleanIds = orderedProductIds.map((id) => String(id ?? "").trim());
+  if (cleanIds.some((id) => !id)) {
+    return { ok: false, error: "A lista de produtos contém identificadores inválidos." };
+  }
+
+  const uniqueIds = new Set(cleanIds);
+  if (uniqueIds.size !== cleanIds.length) {
+    return { ok: false, error: "A lista de produtos contém itens repetidos." };
+  }
+
+  const { supabase, store } = await getUserStore();
+  if (!store) {
+    return { ok: false, error: "Nenhuma loja vinculada à sua conta." };
+  }
+
+  const { data: list, error: listError } = await supabase
+    .from("products")
+    .select("id, sort_order")
+    .eq("store_id", store.id)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (listError || !list?.length) {
+    return { ok: false, error: formatPostgrestError(listError ?? { message: "Lista vazia" }) };
+  }
+
+  if (cleanIds.length !== list.length) {
+    return { ok: false, error: "A lista de produtos está desatualizada. Atualize a página e tente novamente." };
+  }
+
+  const existingIds = new Set(list.map((item) => item.id));
+  if (cleanIds.some((id) => !existingIds.has(id))) {
+    return { ok: false, error: "Não foi possível validar alguns produtos para reordenação." };
+  }
+
+  const maxSortOrder = Math.max(...list.map((item) => item.sort_order), 0);
+  const tempBase = maxSortOrder + 1_000_000;
+
+  for (const [index, id] of cleanIds.entries()) {
+    const { error } = await supabase
+      .from("products")
+      .update({ sort_order: tempBase + index })
+      .eq("id", id)
+      .eq("store_id", store.id);
+
+    if (error) {
+      return { ok: false, error: formatPostgrestError(error) };
+    }
+  }
+
+  for (const [index, id] of cleanIds.entries()) {
+    const { error } = await supabase
+      .from("products")
+      .update({ sort_order: index })
+      .eq("id", id)
+      .eq("store_id", store.id);
+
+    if (error) {
+      return { ok: false, error: formatPostgrestError(error) };
+    }
+  }
+
+  revalidateStoreViews(store.slug);
+  return { ok: true };
+}
+
 export async function deleteProductAction(formData: FormData) {
   const productId = String(formData.get("product_id") ?? "").trim();
   if (!productId) {

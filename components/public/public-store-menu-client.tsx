@@ -10,6 +10,7 @@ import {
   writePublicCartToStorage,
 } from "@/lib/public/cart";
 import { reconcileCartWithMenu } from "@/lib/public/cart-reconcile";
+import { isPublicMenuRowPurchasableNow, isPublicMenuRowVisible } from "@/lib/public/store-operational";
 import { formatBRL } from "@/lib/validation/price";
 import type { PublicCartItem, PublicMenuRpcRow } from "@/types";
 
@@ -26,6 +27,9 @@ type MenuProduct = {
   description: string | null;
   price: number;
   image_url: string | null;
+  track_stock: boolean;
+  stock_quantity: number | null;
+  isPurchasableNow: boolean;
 };
 
 type MenuSection = {
@@ -40,6 +44,17 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
   const unavailableMessage = ordersUnavailableMessage ?? "A loja pausou temporariamente os pedidos.";
 
   const sections = useMemo(() => groupMenuByCategory(menuRows), [menuRows]);
+  const productById = useMemo(() => {
+    const map = new Map<string, MenuProduct>();
+
+    for (const section of sections) {
+      for (const product of section.products) {
+        map.set(product.id, product);
+      }
+    }
+
+    return map;
+  }, [sections]);
   const hasProducts = sections.length > 0;
   const [activeCategory, setActiveCategory] = useState<string>("todos");
   const [searchQuery, setSearchQuery] = useState("");
@@ -121,9 +136,23 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
     [cartItems]
   );
 
-  const isCheckoutDisabled = !acceptsOrders || totalItems === 0;
+  const hasPurchasableItemsInCart = useMemo(
+    () => cartItems.some((item) => productById.get(item.product_id)?.isPurchasableNow === true),
+    [cartItems, productById]
+  );
+  const unavailableItemsInCartCount = useMemo(
+    () => cartItems.filter((item) => productById.get(item.product_id)?.isPurchasableNow === false).length,
+    [cartItems, productById]
+  );
+  const allCartProductsUnavailable = cartItems.length > 0 && unavailableItemsInCartCount === cartItems.length;
+
+  const isCheckoutDisabled = !acceptsOrders || !hasPurchasableItemsInCart;
 
   function addProduct(product: MenuProduct) {
+    if (!acceptsOrders || !product.isPurchasableNow) {
+      return;
+    }
+
     setCartItems((previous) => {
       const existing = previous.find((item) => item.product_id === product.id);
 
@@ -151,6 +180,11 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
   }
 
   function increaseQuantity(productId: string) {
+    const product = productById.get(productId);
+    if (!acceptsOrders || !product || !product.isPurchasableNow) {
+      return;
+    }
+
     setCartItems((previous) =>
       previous.map((item) =>
         item.product_id === productId
@@ -212,7 +246,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
                 type="search"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Buscar por nome ou descricao"
+                placeholder="Buscar por nome ou descrição"
                 data-testid="menu-search-input"
                 className="cx-input"
               />
@@ -268,12 +302,16 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
               {section.products.map((product) => {
                 const cartItem = cartItems.find((item) => item.product_id === product.id);
                 const quantity = cartItem?.quantity ?? 0;
+                const isOutOfStock = product.track_stock && (product.stock_quantity ?? 0) <= 0;
+                const canAddOrIncrease = acceptsOrders && product.isPurchasableNow;
 
                 return (
                   <article
                     key={product.id}
                     data-testid={`menu-product-${product.id}`}
-                    className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_42px_-32px_rgba(24,24,27,0.5)]"
+                    className={`rounded-2xl border bg-white p-4 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_42px_-32px_rgba(24,24,27,0.5)] ${
+                      isOutOfStock ? "border-zinc-300 bg-zinc-50/80" : "border-zinc-200"
+                    }`}
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                       {product.image_url ? (
@@ -287,7 +325,17 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
                         <div>
                           <div className="flex items-start justify-between gap-4">
                             <h3 className="text-base font-medium text-zinc-900">{product.name}</h3>
-                            <span className="text-sm font-semibold text-zinc-900">{formatBRL(product.price)}</span>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-sm font-semibold text-zinc-900">{formatBRL(product.price)}</span>
+                              {isOutOfStock ? (
+                                <span
+                                  data-testid={`menu-stock-badge-${product.id}`}
+                                  className="rounded-full bg-zinc-200 px-2 py-0.5 text-[11px] font-semibold text-zinc-700"
+                                >
+                                  Sem estoque
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
                           {product.description ? (() => {
                             const isExpanded = Boolean(expandedDescriptions[product.id]);
@@ -323,9 +371,8 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
                             <button
                               type="button"
                               onClick={() => decreaseQuantity(product.id)}
-                              disabled={!acceptsOrders}
                               data-testid={`menu-decrease-${product.id}`}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
                             >
                               -
                             </button>
@@ -333,7 +380,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
                             <button
                               type="button"
                               onClick={() => increaseQuantity(product.id)}
-                              disabled={!acceptsOrders}
+                              disabled={!canAddOrIncrease}
                               data-testid={`menu-increase-${product.id}`}
                               className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
                             >
@@ -344,13 +391,22 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
                           <button
                             type="button"
                             onClick={() => addProduct(product)}
-                            disabled={!acceptsOrders}
+                            disabled={!canAddOrIncrease}
                             data-testid={`menu-add-${product.id}`}
                             className="cx-btn-primary w-fit px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             Adicionar
                           </button>
                         )}
+
+                        {isOutOfStock ? (
+                          <p
+                            data-testid={`menu-out-of-stock-${product.id}`}
+                            className="text-xs font-medium text-zinc-600"
+                          >
+                            Indisponível para novos incrementos no carrinho.
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   </article>
@@ -377,7 +433,7 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
         )
       ) : (
         <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-8 text-center">
-          <p className="text-sm font-medium text-zinc-700">Cardapio indisponivel no momento.</p>
+          <p className="text-sm font-medium text-zinc-700">Cardápio indisponível no momento.</p>
           <p className="mt-1 text-xs text-zinc-500">Volte mais tarde para conferir os produtos deste estabelecimento.</p>
         </div>
       )}
@@ -387,7 +443,17 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
           <div className="min-w-0">
             <p className="text-xs text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</p>
             <p className="text-sm font-semibold text-zinc-900">{formatBRL(totalAmount)}</p>
-            {totalItems === 0 ? <p className="text-[11px] text-zinc-500">Adicione itens para liberar o checkout.</p> : null}
+            {totalItems === 0 ? (
+              <p className="text-[11px] text-zinc-500">Adicione itens para liberar o checkout.</p>
+            ) : unavailableItemsInCartCount > 0 ? (
+              <p data-testid="menu-cart-unavailable-hint" className="text-[11px] text-zinc-600">
+                {allCartProductsUnavailable
+                  ? "Checkout bloqueado: todos os itens do carrinho estão indisponíveis no momento."
+                  : `${unavailableItemsInCartCount} ${unavailableItemsInCartCount === 1 ? "item indisponível" : "itens indisponíveis"} para novos incrementos.`}
+              </p>
+            ) : !hasPurchasableItemsInCart ? (
+              <p className="text-[11px] text-zinc-500">Seu carrinho tem apenas itens indisponíveis para compra agora.</p>
+            ) : null}
           </div>
 
           <div className="flex items-center gap-2">
@@ -438,8 +504,9 @@ function groupMenuByCategory(rows: PublicMenuRpcRow[]): MenuSection[] {
       products: [],
     };
 
-    if (row.product_id && row.product_name) {
+    if (row.product_id && row.product_name && isPublicMenuRowVisible(row)) {
       const parsedPrice = Number(row.product_price ?? 0);
+      const stockQuantity = toNonNegativeInteger(row.stock_quantity);
 
       if (Number.isFinite(parsedPrice) && parsedPrice >= 0) {
         const alreadyExists = category.products.some((product) => product.id === row.product_id);
@@ -451,6 +518,9 @@ function groupMenuByCategory(rows: PublicMenuRpcRow[]): MenuSection[] {
             description: row.product_description,
             price: parsedPrice,
             image_url: row.product_image_url,
+            track_stock: row.track_stock === true,
+            stock_quantity: stockQuantity,
+            isPurchasableNow: isPublicMenuRowPurchasableNow(row),
           });
         }
       }
@@ -462,4 +532,19 @@ function groupMenuByCategory(rows: PublicMenuRpcRow[]): MenuSection[] {
   return Array.from(sectionMap.values())
     .sort((a, b) => a.category_sort_order - b.category_sort_order)
     .filter((section) => section.products.length > 0);
+}
+
+function toNonNegativeInteger(value: number | string | null | undefined) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.max(0, Math.floor(value));
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return Math.max(0, Math.floor(parsed));
+    }
+  }
+
+  return null;
 }

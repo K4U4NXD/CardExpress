@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Sora, Space_Grotesk } from "next/font/google";
 import { Reveal } from "@/components/layout/reveal";
 import { LandingStickyNav } from "@/components/layout/landing-sticky-nav";
 import { LandingBenefitsSection } from "@/components/layout/landing-benefits-section";
+
+export const metadata: Metadata = {
+  title: "Início",
+};
 
 const bodyFont = Sora({
   subsets: ["latin"],

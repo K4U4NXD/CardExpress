@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { DashboardProductsView } from "@/components/dashboard/dashboard-products-view";
 import { PageHeader } from "@/components/layout/page-header";
 import { getUserStore } from "@/lib/auth/store";
 import type { Category, Product } from "@/types";
+
+export const metadata: Metadata = {
+  title: "Produtos",
+};
+
 export default async function DashboardProductsPage() {
   const { supabase, store } = await getUserStore();
 

@@ -1,16 +1,23 @@
+import type { Metadata } from "next";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { calculateStoreReadiness } from "@/lib/store-readiness";
+import { extractPendingSignupData } from "@/lib/auth/onboarding";
 import { PageHeader } from "@/components/layout/page-header";
 import { DashboardHomeRealtimeSync } from "@/components/dashboard/dashboard-home-realtime-sync";
 import { formatDateTime, formatOrderCode, ORDER_STATUS_BADGE, ORDER_STATUS_LABELS } from "@/lib/orders/presenter";
 import { getTodayRangeInSaoPaulo } from "@/lib/timezone";
 import { formatBRL } from "@/lib/validation/price";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { OrderStatus } from "@/types";
 
 const LOW_STOCK_THRESHOLD = 5;
 const TOP_PRODUCTS_LIMIT = 5;
 const RECENT_ORDERS_LIMIT = 5;
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+};
 
 type OrderTotalRow = {
   total_amount: number;
@@ -41,13 +48,20 @@ type StockProblemProductRow = {
   stock_quantity: number;
 };
 
+type DashboardHomePageProps = {
+  searchParams: Promise<{
+    signup?: string;
+  }>;
+};
+
 function statusLabel(acceptsOrders: boolean, isReady: boolean) {
   if (!isReady) return { text: "Com pendências", badge: "bg-amber-100 text-amber-900" };
   if (acceptsOrders) return { text: "Aceitando pedidos", badge: "bg-emerald-100 text-emerald-900" };
   return { text: "Pedidos pausados", badge: "bg-zinc-200 text-zinc-700" };
 }
 
-export default async function DashboardHomePage() {
+export default async function DashboardHomePage({ searchParams }: DashboardHomePageProps) {
+  const { signup } = await searchParams;
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -68,6 +82,14 @@ export default async function DashboardHomePage() {
     .select("id, name, slug, phone")
     .eq("owner_id", user.id)
     .maybeSingle();
+
+  const pendingSignup = extractPendingSignupData(user);
+
+  if (!store && pendingSignup) {
+    redirect("/dashboard/finalizar-cadastro");
+  }
+
+  const showSignupSuccess = signup === "email-confirmed" && Boolean(store);
 
   const displayName = profile?.full_name ?? user.user_metadata?.full_name ?? user.email ?? "Comerciante";
 
@@ -249,6 +271,24 @@ export default async function DashboardHomePage() {
       />
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        {showSignupSuccess && store ? (
+          <section className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:p-5">
+            <p className="text-sm font-semibold text-emerald-900">
+              E-mail confirmado com sucesso. Sua loja foi criada e já está pronta para configuração.
+            </p>
+            <div className="mt-3">
+              <Link
+                href={`/${store.slug}`}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100"
+              >
+                Abrir página pública da loja
+              </Link>
+            </div>
+          </section>
+        ) : null}
+
         <div className="mb-2 flex justify-end">
           {store ? <DashboardHomeRealtimeSync storeId={store.id} /> : null}
         </div>
@@ -257,9 +297,8 @@ export default async function DashboardHomePage() {
             <div className="space-y-2 text-left">
               <p className="font-medium text-zinc-800">Nenhuma loja encontrada</p>
               <p className="text-sm text-zinc-600">
-                Se você acabou de confirmar o e-mail, o cadastro pode não ter criado a loja. Em desenvolvimento,
-                desative a confirmação de e-mail no Supabase para concluir o fluxo em um único passo, ou entre em
-                contato para vincular a loja manualmente.
+                Não foi possível localizar uma loja vinculada a esta conta. Se você acabou de confirmar o e-mail,
+                recarregue a página ou acesse o passo de conclusão do cadastro.
               </p>
             </div>
           ) : (

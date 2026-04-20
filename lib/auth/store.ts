@@ -13,7 +13,7 @@ export async function getUserStore() {
 
   const { data: store, error } = await supabase
     .from("stores")
-    .select("id, name, slug, phone")
+    .select("id, name, slug, phone, logo_url")
     .eq("owner_id", user.id)
     .maybeSingle();
 

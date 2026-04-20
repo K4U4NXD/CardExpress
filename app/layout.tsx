@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
+import { BRANDING } from "@/lib/branding";
 import "./globals.css";
 
 /** Metadados padrão da raiz; rotas filhas podem sobrescrever com generateMetadata. */
 export const metadata: Metadata = {
   title: {
-    default: "CardExpress",
-    template: "%s · CardExpress",
+    default: BRANDING.productName,
+    template: `%s | ${BRANDING.shortName}`,
   },
   description: "Cardápio digital para pedidos com retirada no balcão.",
+  icons: {
+    icon: [{ url: BRANDING.iconPath, type: "image/png" }],
+    shortcut: [{ url: BRANDING.iconPath, type: "image/png" }],
+    apple: [{ url: BRANDING.iconPath, type: "image/png" }],
+  },
 };
 
 /** Layout raiz: fontes e shell mínimo compartilhado por toda a aplicação. */

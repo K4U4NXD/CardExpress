@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
 import { PublicReadyPanelClient } from "@/components/public/public-ready-panel-client";
+import { BRANDING } from "@/lib/branding";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 
@@ -21,6 +23,34 @@ type RecentCalledOrder = {
   ready_at: string | null;
 };
 
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  const slug = resolvedParams.slug;
+  const supabase = await createServerSupabaseClient();
+
+  const { data: store } = await supabase
+    .from("stores")
+    .select("name, slug, logo_url")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  const storeLabel = store?.name ?? store?.slug ?? slug;
+  const iconUrl = store?.logo_url?.trim() || BRANDING.iconPath;
+
+  return {
+    title: {
+      absolute: `Painel | ${storeLabel}`,
+    },
+    description: `Painel público de retirada da loja ${storeLabel}.`,
+    icons: {
+      icon: [{ url: iconUrl }],
+      shortcut: [{ url: iconUrl }],
+      apple: [{ url: iconUrl }],
+    },
+  };
+}
+
 export default async function PublicReadyPanelPage({ params }: PageProps) {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
@@ -29,7 +59,7 @@ export default async function PublicReadyPanelPage({ params }: PageProps) {
   const [storeResult, readyResult, historyResult] = await Promise.all([
     supabase
       .from("stores")
-      .select("id, name, slug")
+      .select("id, name, slug, logo_url")
       .eq("slug", slug)
       .maybeSingle(),
     supabase
@@ -61,6 +91,7 @@ export default async function PublicReadyPanelPage({ params }: PageProps) {
           latestOrder={order}
           recentCalledOrders={recentCalled}
           storeName={store.name}
+          storeLogoUrl={store.logo_url}
           tvModeHref={`/${slug}/painel/tv`}
         />
       </div>

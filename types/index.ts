@@ -19,6 +19,7 @@ export type Store = {
   name: string;
   slug: string;
   phone: string | null;
+  logo_url: string | null;
 };
 
 /** Categoria do cardápio (public.categories). */
@@ -105,6 +106,7 @@ export type PublicStoreRpcRow = {
   name: string;
   slug: string;
   phone: string | null;
+  logo_url: string | null;
   accepts_orders: boolean;
   public_message: string | null;
 };

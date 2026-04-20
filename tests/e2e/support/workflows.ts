@@ -232,11 +232,18 @@ export async function createCheckoutSession(page: Page, input: CheckoutInput) {
     await page.getByTestId("checkout-notes").fill(input.note);
   }
 
-  await page.getByTestId("checkout-create-session").click();
+  const createSessionButton = page.getByTestId("checkout-create-session");
 
-  if (input.expectSessionCreated !== false) {
-    await expect(page.getByRole("heading", { name: /checkout criada/i })).toBeVisible({ timeout: 15_000 });
+  if (input.expectSessionCreated === false) {
+    await expect(createSessionButton).toBeDisabled({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: /checkout criada/i })).toHaveCount(0);
+    return;
   }
+
+  await expect(createSessionButton).toBeEnabled({ timeout: 10_000 });
+  await createSessionButton.click();
+
+  await expect(page.getByRole("heading", { name: /checkout criada/i })).toBeVisible({ timeout: 15_000 });
 }
 
 export async function simulatePaymentAndWaitForOrderPage(page: Page, slug: string) {

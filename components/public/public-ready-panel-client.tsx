@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PublicStoreBrandBadge } from "@/components/public/public-store-brand-badge";
 import { PublicPanelRealtimeSync } from "@/components/public/public-panel-realtime-sync";
 import {
   ensurePublicAudioInteractionTracking,
@@ -23,6 +24,7 @@ type PublicReadyPanelClientProps = {
   recentCalledOrders: PanelHistoryItem[];
   mode?: "default" | "tv";
   storeName?: string;
+  storeLogoUrl?: string | null;
   tvModeHref?: string;
 };
 
@@ -44,6 +46,7 @@ export function PublicReadyPanelClient({
   recentCalledOrders,
   mode = "default",
   storeName,
+  storeLogoUrl,
   tvModeHref,
 }: PublicReadyPanelClientProps) {
   const [soundEnabled, setSoundEnabled] = useState(false);
@@ -109,9 +112,15 @@ export function PublicReadyPanelClient({
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.18),rgba(0,0,0,0.95)_58%)]" />
 
         <header className="relative z-10 flex items-start justify-between gap-4 px-6 py-4 sm:px-10 sm:py-6">
-          <div>
+          <div className="space-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-zinc-400">Painel de retirada</p>
-            <p className="mt-1 text-sm font-medium text-zinc-200">{storeName ?? slug}</p>
+            <PublicStoreBrandBadge
+              storeName={storeName}
+              slug={slug}
+              logoUrl={storeLogoUrl}
+              theme="dark"
+              compact
+            />
           </div>
 
           <div className="flex flex-col items-end gap-2">
@@ -187,8 +196,15 @@ export function PublicReadyPanelClient({
   return (
     <div className="mx-auto max-w-5xl space-y-4 px-4 sm:px-6">
       <section className="rounded-xl border border-zinc-800/80 bg-zinc-900/65 px-3 py-1.5 text-zinc-300 sm:px-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 space-y-2">
+            <PublicStoreBrandBadge
+              storeName={storeName}
+              slug={slug}
+              logoUrl={storeLogoUrl}
+              theme="dark"
+              compact
+            />
             <PublicPanelRealtimeSync slug={slug} className="truncate text-[11px] text-zinc-400" />
           </div>
 

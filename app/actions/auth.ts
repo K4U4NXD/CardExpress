@@ -1,54 +1,140 @@
 "use server";
 
+import { ensureAccountProvisioned } from "@/lib/auth/onboarding";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { normalizeStoreSlug, validateStoreSlug } from "@/lib/auth/validation";
+import {
+  normalizeStoreSlug,
+  validateSignupInput,
+  validateStoreSlug,
+  type SignupValidationFieldErrors,
+  type SignupValidationValues,
+} from "@/lib/auth/validation";
+import { buildAbsoluteUrlFromOrigin } from "@/lib/public-store-url";
 import { safeNextPath } from "@/lib/auth/redirect";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+
+export type AuthFormValues = SignupValidationValues;
+export type AuthFieldErrors = SignupValidationFieldErrors;
 
 export type AuthFormState = {
   error?: string;
   success?: string;
+  values?: AuthFormValues;
+  fieldErrors?: AuthFieldErrors;
 };
+
+export type CompleteSignupStoreState = {
+  error?: string;
+  value?: string;
+  fieldErrors?: {
+    store_slug?: string;
+  };
+};
+
+const EMPTY_SIGNUP_VALUES: AuthFormValues = {
+  full_name: "",
+  email: "",
+  store_name: "",
+  store_slug: "",
+  phone: "",
+};
+
+function buildSignupState(input: {
+  error?: string;
+  success?: string;
+  values?: AuthFormValues;
+  fieldErrors?: AuthFieldErrors;
+}): AuthFormState {
+  const nextState: AuthFormState = {};
+
+  if (input.error) {
+    nextState.error = input.error;
+  }
+  if (input.success) {
+    nextState.success = input.success;
+  }
+  if (input.values) {
+    nextState.values = {
+      ...EMPTY_SIGNUP_VALUES,
+      ...input.values,
+    };
+  }
+  if (input.fieldErrors && Object.keys(input.fieldErrors).length > 0) {
+    nextState.fieldErrors = { ...input.fieldErrors };
+  }
+
+  return nextState;
+}
 
 function mapAuthError(message: string): string {
   const m = message.trim();
+  const lower = m.toLowerCase();
+
+  if (lower.includes("email not confirmed") || lower.includes("email_not_confirmed")) {
+    return "Confirme seu e-mail para ativar sua conta e concluir o cadastro da loja.";
+  }
+
   if (m.includes("Invalid login credentials")) {
     return "E-mail ou senha inválidos.";
   }
-  if (m.toLowerCase().includes("invalid email")) {
+  if (lower.includes("invalid email")) {
     return "E-mail inválido. Verifique o endereço digitado.";
   }
-  if (m.toLowerCase().includes("password") && m.toLowerCase().includes("least")) {
+  if (lower.includes("password") && lower.includes("least")) {
     return "A senha não atende aos requisitos mínimos do provedor de login.";
   }
   return m;
 }
 
-function isUniqueViolation(err: { code?: string; message?: string }): boolean {
-  return err.code === "23505" || (err.message?.toLowerCase().includes("duplicate") ?? false);
+function mapSignupAuthError(message: string): Pick<AuthFormState, "error" | "fieldErrors"> {
+  const lower = message.trim().toLowerCase();
+
+  if (
+    lower.includes("email rate limit exceeded") ||
+    lower.includes("rate limit") ||
+    lower.includes("over_email_send_rate_limit")
+  ) {
+    return {
+      error:
+        "Limite de envios de e-mail atingido no momento. Aguarde alguns minutos e tente novamente.",
+    };
+  }
+
+  if (lower.includes("already registered") || lower.includes("user already registered")) {
+    return { fieldErrors: { email: "Este e-mail já está cadastrado." } };
+  }
+  if (lower.includes("invalid email")) {
+    return { fieldErrors: { email: "Digite um e-mail válido." } };
+  }
+  if (lower.includes("password")) {
+    return {
+      fieldErrors: {
+        password:
+          "A senha deve ter no mínimo 8 caracteres, incluindo 1 letra maiúscula, 1 número e 1 caractere especial.",
+      },
+    };
+  }
+
+  return { error: mapAuthError(message) };
 }
 
-/** Mensagens claras em português para erros comuns do PostgREST / Postgres. */
-function mapPostgrestError(err: { message?: string; code?: string }): string {
-  const m = (err.message ?? "").trim();
-  const lower = m.toLowerCase();
+async function resolveAppOrigin(): Promise<string> {
+  const requestHeaders = await headers();
 
-  if (m.includes("Could not find") && m.includes("column")) {
-    return "Coluna ou tabela inesperada no banco. Confira se o schema no Supabase está alinhado com a versão do aplicativo.";
-  }
-  if (
-    err.code === "42501" ||
-    lower.includes("permission denied") ||
-    lower.includes("row-level security") ||
-    lower.includes("rls")
-  ) {
-    return "Operação bloqueada pelas regras de segurança (RLS). Ajuste as políticas no Supabase ou confira se está autenticado.";
-  }
-  if (isUniqueViolation(err)) {
-    return "Já existe um registro com esse valor (por exemplo, slug da loja ou e-mail).";
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const proto = requestHeaders.get("x-forwarded-proto") ?? "http";
+
+  if (host) {
+    return `${proto}://${host}`;
   }
 
-  return m || "Erro desconhecido ao falar com o banco de dados.";
+  const envOrigin = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL;
+  if (envOrigin) {
+    return envOrigin.replace(/\/$/, "");
+  }
+
+  return "http://localhost:3000";
 }
 
 export async function loginAction(
@@ -70,6 +156,17 @@ export async function loginAction(
     return { error: mapAuthError(error.message) };
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.email_confirmed_at) {
+    await supabase.auth.signOut();
+    return {
+      error: "Confirme seu e-mail para ativar sua conta e concluir o cadastro da loja.",
+    };
+  }
+
   redirect(next);
 }
 
@@ -81,99 +178,164 @@ export async function signupAction(
   _prev: AuthFormState | null,
   formData: FormData
 ): Promise<AuthFormState> {
-  const full_name = String(formData.get("full_name") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
+  const full_name = String(formData.get("full_name") ?? "");
+  const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
-  const store_name = String(formData.get("store_name") ?? "").trim();
-  const store_slug = normalizeStoreSlug(String(formData.get("store_slug") ?? ""));
-  const store_phone = String(formData.get("phone") ?? "").trim();
+  const password_confirmation = String(formData.get("password_confirmation") ?? "");
+  const store_name = String(formData.get("store_name") ?? "");
+  const store_slug = String(formData.get("store_slug") ?? "");
+  const store_phone = String(formData.get("phone") ?? "");
 
-  if (!full_name || !email || !password || !store_name || !store_slug || !store_phone) {
-    return { error: "Preencha todos os campos obrigatórios." };
-  }
-
-  const slugErr = validateStoreSlug(store_slug);
-  if (slugErr) return { error: slugErr };
-
-  if (password.length < 6) {
-    return { error: "A senha deve ter pelo menos 6 caracteres." };
-  }
-
-  const supabase = await createServerSupabaseClient();
-
-  const { data: signData, error: signError } = await supabase.auth.signUp({
+  const validation = validateSignupInput({
+    full_name,
     email,
     password,
-    options: {
-      data: { full_name },
-    },
+    password_confirmation,
+    store_name,
+    store_slug,
+    phone: store_phone,
   });
 
-  if (signError) {
-    if (
-      signError.message.includes("already registered") ||
-      signError.message.toLowerCase().includes("user already registered")
-    ) {
-      return { error: "Este e-mail já está cadastrado." };
+  if (validation.hasErrors) {
+    return buildSignupState({
+      values: validation.values,
+      fieldErrors: validation.fieldErrors,
+    });
+  }
+
+  try {
+    const supabase = await createServerSupabaseClient();
+    const appOrigin = await resolveAppOrigin();
+    const emailRedirectTo = buildAbsoluteUrlFromOrigin("/auth/confirm?next=/dashboard", appOrigin);
+
+    const { data: signData, error: signError } = await supabase.auth.signUp({
+      email: validation.values.email,
+      password,
+      options: {
+        emailRedirectTo,
+        data: {
+          full_name: validation.values.full_name,
+          pending_signup: {
+            full_name: validation.values.full_name,
+            store_name: validation.values.store_name,
+            store_slug: validation.values.store_slug,
+            phone: validation.values.phone,
+          },
+        },
+      },
+    });
+
+    if (signError) {
+      return buildSignupState({
+        ...mapSignupAuthError(signError.message),
+        values: validation.values,
+      });
     }
-    return { error: mapAuthError(signError.message) };
+
+    const user = signData.user;
+    if (!user) {
+      return buildSignupState({
+        error: "Não foi possível criar o usuário. Tente novamente.",
+        values: validation.values,
+      });
+    }
+
+    if (signData.session) {
+      await supabase.auth.signOut();
+    }
+  } catch {
+    return buildSignupState({
+      error: "Não foi possível concluir o cadastro agora. Tente novamente.",
+      values: validation.values,
+    });
   }
 
-  const user = signData.user;
-  if (!user) {
-    return { error: "Não foi possível criar o usuário. Tente novamente." };
-  }
+  redirect(`/cadastro/confirmar-email?email=${encodeURIComponent(validation.values.email)}`);
+}
 
-  if (!signData.session) {
+export async function completeSignupStoreAction(
+  _prev: CompleteSignupStoreState | null,
+  formData: FormData
+): Promise<CompleteSignupStoreState> {
+  const rawSlug = String(formData.get("store_slug") ?? "");
+  const normalizedSlug = normalizeStoreSlug(rawSlug);
+
+  if (!normalizedSlug) {
     return {
-      success:
-        "Conta criada. Confirme o link enviado por e-mail; depois faça login para concluir. " +
-        "Se o e-mail já estiver confirmado no projeto, desative a confirmação em Authentication → Providers → Email no Supabase para criar a loja imediatamente.",
+      value: rawSlug,
+      fieldErrors: {
+        store_slug: "Informe o slug da loja.",
+      },
     };
   }
 
-  const { error: profileError } = await supabase
-    .from("profiles")
-    .update({ full_name })
-    .eq("id", user.id);
-
-  if (profileError) {
+  const slugValidationError = validateStoreSlug(normalizedSlug);
+  if (slugValidationError) {
     return {
-      error: `Sua conta foi criada, mas não conseguimos salvar o nome no perfil: ${mapPostgrestError(profileError)} Você pode tentar editar depois em configurações, se disponível.`,
+      value: rawSlug,
+      fieldErrors: {
+        store_slug: slugValidationError,
+      },
     };
   }
 
-  const { data: storeRow, error: storeError } = await supabase
-    .from("stores")
-    .insert({
-      owner_id: user.id,
-      name: store_name,
-      slug: store_slug,
-      phone: store_phone,
-    })
-    .select("id")
-    .single();
+  let shouldRedirectWithSuccess = false;
 
-  if (storeError) {
-    const detail = isUniqueViolation(storeError)
-      ? "Este slug (URL pública) já está em uso. Escolha outro ou recupere o acesso à conta que já o usa."
-      : mapPostgrestError(storeError);
+  try {
+    const supabase = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return {
+        error: "Sua sessão expirou. Faça login novamente para concluir o cadastro.",
+        value: rawSlug,
+      };
+    }
+
+    const provisionResult = await ensureAccountProvisioned({
+      supabase,
+      user,
+      overrideStoreSlug: normalizedSlug,
+    });
+
+    switch (provisionResult.status) {
+      case "completed": {
+        shouldRedirectWithSuccess = true;
+        break;
+      }
+      case "needs-slug": {
+        return {
+          value: normalizedSlug,
+          fieldErrors: {
+            store_slug: provisionResult.message,
+          },
+        };
+      }
+      case "missing-pending-data":
+      case "error": {
+        return {
+          value: normalizedSlug,
+          error: provisionResult.message,
+        };
+      }
+    }
+  } catch {
     return {
-      error: `Não foi possível criar a loja: ${detail} Sua conta de e-mail já existe: use “Esqueci minha senha” no login, se precisar.`,
+      value: rawSlug,
+      error: "Não foi possível concluir o cadastro agora. Tente novamente.",
     };
   }
 
-  const { error: settingsError } = await supabase
-    .from("store_settings")
-    .insert({ store_id: storeRow.id });
-
-  if (settingsError) {
-    return {
-      error: `A loja foi criada, mas falhou ao registrar as configurações iniciais: ${mapPostgrestError(settingsError)} Verifique a tabela public.store_settings e as políticas RLS.`,
-    };
+  if (shouldRedirectWithSuccess) {
+    redirect("/dashboard?signup=email-confirmed");
   }
 
-  redirect("/dashboard");
+  return {
+    value: normalizedSlug,
+    error: "Não foi possível concluir o cadastro agora. Tente novamente.",
+  };
 }
 
 export async function logoutAction() {

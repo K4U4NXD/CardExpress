@@ -4,9 +4,11 @@
 
 O **CardExpress** é um sistema web de **cardápio digital com retirada no balcão**, voltado para estabelecimentos de venda rápida, como lanchonetes, quiosques, barracas, trailers e pontos de alimentação em feiras e eventos.
 
-O cliente acessa a loja por **QR Code** ou **link público**, visualiza o cardápio, monta o carrinho, segue para o checkout e acompanha o pedido. No estado atual do projeto, o pagamento permanece em **modo demo**: a aplicação cria uma sessão intermediária de checkout e permite **simular a aprovação do pagamento** para converter a sessão em pedido real.
+O cliente acessa a loja por **QR Code** ou **link público**, visualiza o cardápio, monta o carrinho, segue para o checkout e acompanha o pedido.
 
-Além da experiência do cliente, o sistema possui um **painel administrativo do comerciante** para gerenciar categorias, produtos, pedidos e configurações da loja, com foco em operação prática, coerência de estoque e **atualização em tempo real** nas telas mais relevantes.
+No estado atual do projeto, o pagamento permanece em **modo demo**: a aplicação cria uma sessão intermediária de checkout e permite **simular a aprovação do pagamento** para converter a sessão em pedido real.
+
+Além da experiência do cliente, o sistema possui um **painel administrativo do comerciante** para gerenciar categorias, produtos, pedidos e configurações da loja, com foco em operação prática, coerência de estoque, branding da loja e **atualização em tempo real** nas telas mais relevantes.
 
 Este repositório corresponde ao desenvolvimento do projeto acadêmico **CardExpress**, realizado em grupo.
 
@@ -24,7 +26,8 @@ Este repositório corresponde ao desenvolvimento do projeto acadêmico **CardExp
 
 O projeto já possui uma base funcional sólida, com:
 
-- autenticação do comerciante;
+- autenticação do comerciante com Supabase Auth;
+- confirmação de e-mail obrigatória para concluir a criação da conta;
 - dashboard protegido;
 - gerenciamento de categorias;
 - gerenciamento de produtos;
@@ -37,51 +40,51 @@ O projeto já possui uma base funcional sólida, com:
 - conversão de checkout em pedido real;
 - acompanhamento público do pedido por `token`;
 - painel público de retirada;
+- painel público em modo TV;
 - controle de estoque integrado ao fluxo de pedidos;
-- status operacionais de pedido incluindo **recusado** e **cancelado**;
+- status operacionais incluindo **recusado** e **cancelado**;
 - devolução de estoque em transições terminais aplicáveis;
+- branding público por loja;
+- logo da loja por URL ou upload;
 - melhorias amplas de UX em desktop e mobile;
 - **atualização em tempo real** nas rotas operacionais e públicas principais.
-- painel público com versão WEB e modo TV dedicado;
-- recuperação pública sem login por `slug`, com persistência local de checkout e pedidos;
-- retomada de múltiplos pedidos em andamento no mesmo aparelho;
-- ações de copiar/compartilhar link no checkout criado e no pedido público;
-- checkout com ajuste de quantidade diretamente no resumo;
-- destaque visual de itens problemáticos no checkout quando houver conflito de estoque/disponibilidade;
-- cancelamento de checkout integrado ao fluxo público;
 
 ### Validação recente do fluxo crítico
 
-Além da validação manual contínua, o projeto passou a contar com uma suíte **E2E/smoke com Playwright** cobrindo o fluxo crítico do MVP.
+Além da validação manual contínua, o projeto conta com uma suíte **E2E/smoke com Playwright** cobrindo o fluxo crítico do MVP.
 
 Cenários validados localmente:
 - fluxo público feliz;
 - reflexo operacional no dashboard e no painel público;
 - bloqueio operacional de checkout/conversão quando a loja pausa pedidos;
 - tratamento de bordas de estoque com múltiplos itens problemáticos;
-- cancelamento de checkout e recovery público sem ressuscitar sessão inválida.
-- visibilidade pública de produto sem estoque com bloqueio de compra;
-
-Com isso, o CardExpress passou a ter uma proteção automatizada inicial contra regressões nas rotas e interações mais importantes do sistema.
+- cancelamento de checkout e recovery público sem ressuscitar sessão inválida;
+- visibilidade pública de produto sem estoque com bloqueio de compra.
 
 ---
 
 ## O que já está implementado
 
-### Autenticação e estrutura da loja
+### Autenticação e onboarding
 
-- cadastro de comerciante;
-- login e logout;
-- proteção das rotas do painel;
-- criação e vínculo de **uma loja por conta**;
-- leitura da loja autenticada no dashboard.
+- cadastro inicial do comerciante com Supabase Auth;
+- confirmação de e-mail obrigatória para concluir a criação da conta;
+- tela dedicada de confirmação em `/cadastro/confirmar-email`;
+- callback interno em `/auth/confirm`;
+- criação de `profile`, `store` e `store_settings` apenas após a confirmação do e-mail;
+- fluxo idempotente de finalização do cadastro;
+- correção de slug em `/dashboard/finalizar-cadastro` quando houver conflito;
+- login com mensagem específica quando a conta ainda não confirmou o e-mail;
+- logout;
+- proteção das rotas internas do painel;
+- regra atual: **1 conta autenticada = 1 loja**.
 
 ### Painel administrativo
 
 - tela inicial do dashboard com **resumo operacional da loja**;
 - navegação lateral no desktop;
 - menu lateral responsivo em mobile;
-- headers compactos/sticky em telas principais;
+- headers compactos/sticky nas telas principais;
 - gerenciamento de categorias;
 - gerenciamento de produtos;
 - gerenciamento operacional de pedidos;
@@ -114,9 +117,9 @@ Com isso, o CardExpress passou a ter uma proteção automatizada inicial contra 
 - editar nome;
 - ativar e desativar;
 - reordenar com **drag and drop no desktop**;
-- reordenar no mobile com fluxo compacto e confiável por controles de ordenação;
+- reordenar no mobile com fluxo compacto por controles de ordenação;
 - excluir categoria quando não houver produtos vinculados;
-- criação com formulário recolhido por padrão para melhor organização da tela;
+- formulário recolhido por padrão;
 - **atualização automática em tempo real** na tela de categorias.
 
 ### Produtos
@@ -127,11 +130,11 @@ Com isso, o CardExpress passou a ter uma proteção automatizada inicial contra 
 - controlar disponibilidade separadamente da ativação;
 - suporte a controle de estoque com `track_stock` e `stock_quantity`;
 - reordenar com **drag and drop no desktop**;
-- reordenar no mobile com fluxo compacto e confiável por controles de ordenação;
+- reordenar no mobile com fluxo compacto por controles de ordenação;
 - excluir produto;
 - badges operacionais refinados;
 - exibição mais clara de estoque, disponibilidade e visibilidade pública;
-- criação com formulário recolhido por padrão;
+- formulário recolhido por padrão;
 - **atualização automática em tempo real** na tela de produtos.
 
 ### Configurações da loja
@@ -139,6 +142,7 @@ Com isso, o CardExpress passou a ter uma proteção automatizada inicial contra 
 - edição de nome da loja;
 - edição de telefone;
 - exibição do `slug` em modo somente leitura;
+- indicação explícita de que o `slug` não pode ser alterado nesta fase;
 - exibição e cópia do link público da loja;
 - QR Code do cardápio público;
 - mensagem pública da loja;
@@ -147,8 +151,25 @@ Com isso, o CardExpress passou a ter uma proteção automatizada inicial contra 
 - botão salvar habilitado apenas quando há alterações;
 - descarte de alterações;
 - validações coerentes de formulário;
-- **atualização automática em tempo real** da tela quando não há alterações locais não salvas;
-- proteção para não sobrescrever formulário `dirty` durante refresh.
+- proteção para não sobrescrever formulário `dirty` durante refresh;
+- **atualização automática em tempo real** quando não há alterações locais não salvas;
+- logo da loja por URL;
+- logo da loja por upload;
+- remoção da logo;
+- persistência da logo no cardápio e no painel público.
+
+### Branding público por loja
+
+As páginas públicas da loja usam branding da própria loja quando disponível:
+
+- logo da loja no cardápio público;
+- logo da loja no painel público;
+- fallback visual quando a loja não possui logo;
+- metadata dinâmica por loja nas páginas públicas;
+- títulos de aba como:
+  - `Cardápio | Nome da loja`
+  - `Painel | Nome da loja`
+- fallback para `slug` quando o nome da loja não estiver disponível.
 
 ### Área pública da loja
 
@@ -165,10 +186,10 @@ Com isso, o CardExpress passou a ter uma proteção automatizada inicial contra 
 - navegação para checkout;
 - coerência entre status público da loja e cardápio efetivamente disponível;
 - **atualização automática em tempo real** do cardápio público;
-- reconciliação automática do carrinho quando preço ou disponibilidade mudam.
+- reconciliação automática do carrinho quando preço ou disponibilidade mudam;
 - retomada automática de checkout e pedidos em andamento no mesmo dispositivo;
 - suporte a múltiplos pedidos em andamento por loja no banner de recuperação;
-- ações de copiar/compartilhar link nas telas públicas relevantes;
+- ações de copiar/compartilhar link nas telas públicas relevantes.
 
 ### Checkout público
 
@@ -179,15 +200,15 @@ Com isso, o CardExpress passou a ter uma proteção automatizada inicial contra 
 - criação de `checkout_sessions` e `checkout_session_items` via RPC;
 - limpeza do carrinho somente após sucesso real da criação da sessão;
 - botão temporário para **simular pagamento aprovado** em ambiente de desenvolvimento/demo;
-- persistência local de nome e telefone no navegador para facilitar compras futuras no mesmo dispositivo;
+- persistência local de nome e telefone no navegador;
 - reconciliação automática do checkout com o cardápio atual;
-- **atualização automática em tempo real** do checkout para refletir mudanças de preço, disponibilidade e status da loja.
+- **atualização automática em tempo real** do checkout para refletir mudanças de preço, disponibilidade e status da loja;
 - recuperação local da `checkout_session` no mesmo aparelho;
 - botão para cancelar checkout quando a sessão ainda estiver pendente;
-- controles de aumentar e diminuir quantidade diretamente no resumo do checkout;
+- controles de aumentar e diminuir quantidade diretamente no resumo;
 - destaque visual de itens com problema de estoque ou indisponibilidade;
-- identificação antecipada de conflitos de estoque no carrinho e no checkout, antes da criação da sessão;
-- mensagens públicas mais específicas para conflitos de disponibilidade/estoque;
+- identificação antecipada de conflitos de estoque no carrinho e no checkout;
+- mensagens públicas mais específicas para conflitos de disponibilidade/estoque.
 
 ### Pedidos
 
@@ -221,7 +242,7 @@ Com isso, o CardExpress passou a ter uma proteção automatizada inicial contra 
 - possibilidade de expandir/recolher os itens do pedido;
 - loading, vazio e erro dedicados na rota de pedidos;
 - melhor responsividade no mobile;
-- **atualização em tempo real** em `/dashboard/pedidos`.
+- **atualização em tempo real** em `/dashboard/pedidos`;
 - toast global para novo pedido aguardando aceite;
 - badge na sidebar em Pedidos;
 - destaque local do card novo com fase forte e fase leve;
@@ -248,14 +269,15 @@ Com isso, o CardExpress passou a ter uma proteção automatizada inicial contra 
 - suporte a estados terminais, incluindo **recusado** e **cancelado**;
 - **atualização em tempo real** da página pública do pedido por canal específico do próprio pedido;
 - painel público `/{slug}/painel` exibindo o pedido mais recente que ficou pronto para retirada;
-- **atualização em tempo real** do painel público.
-- a página pública do pedido agora tem alerta amigável e som suave em mudança real de status;
-- o painel público passou a exibir não só o pedido mais recente pronto, mas também os últimos chamados vindos do sistema;
-- o painel público tem controle de som e o histórico recente agora é persistente por RPC, não mais local ao navegador.
+- **atualização em tempo real** do painel público;
+- alerta amigável e som suave em mudança real de status na página pública do pedido;
+- o painel público exibe não só o pedido mais recente pronto, mas também os últimos chamados vindos do sistema;
+- o painel público tem controle de som;
+- o histórico recente do painel passou a ser persistente por RPC;
 - ações de copiar/compartilhar link do pedido público;
 - retomada pública sem login com persistência local por loja;
 - painel público com modo TV em `/{slug}/painel/tv`;
-- painel WEB e painel TV com layouts distintos para operação e exibição;
+- painel WEB e painel TV com layouts distintos para operação e exibição.
 
 ### Banco de dados
 
@@ -263,7 +285,8 @@ Com isso, o CardExpress passou a ter uma proteção automatizada inicial contra 
 - uso de Auth, Database, RPC, RLS e Realtime;
 - schema versionado localmente em `supabase/migrations/`;
 - fluxo público de checkout e conversão para pedido versionado no repositório;
-- triggers, funções e broadcasts específicos para atualização em tempo real nas telas-chave.
+- triggers, funções e broadcasts específicos para atualização em tempo real nas telas-chave;
+- storage público para logos de loja via bucket `public-assets`.
 
 ---
 
@@ -296,6 +319,7 @@ As principais frentes restantes são:
   - RPC
   - RLS
   - Realtime
+  - Storage
 
 ### Ferramentas auxiliares
 
@@ -303,6 +327,7 @@ As principais frentes restantes são:
 - **npm**
 - **Supabase CLI**
 - **Docker Desktop**
+- **Playwright**
 
 ---
 
@@ -334,6 +359,7 @@ Se o arquivo `.env.local.example` ainda não existir no repositório local, crie
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_STORE_LOGOS_BUCKET=public-assets
 ````
 
 ### `.env.local`
@@ -341,6 +367,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```env
 NEXT_PUBLIC_SUPABASE_URL=SEU_PROJECT_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY=SUA_ANON_KEY
+NEXT_PUBLIC_SUPABASE_STORE_LOGOS_BUCKET=public-assets
 ```
 
 ### Onde encontrar os valores
@@ -404,7 +431,7 @@ Executa a suíte E2E/smoke com Playwright.
 
 ### `npm run test:e2e:headed`
 
-Executa a suíte E2E em modo visual (headed).
+Executa a suíte E2E em modo visual.
 
 ### `npm run test:e2e:ui`
 
@@ -418,7 +445,7 @@ Abre o runner interativo do Playwright.
 
 1. Copie `.env.e2e.example` para `.env.e2e` e preencha as credenciais de um comerciante existente.
 2. Garanta que a conta usada tenha loja vinculada e permissão para operar no dashboard.
-3. Instale os navegadores do Playwright (primeira execução):
+3. Instale os navegadores do Playwright na primeira execução:
 
 ```bash
 npx playwright install chromium
@@ -431,7 +458,12 @@ CARDEXPRESS_E2E_EMAIL=
 CARDEXPRESS_E2E_PASSWORD=
 ```
 
-Variáveis opcionais: `PLAYWRIGHT_BASE_URL`, `CARDEXPRESS_E2E_CUSTOMER_NAME`, `CARDEXPRESS_E2E_CUSTOMER_PHONE`, `CARDEXPRESS_E2E_RUN_ID`.
+Variáveis opcionais:
+
+* `PLAYWRIGHT_BASE_URL`
+* `CARDEXPRESS_E2E_CUSTOMER_NAME`
+* `CARDEXPRESS_E2E_CUSTOMER_PHONE`
+* `CARDEXPRESS_E2E_RUN_ID`
 
 ### Execução
 
@@ -454,18 +486,23 @@ cardexpress/
 ├─ app/
 │  ├─ (dashboard)/
 │  │  ├─ cadastro/
+│  │  │  └─ confirmar-email/
 │  │  ├─ login/
 │  │  └─ dashboard/
 │  │     ├─ categorias/
 │  │     ├─ produtos/
 │  │     ├─ pedidos/
-│  │     └─ configuracoes/
+│  │     ├─ configuracoes/
+│  │     └─ finalizar-cadastro/
 │  ├─ (public)/
 │  │  └─ [slug]/
 │  │     ├─ page.tsx
 │  │     ├─ checkout/
 │  │     ├─ painel/
+│  │     ├─ painel/tv/
 │  │     └─ pedido/[id]/
+│  ├─ auth/
+│  │  └─ confirm/
 │  ├─ actions/
 │  ├─ globals.css
 │  ├─ layout.tsx
@@ -476,14 +513,24 @@ cardexpress/
 │  ├─ layout/
 │  ├─ public/
 │  └─ shared/
+├─ docs/
+│  └─ supabase-confirmation-email-template.md
 ├─ lib/
 │  ├─ auth/
+│  ├─ branding.ts
+│  ├─ db-errors.ts
 │  ├─ orders/
 │  ├─ public/
 │  ├─ supabase/
-│  ├─ validation/
 │  ├─ timezone.ts
-│  └─ db-errors.ts
+│  ├─ validation/
+│  └─ public/store-logo-storage.ts
+├─ public/
+│  └─ branding/
+│     ├─ icone-cardexpress.png
+│     └─ logo-cardexpress.png
+├─ tests/
+│  └─ e2e/
 ├─ types/
 ├─ supabase/
 │  ├─ config.toml
@@ -500,37 +547,54 @@ cardexpress/
 
 ### Área administrativa
 
-* `/cadastro` → cadastro de comerciante e loja;
-* `/login` → autenticação;
-* `/dashboard` → visão geral da operação;
-* `/dashboard/categorias` → gerenciamento de categorias;
-* `/dashboard/produtos` → gerenciamento de produtos;
-* `/dashboard/pedidos` → operação e histórico de pedidos;
-* `/dashboard/configuracoes` → configurações da loja.
+* `/cadastro` → cadastro inicial do comerciante
+* `/cadastro/confirmar-email` → tela dedicada de confirmação de e-mail
+* `/login` → autenticação
+* `/dashboard/finalizar-cadastro` → finalização do cadastro quando necessário
+* `/dashboard` → visão geral da operação
+* `/dashboard/categorias` → gerenciamento de categorias
+* `/dashboard/produtos` → gerenciamento de produtos
+* `/dashboard/pedidos` → operação e histórico de pedidos
+* `/dashboard/configuracoes` → configurações da loja
+
+### Infra/auth
+
+* `/auth/confirm` → callback interno de confirmação de e-mail
 
 ### Área pública
 
-* `/{slug}` → cardápio público da loja;
-* `/{slug}/checkout` → checkout público;
-* `/{slug}/pedido/[id]?token=...` → acompanhamento público do pedido;
-* `/{slug}/painel` → painel público de retirada.
-* `/{slug}/painel/tv` → painel público em modo TV/monitor;
+* `/{slug}` → cardápio público da loja
+* `/{slug}/checkout` → checkout público
+* `/{slug}/pedido/[id]?token=...` → acompanhamento público do pedido
+* `/{slug}/painel` → painel público de retirada
+* `/{slug}/painel/tv` → painel público em modo TV/monitor
 
 ---
 
 ## Fluxos principais
 
-### 1. Fluxo do cardápio público
+### 1. Fluxo do cadastro e ativação da conta
+
+1. o comerciante preenche o cadastro inicial;
+2. o sistema cria apenas o usuário de autenticação pendente;
+3. a aplicação envia o e-mail de confirmação;
+4. o comerciante acessa `/cadastro/confirmar-email`;
+5. o link do e-mail passa pela rota interna `/auth/confirm`;
+6. após a confirmação, o sistema conclui a criação de `profile`, `store` e `store_settings`;
+7. se houver conflito de `slug`, o usuário finaliza o cadastro em `/dashboard/finalizar-cadastro`;
+8. após conclusão, o usuário acessa o dashboard.
+
+### 2. Fluxo do cardápio público
 
 1. o cliente acessa `/{slug}`;
-2. a aplicação busca dados públicos da loja via RPC;
+2. a aplicação busca dados públicos da loja;
 3. carrega categorias e produtos disponíveis;
 4. permite busca local e navegação por categoria;
 5. monta o carrinho no navegador com `localStorage` por loja;
 6. segue para `/{slug}/checkout`;
 7. se preço, disponibilidade ou status da loja mudarem, a interface reconcilia o carrinho com o cardápio atual.
 
-### 2. Fluxo do checkout
+### 3. Fluxo do checkout
 
 1. o checkout lê o carrinho salvo da loja;
 2. coleta nome e telefone do cliente;
@@ -540,7 +604,7 @@ cardexpress/
 6. a interface exibe a sessão criada como aguardando pagamento;
 7. o checkout continua reagindo ao cardápio atual enquanto estiver aberto.
 
-### 3. Fluxo atual de pagamento (modo demo)
+### 4. Fluxo atual de pagamento (modo demo)
 
 Enquanto a integração com gateway real não foi implementada, o projeto usa um fluxo temporário de demonstração:
 
@@ -549,7 +613,7 @@ Enquanto a integração com gateway real não foi implementada, o projeto usa um
 3. a função `convert_paid_checkout_session_to_order(...)` converte a sessão em pedido real;
 4. o usuário é redirecionado para a página pública do pedido.
 
-### 4. Fluxo do pedido
+### 5. Fluxo do pedido
 
 1. o pedido entra em `orders` com status `aguardando_aceite`;
 2. aparece no painel administrativo da loja;
@@ -674,7 +738,7 @@ Um produto aparece no cardápio público quando:
 Quando houver controle de estoque:
 
 * produtos com estoque positivo ficam aptos para compra;
-* produtos sem estoque continuam visíveis, mas aparecem como indisponíveis para novos itens/incrementos.
+* produtos sem estoque continuam visíveis, mas aparecem como indisponíveis para novos itens e incrementos.
 
 ### Disponibilidade pública efetiva da loja
 
@@ -697,7 +761,7 @@ A lógica do projeto mantém a regra de que o pedido só deve entrar no fluxo op
 
 ---
 
-## Banco de dados e Supabase
+## Banco de dados, storage e Supabase
 
 O projeto utiliza Supabase como backend principal.
 
@@ -725,6 +789,21 @@ O projeto utiliza Supabase como backend principal.
 * `transition_order_to_terminal`
 * `get_recent_called_orders_for_store`
 * `cancel_checkout_session_by_token`
+
+### Storage para logos de loja
+
+O projeto utiliza o bucket público `public-assets` no Supabase Storage para armazenar logos de loja.
+
+Padrão de caminho:
+
+* `store-logos/<store-id>/arquivo.ext`
+
+As logos da loja são usadas em:
+
+* configurações da loja;
+* cardápio público;
+* painel público;
+* metadata dinâmica das páginas públicas, quando houver logo configurada.
 
 ### Migrations
 
@@ -767,12 +846,12 @@ npx supabase db push
 * quando uma mudança for aplicada manualmente no SQL Editor, ela deve ser **versionada depois em `supabase/migrations/`**;
 * se o remoto já tiver recebido uma alteração manualmente e o `db push` acusar objeto já existente, revise o histórico com:
 
-  ```bash
-  npx supabase migration list
-  npx supabase migration repair <timestamp> --status applied
-  ```
+```bash
+npx supabase migration list
+npx supabase migration repair <timestamp> --status applied
+```
 
-  e depois tente novamente o `db push`.
+e depois tente novamente o `db push`.
 
 ---
 
@@ -793,7 +872,7 @@ npm run lint
 npm run build
 ```
 
-Se a mudança envolver banco:
+Se a mudança envolver banco ou storage:
 
 * confirme se a migration foi criada ou atualizada;
 * revise `supabase/migrations/` antes do commit.
@@ -820,10 +899,13 @@ Se a mudança envolver banco:
 ### Concluído
 
 * autenticação do comerciante;
+* onboarding com confirmação de e-mail;
 * dashboard protegido;
 * CRUD de categorias;
 * CRUD de produtos;
 * configurações da loja;
+* logo da loja por URL e upload;
+* branding público por loja;
 * fluxo operacional de pedidos;
 * histórico e escopos de pedidos no dashboard;
 * cardápio público por `slug`;
@@ -835,13 +917,14 @@ Se a mudança envolver banco:
 * conversão para pedido real;
 * acompanhamento público do pedido;
 * painel público de retirada;
+* painel público em modo TV;
 * Home do dashboard com métricas operacionais;
 * atualização em tempo real nas páginas principais;
 * suporte a pedido **cancelado**;
 * devolução de estoque em **recusa** e **cancelamento**;
-* melhorias amplas de responsividade e UX no dashboard e na área pública.
+* melhorias amplas de responsividade e UX no dashboard e na área pública;
 * produtos sem estoque visíveis no cardápio, porém bloqueados para compra;
-* reordenação de categorias e produtos com drag and drop no desktop e fluxo compacto de reorder no mobile;
+* reordenação de categorias e produtos com drag and drop no desktop e fluxo compacto no mobile.
 
 ### Em andamento / pendente
 
@@ -849,7 +932,9 @@ Se a mudança envolver banco:
 * remoção da simulação de pagamento quando houver gateway;
 * ajustes pontuais para implantação em ambiente real;
 * documentação acadêmica final;
-* evolução futura de relatórios e métricas, se necessário.
+* relatórios e métricas mais avançadas;
+* evolução futura de autenticação do comerciante;
+* expansão futura da frente SaaS comercial.
 
 ---
 
@@ -863,7 +948,7 @@ Se a mudança envolver banco:
 6. valide a interface e o fluxo afetado;
 7. rode `npm run lint`;
 8. rode `npm run build`;
-9. se alterar banco, registre a migration;
+9. se alterar banco ou storage, registre a migration/policy correspondente;
 10. faça commit com mensagem clara;
 11. envie para o GitHub.
 
@@ -889,6 +974,14 @@ Responsável principal no contexto atual do desenvolvimento:
 
 O CardExpress já possui uma base sólida para operação de uma loja com cardápio digital e retirada no balcão. O projeto evoluiu para um fluxo público funcional em modo demo, com cardápio, carrinho, checkout, conversão para pedido real, acompanhamento público do pedido e operação administrativa consistente.
 
-Além disso, o projeto passou a contar com atualização em tempo real nas áreas mais relevantes da operação, melhoria de coerência entre painel administrativo e área pública, reconciliação do carrinho e do checkout com o cardápio atual e tratamento de estados operacionais importantes como **recusa** e **cancelamento** com devolução de estoque.
+Além disso, o projeto conta com:
 
-A principal evolução futura para uso real é a substituição da simulação atual por uma integração efetiva com gateway de pagamento, mantendo banco, código e migrations alinhados no repositório.
+* onboarding com confirmação de e-mail;
+* branding público por loja;
+* logo da loja em configurações e páginas públicas;
+* atualização em tempo real nas áreas mais relevantes da operação;
+* melhoria de coerência entre painel administrativo e área pública;
+* reconciliação do carrinho e do checkout com o cardápio atual;
+* tratamento de estados operacionais importantes como **recusa** e **cancelamento** com devolução de estoque.
+
+A principal evolução futura para uso real é a substituição da simulação atual por uma integração efetiva com gateway de pagamento, mantendo banco, código, storage e migrations alinhados no repositório.

@@ -13,6 +13,7 @@ import {
 export type StoreSettingsFormValues = {
   name: string;
   phone: string;
+  logo_url: string;
   accepts_orders: boolean;
   public_message: string;
 };
@@ -25,15 +26,23 @@ export type StoreSettingsActionState = {
   readiness?: StoreReadinessResult;
 };
 
+export type StoreLogoUploadActionResult = {
+  error?: string;
+  success?: string;
+  logoUrl?: string;
+};
+
 function toFormValues(values: {
   name: string;
   phone: string;
+  logoUrl: string | null;
   acceptsOrders: boolean;
   publicMessage: string | null;
 }): StoreSettingsFormValues {
   return {
     name: values.name,
     phone: values.phone,
+    logo_url: values.logoUrl ?? "",
     accepts_orders: values.acceptsOrders,
     public_message: values.publicMessage ?? "",
   };
@@ -46,18 +55,76 @@ function mapUnknownError(error: unknown): string {
   return "Não foi possível concluir a ação. Tente novamente.";
 }
 
+function normalizeUploadedLogoUrl(rawLogoUrl: string): { value: string | null; error?: string } {
+  const normalized = rawLogoUrl.trim();
+
+  if (!normalized) {
+    return { value: null, error: "A URL da logo enviada está vazia." };
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return { value: null, error: "A URL da logo precisa iniciar com http:// ou https://." };
+    }
+  } catch {
+    return { value: null, error: "A URL da logo enviada é inválida." };
+  }
+
+  return { value: normalized };
+}
+
+export async function saveStoreUploadedLogoAction(rawLogoUrl: string): Promise<StoreLogoUploadActionResult> {
+  const logoNormalization = normalizeUploadedLogoUrl(rawLogoUrl);
+
+  if (!logoNormalization.value) {
+    return { error: logoNormalization.error ?? "Não foi possível validar a URL da logo enviada." };
+  }
+
+  const { supabase, store } = await getUserStore();
+
+  if (!store) {
+    return { error: "Nenhuma loja vinculada à sua conta." };
+  }
+
+  const { error } = await supabase
+    .from("stores")
+    .update({
+      logo_url: logoNormalization.value,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", store.id);
+
+  if (error) {
+    return { error: formatPostgrestError(error) };
+  }
+
+  revalidatePath("/dashboard/configuracoes");
+  revalidatePath(`/${store.slug}`);
+  revalidatePath(`/${store.slug}/checkout`);
+  revalidatePath(`/${store.slug}/painel`);
+  revalidatePath(`/${store.slug}/painel/tv`);
+
+  return {
+    success: "Logo da loja salva com sucesso.",
+    logoUrl: logoNormalization.value,
+  };
+}
+
 export async function saveStoreSettingsAction(
   _prev: StoreSettingsActionState | null,
   formData: FormData
 ): Promise<StoreSettingsActionState> {
   const rawName = String(formData.get("name") ?? "");
   const rawPhone = String(formData.get("phone") ?? "");
+  const rawLogoUrl = String(formData.get("logo_url") ?? "");
   const rawPublicMessage = String(formData.get("public_message") ?? "");
   const rawAcceptsOrders = formData.get("accepts_orders") === "on";
 
   const validation = validateStoreSettingsInput({
     name: rawName,
     phone: rawPhone,
+    logoUrl: rawLogoUrl,
     publicMessage: rawPublicMessage,
     acceptsOrders: rawAcceptsOrders,
   });
@@ -106,6 +173,7 @@ export async function saveStoreSettingsAction(
     .update({
       name: validation.values.name,
       phone: validation.values.phone,
+      logo_url: validation.values.logoUrl,
       updated_at: new Date().toISOString(),
     })
     .eq("id", store.id);
@@ -140,6 +208,8 @@ export async function saveStoreSettingsAction(
   revalidatePath("/dashboard/configuracoes");
   revalidatePath(`/${store.slug}`);
   revalidatePath(`/${store.slug}/checkout`);
+  revalidatePath(`/${store.slug}/painel`);
+  revalidatePath(`/${store.slug}/painel/tv`);
 
   return {
     success:

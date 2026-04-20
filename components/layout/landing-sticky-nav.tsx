@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+
+import { BRANDING } from "@/lib/branding";
 
 type LandingSectionItem = {
   id: string;
@@ -144,9 +147,16 @@ export function LandingStickyNav({ sections }: LandingStickyNavProps) {
             <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
               <a
                 href="#inicio"
-                className="inline-flex items-center rounded-xl px-3 py-2 text-lg font-semibold tracking-tight text-zinc-900 transition duration-300 hover:bg-zinc-100"
+                className="inline-flex items-center rounded-xl px-3 py-2 transition duration-300 hover:bg-zinc-100"
               >
-                CardExpress
+                <Image
+                  src={BRANDING.logoPath}
+                  alt={BRANDING.productName}
+                  width={196}
+                  height={48}
+                  priority
+                  className="h-auto w-auto max-w-[196px]"
+                />
               </a>
 
               <div className="flex items-center justify-center gap-2" role="navigation" aria-label="Navegação da landing">
@@ -204,9 +214,17 @@ export function LandingStickyNav({ sections }: LandingStickyNavProps) {
           <div className="mb-2 flex items-center justify-between gap-2 px-1">
             <a
               href="#inicio"
-              className="inline-flex items-center rounded-lg px-2 py-1 text-sm font-semibold tracking-tight text-zinc-900 transition hover:bg-zinc-100"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold tracking-tight text-zinc-900 transition hover:bg-zinc-100"
             >
-              CardExpress
+              <Image
+                src={BRANDING.iconPath}
+                alt={BRANDING.productName}
+                width={20}
+                height={20}
+                className="h-5 w-5 rounded"
+                priority
+              />
+              <span>{BRANDING.shortName}</span>
             </a>
             <div className="flex items-center gap-1.5">
               <Link

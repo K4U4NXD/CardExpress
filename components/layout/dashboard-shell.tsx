@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 import { LogoutButton } from "@/components/auth/logout-button";
 import { DashboardGlobalOrderAlerts } from "@/components/dashboard/dashboard-global-order-alerts";
 import { DashboardQueryFlash } from "@/components/dashboard/dashboard-query-flash";
 import { ToastProvider } from "@/components/shared/toast-provider";
+import { BRANDING } from "@/lib/branding";
 
 type DashboardShellProps = {
   children: React.ReactNode;
@@ -77,7 +79,14 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
 
         <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-zinc-200/80 bg-white/92 px-3 py-5 shadow-[0_30px_60px_-50px_rgba(24,24,27,0.6)] backdrop-blur-xl md:flex">
           <div className="rounded-2xl border border-zinc-200 bg-zinc-50/80 px-3 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-400">CardExpress</p>
+            <Image
+              src={BRANDING.logoPath}
+              alt={BRANDING.productName}
+              width={196}
+              height={48}
+              className="h-auto w-auto max-w-[196px]"
+              priority
+            />
             <p className="mt-1 text-sm font-semibold text-zinc-800">Painel do comerciante</p>
           </div>
 
@@ -131,7 +140,17 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
         <div className="md:pl-60">
           <header className="sticky top-0 z-30 border-b border-zinc-200/80 bg-white/90 backdrop-blur-xl md:hidden">
             <div className="flex h-14 items-center justify-between px-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">CardExpress</p>
+              <div className="inline-flex items-center gap-2">
+                <Image
+                  src={BRANDING.iconPath}
+                  alt={BRANDING.productName}
+                  width={22}
+                  height={22}
+                  className="h-[22px] w-[22px] rounded"
+                  priority
+                />
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">{BRANDING.shortName}</p>
+              </div>
               <button
                 type="button"
                 onClick={() => setMenuOpen(true)}
@@ -161,7 +180,16 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
               className="relative flex h-full w-72 max-w-[85vw] flex-col border-r border-zinc-200 bg-white/96 px-4 py-5 shadow-2xl backdrop-blur-xl"
             >
               <div className="mb-4 flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Navegação</p>
+                <div className="flex items-center gap-2">
+                  <Image
+                    src={BRANDING.iconPath}
+                    alt={BRANDING.productName}
+                    width={20}
+                    height={20}
+                    className="h-5 w-5 rounded"
+                  />
+                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Navegação</p>
+                </div>
                 <button
                   type="button"
                   onClick={() => setMenuOpen(false)}

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
 import { StoreSettingsForm } from "@/components/dashboard/store-settings-form";
 import { getUserStore } from "@/lib/auth/store";
@@ -5,6 +6,10 @@ import { formatPostgrestError } from "@/lib/db-errors";
 import { buildAbsolutePublicStoreUrl, buildPublicStorePath } from "@/lib/public-store-url";
 import { calculateStoreReadiness, type StoreReadinessResult } from "@/lib/store-readiness";
 import { headers } from "next/headers";
+
+export const metadata: Metadata = {
+  title: "Configurações",
+};
 
 const FALLBACK_READINESS: StoreReadinessResult = {
   isReady: false,
@@ -58,7 +63,7 @@ export default async function DashboardSettingsPage() {
     <>
       <PageHeader
         title="Configurações"
-        description="Dados básicos da loja e operação de pedidos."
+        description="Dados básicos da loja e operação de pedidos. O slug público permanece bloqueado nesta fase."
         sticky
         compact
         stickyTopClassName="top-14 md:top-0"
@@ -81,9 +86,11 @@ export default async function DashboardSettingsPage() {
           </div>
         ) : (
           <StoreSettingsForm
+            storeId={store.id}
             initialValues={{
               name: store.name,
               phone: store.phone ?? "",
+              logo_url: store.logo_url ?? "",
               slug: store.slug,
               public_path: publicStorePath ?? buildPublicStorePath(store.slug),
               public_url: publicStoreUrl ?? buildPublicStorePath(store.slug),

@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { DashboardCategoriesView } from "@/components/dashboard/dashboard-categories-view";
 import { PageHeader } from "@/components/layout/page-header";
 import { getUserStore } from "@/lib/auth/store";
 import type { Category } from "@/types";
+
+export const metadata: Metadata = {
+  title: "Categorias",
+};
+
 export default async function DashboardCategoriesPage() {
   const { supabase, store } = await getUserStore();
 

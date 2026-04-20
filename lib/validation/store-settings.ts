@@ -1,13 +1,15 @@
 export const STORE_NAME_MAX_LENGTH = 120;
 export const STORE_PUBLIC_MESSAGE_MAX_LENGTH = 280;
+export const STORE_LOGO_URL_MAX_LENGTH = 500;
 
 export type StoreSettingsFieldErrors = Partial<
-  Record<"name" | "phone" | "public_message" | "accepts_orders", string>
+  Record<"name" | "phone" | "logo_url" | "public_message" | "accepts_orders", string>
 >;
 
 type StoreSettingsValidationInput = {
   name: string;
   phone: string;
+  logoUrl: string;
   publicMessage: string;
   acceptsOrders: boolean;
 };
@@ -16,6 +18,7 @@ export type StoreSettingsValidatedInput = {
   name: string;
   phone: string;
   phoneDigits: string;
+  logoUrl: string | null;
   publicMessage: string | null;
   acceptsOrders: boolean;
 };
@@ -28,6 +31,8 @@ export function validateStoreSettingsInput(input: StoreSettingsValidationInput):
   const name = input.name.trim();
   const phone = input.phone.trim();
   const phoneDigits = phone.replace(/\D/g, "");
+  const logoUrlRaw = input.logoUrl.trim();
+  const logoUrl = logoUrlRaw || null;
   const publicMessageRaw = input.publicMessage.trim();
   const publicMessage = publicMessageRaw || null;
 
@@ -49,11 +54,25 @@ export function validateStoreSettingsInput(input: StoreSettingsValidationInput):
     fieldErrors.public_message = `A mensagem pública deve ter no máximo ${STORE_PUBLIC_MESSAGE_MAX_LENGTH} caracteres.`;
   }
 
+  if (logoUrlRaw.length > STORE_LOGO_URL_MAX_LENGTH) {
+    fieldErrors.logo_url = `A URL da logo deve ter no máximo ${STORE_LOGO_URL_MAX_LENGTH} caracteres.`;
+  } else if (logoUrlRaw) {
+    try {
+      const parsed = new URL(logoUrlRaw);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        fieldErrors.logo_url = "Use uma URL de logo iniciando com http:// ou https://.";
+      }
+    } catch {
+      fieldErrors.logo_url = "Informe uma URL válida para a logo.";
+    }
+  }
+
   return {
     values: {
       name,
       phone,
       phoneDigits,
+      logoUrl,
       publicMessage,
       acceptsOrders: input.acceptsOrders,
     },

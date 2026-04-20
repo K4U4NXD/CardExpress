@@ -1,9 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
+import Image from "next/image";
 
 import {
+  saveStoreUploadedLogoAction,
   saveStoreSettingsAction,
   type StoreSettingsActionState,
   type StoreSettingsFormValues,
@@ -11,13 +13,17 @@ import {
 import { DashboardSettingsRealtimeSync } from "@/components/dashboard/dashboard-settings-realtime-sync";
 import type { StoreReadinessResult } from "@/lib/store-readiness";
 import {
+  STORE_LOGO_URL_MAX_LENGTH,
   STORE_PUBLIC_MESSAGE_MAX_LENGTH,
   validateStoreSettingsInput,
 } from "@/lib/validation/store-settings";
+import { buildStoreLogoObjectPath, STORE_LOGO_BUCKET } from "@/lib/public/store-logo-storage";
 import { buildAbsoluteUrlFromOrigin } from "@/lib/public-store-url";
 import { useToast } from "@/components/shared/toast-provider";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 type StoreSettingsFormProps = {
+  storeId: string;
   initialValues: StoreSettingsFormValues & {
     slug: string;
     public_path: string;
@@ -28,13 +34,58 @@ type StoreSettingsFormProps = {
 };
 
 const INITIAL_STATE: StoreSettingsActionState = {};
+const STORE_LOGO_MAX_BYTES = 3 * 1024 * 1024;
+const STORE_LOGO_ALLOWED_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/svg+xml",
+]);
 
 type QrDownloadStatus = "idle" | "error";
+
+function coerceTextValue(incomingValue: unknown, fallbackValue: unknown): string {
+  if (typeof incomingValue === "string") {
+    return incomingValue;
+  }
+
+  if (typeof fallbackValue === "string") {
+    return fallbackValue;
+  }
+
+  return "";
+}
+
+function coerceBooleanValue(incomingValue: unknown, fallbackValue: unknown): boolean {
+  if (typeof incomingValue === "boolean") {
+    return incomingValue;
+  }
+
+  if (typeof fallbackValue === "boolean") {
+    return fallbackValue;
+  }
+
+  return false;
+}
+
+function coerceFormValues(
+  incomingValues: Partial<StoreSettingsFormValues> | null | undefined,
+  fallbackValues: StoreSettingsFormValues
+): StoreSettingsFormValues {
+  return {
+    name: coerceTextValue(incomingValues?.name, fallbackValues.name),
+    phone: coerceTextValue(incomingValues?.phone, fallbackValues.phone),
+    logo_url: coerceTextValue(incomingValues?.logo_url, fallbackValues.logo_url),
+    accepts_orders: coerceBooleanValue(incomingValues?.accepts_orders, fallbackValues.accepts_orders),
+    public_message: coerceTextValue(incomingValues?.public_message, fallbackValues.public_message),
+  };
+}
 
 function normalizeFormValues(values: StoreSettingsFormValues): StoreSettingsFormValues {
   return {
     name: values.name.trim(),
     phone: values.phone.trim(),
+    logo_url: values.logo_url.trim(),
     accepts_orders: values.accepts_orders,
     public_message: values.public_message.trim(),
   };
@@ -44,12 +95,14 @@ function sameFormValues(a: StoreSettingsFormValues, b: StoreSettingsFormValues):
   return (
     a.name === b.name &&
     a.phone === b.phone &&
+    a.logo_url === b.logo_url &&
     a.accepts_orders === b.accepts_orders &&
     a.public_message === b.public_message
   );
 }
 
 export function StoreSettingsForm({
+  storeId,
   initialValues,
   initialReadiness,
   forcedAcceptsOrdersOff,
@@ -57,21 +110,36 @@ export function StoreSettingsForm({
   const initialSnapshot = useMemo<StoreSettingsFormValues>(
     () =>
       normalizeFormValues({
-        name: initialValues.name,
-        phone: initialValues.phone,
-        accepts_orders: initialValues.accepts_orders,
-        public_message: initialValues.public_message,
+        name: coerceTextValue(initialValues.name, ""),
+        phone: coerceTextValue(initialValues.phone, ""),
+        logo_url: coerceTextValue(initialValues.logo_url, ""),
+        accepts_orders: coerceBooleanValue(initialValues.accepts_orders, false),
+        public_message: coerceTextValue(initialValues.public_message, ""),
       }),
-    [initialValues.name, initialValues.phone, initialValues.accepts_orders, initialValues.public_message]
+    [
+      initialValues.name,
+      initialValues.phone,
+      initialValues.logo_url,
+      initialValues.accepts_orders,
+      initialValues.public_message,
+    ]
   );
 
   const [state, formAction, pending] = useActionState(saveStoreSettingsAction, INITIAL_STATE);
-  const [values, setValues] = useState<StoreSettingsFormValues>(initialSnapshot);
-  const [savedSnapshot, setSavedSnapshot] = useState<StoreSettingsFormValues>(initialSnapshot);
+  const [values, setValues] = useState<StoreSettingsFormValues>(() => coerceFormValues(initialSnapshot, initialSnapshot));
+  const [savedSnapshot, setSavedSnapshot] = useState<StoreSettingsFormValues>(() =>
+    coerceFormValues(initialSnapshot, initialSnapshot)
+  );
   const [qrDownloadStatus, setQrDownloadStatus] = useState<QrDownloadStatus>("idle");
   const [hideServerFeedback, setHideServerFeedback] = useState(false);
   const [hasPendingRefresh, setHasPendingRefresh] = useState(false);
   const [manualRefreshToken, setManualRefreshToken] = useState(0);
+  const [logoUploadPending, setLogoUploadPending] = useState(false);
+  const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
+  const [logoPreviewBroken, setLogoPreviewBroken] = useState(false);
+  const [logoUploadMode, setLogoUploadMode] = useState<"url" | "upload">("url");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const supabaseClientRef = useRef<ReturnType<typeof createBrowserSupabaseClient> | null>(null);
   const submitAttemptRef = useRef(0);
   const toastedSubmitAttemptRef = useRef(0);
   const { enqueueToast } = useToast();
@@ -79,17 +147,30 @@ export function StoreSettingsForm({
 
   useEffect(() => {
     if (state?.values) {
-      setValues(state.values);
+      setValues((currentValues) => coerceFormValues(state.values, currentValues));
       if (state.success) {
-        setSavedSnapshot(normalizeFormValues(state.values));
+        setSavedSnapshot((currentValues) => normalizeFormValues(coerceFormValues(state.values, currentValues)));
       }
     }
   }, [state]);
 
   useEffect(() => {
-    setSavedSnapshot(initialSnapshot);
-    setValues(initialSnapshot);
+    setSavedSnapshot(coerceFormValues(initialSnapshot, initialSnapshot));
+    setValues(coerceFormValues(initialSnapshot, initialSnapshot));
   }, [initialSnapshot]);
+
+  useEffect(() => {
+    setLogoPreviewBroken(false);
+  }, [values.logo_url]);
+
+  useEffect(() => {
+    if (logoUploadMode === "url") {
+      setSelectedLogoFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }, [logoUploadMode]);
 
   useEffect(() => {
     if (!serverFeedbackVisible) {
@@ -151,6 +232,7 @@ export function StoreSettingsForm({
       validateStoreSettingsInput({
         name: values.name,
         phone: values.phone,
+        logoUrl: values.logo_url,
         publicMessage: values.public_message,
         acceptsOrders: values.accepts_orders,
       }),
@@ -177,10 +259,16 @@ export function StoreSettingsForm({
 
   const nameError = validation.fieldErrors.name ?? (serverFeedbackVisible ? state.fieldErrors?.name : undefined);
   const phoneError = validation.fieldErrors.phone ?? (serverFeedbackVisible ? state.fieldErrors?.phone : undefined);
+  const logoUrlError =
+    validation.fieldErrors.logo_url ?? (serverFeedbackVisible ? state.fieldErrors?.logo_url : undefined);
   const publicMessageError =
     validation.fieldErrors.public_message ?? (serverFeedbackVisible ? state.fieldErrors?.public_message : undefined);
   const acceptsOrdersError =
     readinessToggleError ?? (serverFeedbackVisible ? state.fieldErrors?.accepts_orders : undefined);
+  const uploadDisabled = logoUploadPending || pending || !selectedLogoFile;
+  const logoUrlValue = coerceTextValue(values.logo_url, "");
+  const logoPreviewUrl = logoUrlValue.trim();
+  const selectedLogoFileName = selectedLogoFile?.name ?? "";
 
   function updateField<K extends keyof StoreSettingsFormValues>(key: K, value: StoreSettingsFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -191,6 +279,12 @@ export function StoreSettingsForm({
 
   function handleDiscardChanges() {
     setValues(savedSnapshot);
+    setLogoUploadMode("url");
+    setLogoPreviewBroken(false);
+    setSelectedLogoFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     setHideServerFeedback(true);
   }
 
@@ -210,6 +304,156 @@ export function StoreSettingsForm({
       setQrDownloadStatus("idle");
     } catch {
       setQrDownloadStatus("error");
+    }
+  }
+
+  function handleLogoFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const nextFile = event.target.files?.[0] ?? null;
+    setSelectedLogoFile(nextFile);
+
+    if (!nextFile) {
+      return;
+    }
+
+    if (!STORE_LOGO_ALLOWED_TYPES.has(nextFile.type)) {
+      enqueueToast({
+        tone: "warning",
+        title: "Formato não suportado",
+        text: "Use PNG, JPG, WEBP ou SVG para a logo da loja.",
+      });
+      setSelectedLogoFile(null);
+      event.currentTarget.value = "";
+      return;
+    }
+
+    if (nextFile.size > STORE_LOGO_MAX_BYTES) {
+      enqueueToast({
+        tone: "warning",
+        title: "Arquivo muito grande",
+        text: "A logo deve ter no máximo 3 MB.",
+      });
+      setSelectedLogoFile(null);
+      event.currentTarget.value = "";
+    }
+  }
+
+  async function handleLogoUpload() {
+    if (!selectedLogoFile) {
+      return;
+    }
+
+    if (!STORE_LOGO_ALLOWED_TYPES.has(selectedLogoFile.type)) {
+      enqueueToast({
+        tone: "warning",
+        title: "Formato não suportado",
+        text: "Use PNG, JPG, WEBP ou SVG para a logo da loja.",
+      });
+      return;
+    }
+
+    if (selectedLogoFile.size > STORE_LOGO_MAX_BYTES) {
+      enqueueToast({
+        tone: "warning",
+        title: "Arquivo muito grande",
+        text: "A logo deve ter no máximo 3 MB.",
+      });
+      return;
+    }
+
+    if (!storeId) {
+      enqueueToast({
+        tone: "error",
+        title: "Falha ao enviar logo",
+        text: "Não foi possível identificar a loja para salvar a imagem.",
+      });
+      return;
+    }
+
+    const objectPath = buildStoreLogoObjectPath({
+      storeId,
+      fileName: selectedLogoFile.name,
+      mimeType: selectedLogoFile.type,
+    });
+
+    setLogoUploadPending(true);
+
+    try {
+      const supabase =
+        supabaseClientRef.current ??
+        (() => {
+          const client = createBrowserSupabaseClient();
+          supabaseClientRef.current = client;
+          return client;
+        })();
+
+      const { error: uploadError } = await supabase.storage.from(STORE_LOGO_BUCKET).upload(objectPath, selectedLogoFile, {
+        cacheControl: "3600",
+        upsert: true,
+        contentType: selectedLogoFile.type,
+      });
+
+      if (uploadError) {
+        enqueueToast({
+          tone: "error",
+          title: "Falha ao enviar logo",
+          text: uploadError.message,
+        });
+        return;
+      }
+
+      const { data } = supabase.storage.from(STORE_LOGO_BUCKET).getPublicUrl(objectPath);
+      const publicUrl = data.publicUrl;
+
+      const persistResult = await saveStoreUploadedLogoAction(publicUrl);
+
+      if (persistResult.error) {
+        updateField("logo_url", publicUrl);
+        enqueueToast({
+          tone: "warning",
+          title: "Upload concluído, mas falta salvar",
+          text: `${persistResult.error} Você ainda pode salvar manualmente em "Salvar configurações".`,
+        });
+      } else {
+        const persistedLogoUrl = persistResult.logoUrl ?? publicUrl;
+        updateField("logo_url", persistedLogoUrl);
+        setSavedSnapshot((currentSnapshot) => ({
+          ...currentSnapshot,
+          logo_url: persistedLogoUrl,
+        }));
+      }
+
+      setLogoUploadMode("upload");
+      setLogoPreviewBroken(false);
+      setSelectedLogoFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      if (!persistResult.error) {
+        enqueueToast({
+          tone: "success",
+          title: "Logo enviada e salva",
+          text: "A nova logo foi aplicada e já está persistida para as páginas públicas.",
+        });
+      }
+    } catch (error) {
+      enqueueToast({
+        tone: "error",
+        title: "Falha ao enviar logo",
+        text: error instanceof Error ? error.message : "Não foi possível enviar a logo agora.",
+      });
+    } finally {
+      setLogoUploadPending(false);
+    }
+  }
+
+  function handleRemoveLogo() {
+    updateField("logo_url", "");
+    setLogoUploadMode("url");
+    setLogoPreviewBroken(false);
+    setSelectedLogoFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   }
 
@@ -247,9 +491,11 @@ export function StoreSettingsForm({
         </div>
       ) : null}
 
+      <input type="hidden" name="logo_url" value={logoUrlValue} />
+
       <div>
         <h2 className="text-sm font-semibold text-zinc-900">Dados básicos da loja</h2>
-        <p className="mt-1 text-xs text-zinc-500">Edite nome, telefone e mensagem pública exibida para clientes.</p>
+        <p className="mt-1 text-xs text-zinc-500">Edite nome, telefone, logo e mensagem pública exibida para clientes.</p>
       </div>
 
       {forcedAcceptsOrdersOff && !readiness.isReady ? (
@@ -294,6 +540,133 @@ export function StoreSettingsForm({
           {phoneError ? <p className="mt-1 text-xs text-red-700">{phoneError}</p> : null}
         </div>
 
+        <div className="sm:col-span-2 rounded-2xl border border-zinc-200 bg-zinc-50/90 p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-zinc-900">Logo da loja</p>
+              <p className="mt-1 text-xs text-zinc-600">Escolha um link ou envie um arquivo para atualizar a logo pública da loja.</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleRemoveLogo}
+              disabled={pending || logoUploadPending || (!logoUrlValue && !selectedLogoFile)}
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-60"
+            >
+              Remover logo
+            </button>
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-[220px_1fr]">
+            <div className="space-y-2">
+              <div
+                data-testid="settings-logo-preview"
+                className="relative flex h-40 w-full max-w-[220px] items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm"
+              >
+                {logoPreviewUrl && !logoPreviewBroken ? (
+                  <Image
+                    src={logoPreviewUrl}
+                    alt={`Logo da loja ${values.name || initialValues.slug}`}
+                    fill
+                    sizes="220px"
+                    unoptimized
+                    className="object-contain p-3"
+                    onError={() => setLogoPreviewBroken(true)}
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center rounded-xl bg-zinc-100 text-zinc-500">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em]">Sem logo</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-[11px] text-zinc-500">Preview da logo atual no cardápio e no painel público.</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="inline-flex rounded-lg border border-zinc-200 bg-white p-1">
+                <button
+                  type="button"
+                  onClick={() => setLogoUploadMode("url")}
+                  data-testid="settings-logo-mode-url"
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                    logoUploadMode === "url" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
+                  }`}
+                >
+                  Link da imagem
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLogoUploadMode("upload")}
+                  data-testid="settings-logo-mode-upload"
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                    logoUploadMode === "upload" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
+                  }`}
+                >
+                  Enviar arquivo
+                </button>
+              </div>
+
+              {logoUploadMode === "url" ? (
+                <div key="logo-mode-url" className="space-y-1.5">
+                  <label htmlFor="settings-store-logo-url" className="block text-sm font-medium text-zinc-800">
+                    URL da logo
+                  </label>
+                  <input
+                    id="settings-store-logo-url"
+                    type="url"
+                    value={logoUrlValue}
+                    onChange={(event) => updateField("logo_url", event.target.value)}
+                    aria-invalid={Boolean(logoUrlError)}
+                    maxLength={STORE_LOGO_URL_MAX_LENGTH}
+                    className="cx-input"
+                    placeholder="https://..."
+                  />
+                  <p className="text-xs text-zinc-500">Cole um link direto para imagem (PNG, JPG, WEBP ou SVG).</p>
+                </div>
+              ) : (
+                <div key="logo-mode-upload" className="space-y-2.5 rounded-xl border border-zinc-200 bg-white p-3">
+                  <label htmlFor="settings-store-logo-upload" className="block text-sm font-medium text-zinc-800">
+                    Arquivo da logo
+                  </label>
+                  <input
+                    id="settings-store-logo-upload"
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml"
+                    onChange={handleLogoFileChange}
+                    className="block w-full cursor-pointer rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700"
+                  />
+
+                  {selectedLogoFileName ? (
+                    <p className="text-xs text-zinc-700">Arquivo selecionado: <span className="font-medium">{selectedLogoFileName}</span></p>
+                  ) : (
+                    <p className="text-xs text-zinc-500">Nenhum arquivo selecionado.</p>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void handleLogoUpload()}
+                      disabled={uploadDisabled}
+                      className="cx-btn-secondary px-3 py-2 disabled:opacity-60"
+                    >
+                      {logoUploadPending ? "Enviando..." : "Enviar e aplicar"}
+                    </button>
+                    <p className="text-xs text-zinc-500">Tipos: PNG, JPG, WEBP, SVG. Máximo de 3 MB.</p>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-zinc-500">Após alterar, use “Salvar configurações” para garantir o estado final da tela.</p>
+
+              {logoUrlError ? <p className="text-xs text-red-700">{logoUrlError}</p> : null}
+              {!logoUrlError && logoPreviewBroken && logoPreviewUrl ? (
+                <p className="text-xs text-amber-700">Não foi possível carregar essa imagem. Verifique o link ou envie um arquivo.</p>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
         <div>
           <label htmlFor="settings-store-slug" className="block text-sm font-medium text-zinc-800">
             Slug público (somente leitura)
@@ -305,6 +678,10 @@ export function StoreSettingsForm({
             value={initialValues.slug}
             className="mt-1 w-full cursor-not-allowed rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-700"
           />
+          <p className="mt-1 text-xs text-zinc-500">
+            Este slug identifica o endereço público da loja e está bloqueado nesta fase. Ainda não é possível
+            alterá-lo.
+          </p>
         </div>
 
         <div className="sm:col-span-2 rounded-xl border border-zinc-200 bg-zinc-50/85 p-4">

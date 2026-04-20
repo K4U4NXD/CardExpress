@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { NewOrderSoundToggle } from "@/components/dashboard/new-order-sound-toggle";
 import { OrdersLiveList } from "@/components/dashboard/orders-live-list";
 import { OrdersRealtimeSync } from "@/components/dashboard/orders-realtime-sync";
@@ -5,6 +6,10 @@ import { PageHeader } from "@/components/layout/page-header";
 import { getUserStore } from "@/lib/auth/store";
 import type { Order, OrderItem, OrderStatus } from "@/types";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Pedidos",
+};
 
 const ACTIVE_STATUSES: OrderStatus[] = ["aguardando_aceite", "em_preparo", "pronto_para_retirada"];
 const HISTORICAL_STATUSES: OrderStatus[] = ["finalizado", "recusado", "cancelado"];

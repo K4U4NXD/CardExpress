@@ -92,7 +92,7 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
             ) : null}
           </div>
 
-          <p className="mt-2 text-xs text-zinc-500">Use esta tela para acompanhar atualizacoes automaticas do pedido.</p>
+          <p className="mt-2 text-xs text-zinc-500">Use esta tela para acompanhar atualizações automáticas do pedido.</p>
           <PublicOrderStatusAlert orderId={order.id} publicToken={token} status={order.status} />
           <PublicOrderRealtimeSync
             orderId={order.id}

@@ -187,7 +187,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
     <>
       <PageHeader
         title="Produtos"
-        description="Gerencie os itens exibidos no cardapio publico da loja."
+        description="Gerencie os itens exibidos no cardápio público da loja."
         sticky
         compact
         stickyTopClassName="top-14 md:top-0"
@@ -224,7 +224,11 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
                   Cancelar
                 </button>
               </div>
-              <CreateProductForm categories={categoriesForCreate} onCancel={() => setIsCreateOpen(false)} />
+              <CreateProductForm
+                storeId={storeId}
+                categories={categoriesForCreate}
+                onCancel={() => setIsCreateOpen(false)}
+              />
             </section>
           ) : null}
 
@@ -238,7 +242,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
 
             {orderedProducts.length > 1 ? (
               <p className="mt-1 text-xs text-zinc-500">
-                No desktop, arraste pela alca lateral. No celular, use o bloco de
+                No desktop, arraste pela alça lateral. No celular, use o bloco de
                 &quot;Reordenar&quot; em cada item.
               </p>
             ) : null}
@@ -250,7 +254,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
             {orderedProducts.length === 0 ? (
               <div className="mt-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4">
                 <p className="text-sm font-medium text-zinc-700">Nenhum produto cadastrado.</p>
-                <p className="mt-1 text-xs text-zinc-500">Crie um produto para iniciar a exibicao no cardapio.</p>
+                <p className="mt-1 text-xs text-zinc-500">Crie um produto para iniciar a exibição no cardápio.</p>
               </div>
             ) : (
               <div className="mt-4 space-y-3">

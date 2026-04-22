@@ -22,6 +22,7 @@ export default async function DashboardProductsPage() {
           "id, store_id, category_id, name, description, price, image_url, is_active, is_available, track_stock, stock_quantity, sort_order, created_at, updated_at"
         )
         .eq("store_id", store.id)
+        .is("archived_at", null)
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true }),
       supabase

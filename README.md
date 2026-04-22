@@ -48,6 +48,10 @@ O projeto já possui uma base funcional sólida, com:
 - logo da loja por URL ou upload;
 - melhorias amplas de UX em desktop e mobile;
 - **atualização em tempo real** nas rotas operacionais e públicas principais.
+- imagem de produto por URL ou upload;
+- exclusão segura de produto com preservação de histórico;
+- confirmação refinada para exclusão de produto, no padrão do dashboard;
+- revisão de textos e acentuação nas páginas principais do painel e do acompanhamento público do pedido;
 
 ### Validação recente do fluxo crítico
 
@@ -124,14 +128,20 @@ Cenários validados localmente:
 
 ### Produtos
 
+### Produtos
+
 - criar produto;
 - editar produto;
 - ativar e desativar;
 - controlar disponibilidade separadamente da ativação;
 - suporte a controle de estoque com `track_stock` e `stock_quantity`;
+- imagem de produto por link externo;
+- imagem de produto por upload;
+- regra de imagem: **link ou upload**, salvando apenas a URL final em `image_url`;
 - reordenar com **drag and drop no desktop**;
 - reordenar no mobile com fluxo compacto por controles de ordenação;
-- excluir produto;
+- exclusão física quando o produto não possui histórico;
+- exclusão lógica segura quando o produto já possui histórico de checkout/pedido, preservando integridade;
 - badges operacionais refinados;
 - exibição mais clara de estoque, disponibilidade e visibilidade pública;
 - formulário recolhido por padrão;
@@ -245,7 +255,6 @@ As páginas públicas da loja usam branding da própria loja quando disponível:
 - **atualização em tempo real** em `/dashboard/pedidos`;
 - toast global para novo pedido aguardando aceite;
 - badge na sidebar em Pedidos;
-- destaque local do card novo com fase forte e fase leve;
 - som de novo pedido no dashboard;
 - deduplicação de toasts;
 - correção de UX para não depender de reload da página.
@@ -287,6 +296,16 @@ As páginas públicas da loja usam branding da própria loja quando disponível:
 - fluxo público de checkout e conversão para pedido versionado no repositório;
 - triggers, funções e broadcasts específicos para atualização em tempo real nas telas-chave;
 - storage público para logos de loja via bucket `public-assets`.
+
+### Storage para imagens de produto
+
+O projeto utiliza o mesmo bucket público `public-assets` no Supabase Storage para armazenar imagens de produto.
+
+Padrão de caminho:
+
+* `product-images/<store-id>/<product-id-ou-draft>/arquivo.ext`
+
+As imagens de produto são persistidas em `products.image_url`, reaproveitando a URL pública final do arquivo.
 
 ---
 
@@ -352,7 +371,7 @@ As principais frentes restantes são:
 
 Crie um arquivo `.env.local` na raiz do projeto.
 
-Se o arquivo `.env.local.example` ainda não existir no repositório local, crie-o também e versione-o.
+O repositório já inclui o arquivo `.env.local.example` como referência.
 
 ### `.env.local.example`
 
@@ -360,7 +379,7 @@ Se o arquivo `.env.local.example` ainda não existir no repositório local, crie
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_SUPABASE_STORE_LOGOS_BUCKET=public-assets
-````
+```
 
 ### `.env.local`
 
@@ -513,8 +532,6 @@ cardexpress/
 │  ├─ layout/
 │  ├─ public/
 │  └─ shared/
-├─ docs/
-│  └─ supabase-confirmation-email-template.md
 ├─ lib/
 │  ├─ auth/
 │  ├─ branding.ts
@@ -696,6 +713,12 @@ Nesta versão do projeto:
 * a identificação do cliente é simples, com nome e telefone;
 * o histórico global do cliente entre dispositivos não faz parte do escopo atual.
 
+### Exclusão de produto com histórico
+
+Quando um produto nunca foi usado em checkout ou pedido, ele pode ser removido fisicamente.
+
+Quando o produto já possui histórico, a ação de “Excluir” remove o item da operação atual, mas preserva seus vínculos históricos no banco. Nesse caso, a remoção é feita por arquivamento lógico, sem quebrar pedidos antigos nem métricas.
+
 ### Slug não editável nesta fase
 
 No estado atual do projeto:
@@ -790,13 +813,14 @@ O projeto utiliza Supabase como backend principal.
 * `get_recent_called_orders_for_store`
 * `cancel_checkout_session_by_token`
 
-### Storage para logos de loja
+### Storage para assets públicos da loja
 
-O projeto utiliza o bucket público `public-assets` no Supabase Storage para armazenar logos de loja.
+O projeto utiliza o bucket público `public-assets` no Supabase Storage para armazenar assets públicos da loja.
 
-Padrão de caminho:
+Padrões de caminho:
 
-* `store-logos/<store-id>/arquivo.ext`
+* logo da loja: `store-logos/<store-id>/arquivo.ext`
+* imagem de produto: `product-images/<store-id>/<product-id-ou-draft>/arquivo.ext`
 
 As logos da loja são usadas em:
 
@@ -805,9 +829,25 @@ As logos da loja são usadas em:
 * painel público;
 * metadata dinâmica das páginas públicas, quando houver logo configurada.
 
+As imagens de produto são usadas no cardápio público da loja.
+
 ### Migrations
 
 Consulte a pasta `supabase/migrations/` para o histórico versionado do banco.
+
+No estado atual, os blocos críticos estão versionados com migrations específicas:
+
+* checkout/conversão e guardas operacionais:
+  * `20260403001920_public_checkout_order_flow.sql`
+  * `20260414123000_harden_checkout_conversion_operational_guard.sql`
+* realtime (dashboard/público):
+  * `20260411163258_enable_realtime_for_orders.sql`
+  * `20260411175544_broadcast_public_panel_refresh.sql`
+  * `20260411175546_dashboard_home_realtime_refresh.sql`
+  * `20260411175548_broadcast_public_order_refresh.sql`
+  * `20260412193547_add_realtime_public_menu_and_dashboard_products.sql`
+* storage de logos em bucket público:
+  * `20260420012418_storage_public_assets_store_logos.sql`
 
 > Como parte do desenvolvimento, algumas alterações foram aplicadas manualmente no Supabase e depois versionadas no repositório. Sempre confirme se o histórico remoto e o local continuam coerentes.
 
@@ -925,6 +965,10 @@ Se a mudança envolver banco ou storage:
 * melhorias amplas de responsividade e UX no dashboard e na área pública;
 * produtos sem estoque visíveis no cardápio, porém bloqueados para compra;
 * reordenação de categorias e produtos com drag and drop no desktop e fluxo compacto no mobile.
+* imagem de produto por URL e upload;
+* exclusão segura de produto com preservação de histórico;
+* confirmação refinada para exclusão de produto no dashboard;
+* revisão textual e ortográfica nas páginas principais do painel e no acompanhamento público do pedido;
 
 ### Em andamento / pendente
 

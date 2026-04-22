@@ -8,8 +8,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 const PATH = "/dashboard/produtos";
-const PRODUCT_HISTORY_BLOCK_MESSAGE =
-  "Este produto já possui histórico de checkout ou pedido e não pode ser excluído. Para removê-lo da operação, pause a venda ou desative o produto.";
+const PRODUCT_HISTORY_ARCHIVED_NOTICE = "excluido-com-historico";
 
 function revalidateStoreViews(storeSlug: string) {
   revalidatePath(PATH);
@@ -35,6 +34,48 @@ function isProductHistoryDeleteError(err: { code?: string; message?: string; det
 
   const joined = `${err.message ?? ""} ${err.details ?? ""}`.toLowerCase();
   return joined.includes("checkout_session_items_product_id_fkey") || joined.includes("order_items_product_id_fkey");
+}
+
+async function archiveProductForHistory(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  storeId: string,
+  productId: string
+) {
+  const archivedAt = new Date().toISOString();
+
+  return supabase
+    .from("products")
+    .update({
+      archived_at: archivedAt,
+      is_active: false,
+      is_available: false,
+      track_stock: false,
+      stock_quantity: 0,
+      updated_at: archivedAt,
+    })
+    .eq("id", productId)
+    .eq("store_id", storeId)
+    .is("archived_at", null);
+}
+
+function normalizeProductImageUrl(rawImageUrl: string): { value: string | null; error?: string } {
+  const normalized = rawImageUrl.trim();
+
+  if (!normalized) {
+    return { value: null };
+  }
+
+  try {
+    const parsed = new URL(normalized);
+
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return { value: null, error: "A URL da imagem precisa iniciar com http:// ou https://." };
+    }
+  } catch {
+    return { value: null, error: "A URL da imagem do produto é inválida." };
+  }
+
+  return { value: normalized };
 }
 
 function resolveStockAndAvailability(formData: FormData):
@@ -79,10 +120,11 @@ async function productOwnedOrNull(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, sort_order, is_active, category_id, name, description, price, image_url, track_stock, stock_quantity, is_available"
+      "id, sort_order, is_active, category_id, name, description, price, image_url, track_stock, stock_quantity, is_available, archived_at"
     )
     .eq("id", productId)
     .eq("store_id", storeId)
+    .is("archived_at", null)
     .maybeSingle();
 
   if (error || !data) return null;
@@ -137,6 +179,11 @@ export async function createProductAction(
     return { error: stock.message };
   }
 
+  const imageNormalization = normalizeProductImageUrl(imageUrlRaw);
+  if (imageNormalization.error) {
+    return { error: imageNormalization.error };
+  }
+
   const { supabase, store } = await getUserStore();
   if (!store) {
     return { error: "Nenhuma loja vinculada à sua conta." };
@@ -151,13 +198,14 @@ export async function createProductAction(
     .from("products")
     .select("sort_order")
     .eq("store_id", store.id)
+    .is("archived_at", null)
     .order("sort_order", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   const nextOrder = (last?.sort_order ?? -1) + 1;
   const description = descriptionRaw || null;
-  const image_url = imageUrlRaw || null;
+  const image_url = imageNormalization.value;
 
   const { error } = await supabase.from("products").insert({
     store_id: store.id,
@@ -213,13 +261,18 @@ export async function updateProductAction(formData: FormData) {
     redirect(`${PATH}?erro=${encodeURIComponent(stock.message)}`);
   }
 
+  const imageNormalization = normalizeProductImageUrl(imageUrlRaw);
+  if (imageNormalization.error) {
+    redirect(`${PATH}?erro=${encodeURIComponent(imageNormalization.error)}`);
+  }
+
   const catOk = await assertCategoryAllowedForProduct(supabase, store.id, categoryId, row.category_id);
   if (!catOk.ok) {
     redirect(`${PATH}?erro=${encodeURIComponent(catOk.message)}`);
   }
 
   const description = descriptionRaw || null;
-  const image_url = imageUrlRaw || null;
+  const image_url = imageNormalization.value;
 
   const { error } = await supabase
     .from("products")
@@ -331,6 +384,7 @@ export async function moveProductAction(formData: FormData) {
     .from("products")
     .select("id, sort_order")
     .eq("store_id", store.id)
+    .is("archived_at", null)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
@@ -403,6 +457,7 @@ export async function reorderProductsAction(orderedProductIds: string[]): Promis
     .from("products")
     .select("id, sort_order")
     .eq("store_id", store.id)
+    .is("archived_at", null)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
@@ -461,22 +516,54 @@ export async function deleteProductAction(formData: FormData) {
     redirect(`${PATH}?aviso=erro-loja`);
   }
 
-  const row = await productOwnedOrNull(supabase, store.id, productId);
-  if (!row) {
+  const { data: row, error: rowError } = await supabase
+    .from("products")
+    .select("id, archived_at")
+    .eq("id", productId)
+    .eq("store_id", store.id)
+    .maybeSingle();
+
+  if (rowError || !row) {
     redirect(`${PATH}?aviso=erro-permissao`);
   }
 
-  const { count: orderItemsHistoryCount, error: orderItemsHistoryError } = await supabase
-    .from("order_items")
-    .select("id", { count: "exact", head: true })
-    .eq("product_id", productId);
+  if (row.archived_at) {
+    revalidateStoreViews(store.slug);
+    redirectWithNotice(PRODUCT_HISTORY_ARCHIVED_NOTICE);
+  }
+
+  const [orderItemsHistoryResult, checkoutItemsHistoryResult] = await Promise.all([
+    supabase
+      .from("order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", productId),
+    supabase
+      .from("checkout_session_items")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", productId),
+  ]);
+
+  const { count: orderItemsHistoryCount, error: orderItemsHistoryError } = orderItemsHistoryResult;
+  const { count: checkoutItemsHistoryCount, error: checkoutItemsHistoryError } = checkoutItemsHistoryResult;
 
   if (orderItemsHistoryError) {
     redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(orderItemsHistoryError))}`);
   }
 
-  if ((orderItemsHistoryCount ?? 0) > 0) {
-    redirect(`${PATH}?erro=${encodeURIComponent(PRODUCT_HISTORY_BLOCK_MESSAGE)}`);
+  if (checkoutItemsHistoryError) {
+    redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(checkoutItemsHistoryError))}`);
+  }
+
+  const hasHistory = (orderItemsHistoryCount ?? 0) > 0 || (checkoutItemsHistoryCount ?? 0) > 0;
+
+  if (hasHistory) {
+    const { error: archiveError } = await archiveProductForHistory(supabase, store.id, productId);
+    if (archiveError) {
+      redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(archiveError))}`);
+    }
+
+    revalidateStoreViews(store.slug);
+    redirectWithNotice(PRODUCT_HISTORY_ARCHIVED_NOTICE);
   }
 
   const { error } = await supabase
@@ -487,7 +574,13 @@ export async function deleteProductAction(formData: FormData) {
 
   if (error) {
     if (isProductHistoryDeleteError(error)) {
-      redirect(`${PATH}?erro=${encodeURIComponent(PRODUCT_HISTORY_BLOCK_MESSAGE)}`);
+      const { error: archiveError } = await archiveProductForHistory(supabase, store.id, productId);
+      if (archiveError) {
+        redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(archiveError))}`);
+      }
+
+      revalidateStoreViews(store.slug);
+      redirectWithNotice(PRODUCT_HISTORY_ARCHIVED_NOTICE);
     }
     redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(error))}`);
   }

@@ -27,10 +27,10 @@ const SCOPE_FILTERS: Array<{ value: OrdersScopeFilter; label: string }> = [
 
 const SCOPE_LABELS: Record<OrdersScopeFilter, string> = {
   ativos: "fila operacional",
-  finalizados: "historico de finalizados",
-  recusados: "historico de recusados",
-  cancelados: "historico de cancelados",
-  todos: "visao geral",
+  finalizados: "histórico de finalizados",
+  recusados: "histórico de recusados",
+  cancelados: "histórico de cancelados",
+  todos: "visão geral",
 };
 
 function EmptyOrdersIcon() {
@@ -189,7 +189,7 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         {itemsUnavailable ? (
           <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
-            Itens do pedido nao estao acessiveis nesta consulta. Exibindo apenas os dados gerais.
+            Itens do pedido não estão acessíveis nesta consulta. Exibindo apenas os dados gerais.
           </p>
         ) : null}
 
@@ -203,7 +203,7 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
               <div className="rounded-2xl border border-red-200 bg-red-50 p-6 shadow-sm">
                 <h2 className="text-sm font-semibold text-red-900">Erro ao carregar pedidos</h2>
                 <p className="mt-2 text-sm text-red-800">
-                  Nao foi possivel buscar os pedidos agora. Atualize a pagina para tentar novamente.
+                  Não foi possível buscar os pedidos agora. Atualize a página para tentar novamente.
                 </p>
                 <p className="mt-2 text-xs text-red-700">Detalhe técnico: {loadError}</p>
               </div>
@@ -231,10 +231,10 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
               <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <h2 className="text-sm font-semibold text-zinc-900">
-                    {isOperationalView ? "Pedidos em andamento" : "Historico de pedidos"}
+                    {isOperationalView ? "Pedidos em andamento" : "Histórico de pedidos"}
                   </h2>
                   <p className="text-xs text-zinc-500">
-                    {orders.length} pedido(s) em {selectedScopeLabel}. Exibindo ate 50 registros.
+                    {orders.length} pedido(s) em {selectedScopeLabel}. Exibindo até 50 registros.
                   </p>
                 </div>
                 <OrdersLiveList

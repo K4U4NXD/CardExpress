@@ -68,9 +68,6 @@ function ActionButton({ label, className, dataTestId }: ActionButtonProps) {
 export function OrderRow({
   order,
   isNewlyArrived = false,
-  isStrongNewHighlight = false,
-  isSoftNewHighlight = false,
-  strongPulseNonce = 0,
   isFocusedByJump = false,
   onAcknowledgeNew,
 }: OrderRowProps) {
@@ -140,33 +137,7 @@ export function OrderRow({
   const actions = actionsByStatus[order.status];
   const accentClass = accentClassByStatus[order.status];
 
-  const strongPulseClass = isStrongNewHighlight
-    ? strongPulseNonce % 2 === 0
-      ? "cx-order-strong-pulse-a"
-      : "cx-order-strong-pulse-b"
-    : "";
-
-  const strongBadgePulseClass = isStrongNewHighlight
-    ? strongPulseNonce % 2 === 0
-      ? "cx-order-strong-badge-pulse-a"
-      : "cx-order-strong-badge-pulse-b"
-    : "";
-
-  const highlightClass = isStrongNewHighlight
-    ? `border-l-[9px] border-amber-500 ring-2 ring-amber-300 bg-[linear-gradient(180deg,rgba(254,215,170,0.56)_0%,rgba(255,247,237,0.86)_48%,rgba(255,255,255,1)_100%)] shadow-[0_32px_72px_-36px_rgba(245,158,11,0.82)] ${strongPulseClass}`
-    : isSoftNewHighlight
-      ? "border-l-[6px] border-amber-400 ring-1 ring-amber-200 bg-[linear-gradient(180deg,rgba(254,243,199,0.7)_0%,rgba(255,255,255,1)_88%)] shadow-[0_22px_46px_-34px_rgba(245,158,11,0.46)]"
-      : isNewlyArrived
-        ? "border-l-[5px] border-amber-300 bg-amber-50/45"
-      : "";
-
   const jumpFocusClass = isFocusedByJump ? "ring-2 ring-sky-300 ring-offset-1" : "";
-
-  const newBadgeClass = isStrongNewHighlight
-    ? `rounded-full border border-amber-600 bg-amber-200 px-2.5 py-0.5 text-xs font-extrabold tracking-[0.01em] text-amber-950 ${strongBadgePulseClass}`
-    : isSoftNewHighlight
-      ? "rounded-full border border-amber-400 bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900"
-      : "rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800";
 
   const handleAcknowledgeNew = () => {
     if (!isNewlyArrived) {
@@ -192,7 +163,7 @@ export function OrderRow({
       data-testid={`order-row-${order.id}`}
       onMouseEnter={handleAcknowledgeNew}
       onFocusCapture={handleAcknowledgeNew}
-      className={`relative rounded-2xl border border-zinc-200 border-l-4 ${accentClass} ${highlightClass} ${jumpFocusClass} bg-white p-4 shadow-[0_18px_36px_-30px_rgba(24,24,27,0.4)] transition sm:p-5`}
+      className={`relative rounded-2xl border border-zinc-200 border-l-4 ${accentClass} ${jumpFocusClass} bg-white p-4 shadow-[0_18px_36px_-30px_rgba(24,24,27,0.4)] transition sm:p-5`}
     >
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -201,11 +172,6 @@ export function OrderRow({
               <span className="inline-flex items-center rounded-lg bg-zinc-900 px-2.5 py-1 text-sm font-semibold text-white">
                 {formatOrderCode(order)}
               </span>
-              {isNewlyArrived ? (
-                <span className={newBadgeClass}>
-                  Novo pedido
-                </span>
-              ) : null}
               <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>{statusLabel}</span>
               {order.refund_status && order.refund_status !== "none" ? (
                 <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">
@@ -217,7 +183,7 @@ export function OrderRow({
             <div className="grid gap-2 sm:grid-cols-3">
               <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Cliente</p>
-                <p className="text-sm font-medium text-zinc-800">{order.customer_name?.trim() || "Nao informado"}</p>
+                <p className="text-sm font-medium text-zinc-800">{order.customer_name?.trim() || "Não informado"}</p>
               </div>
               <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Telefone</p>
@@ -233,7 +199,7 @@ export function OrderRow({
           <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-2">
             <div className="flex flex-wrap items-center gap-2 sm:justify-end">
               {actions.length === 0 ? (
-                <p className="px-1 text-xs text-zinc-500">Sem acoes disponiveis para este status.</p>
+                <p className="px-1 text-xs text-zinc-500">Sem ações disponíveis para este status.</p>
               ) : (
                 actions.map((actionItem) => (
                   <form key={actionItem.key} action={actionItem.action} className="inline">
@@ -279,14 +245,14 @@ export function OrderRow({
                 ))}
               </ul>
             ) : (
-              <p className="mt-2 text-xs text-zinc-500">Itens nao disponiveis nesta visualizacao.</p>
+              <p className="mt-2 text-xs text-zinc-500">Itens não disponíveis nesta visualização.</p>
             )
           ) : null}
         </section>
 
         {order.note ? (
           <section className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Observacao</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Observação</p>
             <p className="mt-1 text-sm text-amber-900">{order.note}</p>
           </section>
         ) : null}

@@ -176,7 +176,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
     <>
       <PageHeader
         title="Categorias"
-        description="Organize as secoes do cardapio para facilitar a navegacao do cliente."
+        description="Organize as seções do cardápio para facilitar a navegação do cliente."
         sticky
         compact
         stickyTopClassName="top-14 md:top-0"
@@ -220,7 +220,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
 
             {orderedCategories.length > 1 ? (
               <p className="mt-1 text-xs text-zinc-500">
-                No desktop, arraste pela alca lateral. No celular, use o bloco de
+                No desktop, arraste pela alça lateral. No celular, use o bloco de
                 &quot;Reordenar&quot; em cada item.
               </p>
             ) : null}
@@ -228,7 +228,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
             {orderedCategories.length === 0 ? (
               <div className="mt-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4">
                 <p className="text-sm font-medium text-zinc-700">Nenhuma categoria cadastrada.</p>
-                <p className="mt-1 text-xs text-zinc-500">Use o botao &quot;Nova categoria&quot; para iniciar a estrutura do cardapio.</p>
+                <p className="mt-1 text-xs text-zinc-500">Use o botão &quot;Nova categoria&quot; para iniciar a estrutura do cardápio.</p>
               </div>
             ) : (
               <div className="mt-3 sm:mt-2 space-y-2 sm:space-y-0">

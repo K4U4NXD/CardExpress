@@ -28,6 +28,7 @@ const AVISO_BY_ROUTE_PREFIX: Array<{ prefix: string; messages: Record<string, st
       "venda-liberada": "Venda do produto liberada com sucesso.",
       reordenado: "Produto reordenado.",
       excluido: "Produto excluído com sucesso.",
+      "excluido-com-historico": "Produto removido da operação e preservado no histórico.",
       "erro-campos": "Preencha nome, preço e categoria.",
       "erro-loja": "Não foi possível identificar sua loja.",
       "erro-permissao": "Não foi possível concluir a ação. Tente novamente.",

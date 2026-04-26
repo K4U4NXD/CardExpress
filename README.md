@@ -68,9 +68,14 @@ Além da validação manual contínua, o projeto conta com uma suíte **E2E/smok
 Cenários validados localmente:
 - fluxo público feliz;
 - reflexo operacional no dashboard e no painel público;
-- bloqueio operacional de checkout/conversão quando a loja pausa pedidos;
+- modos operacionais da loja: Loja offline, Aberta manualmente e Horário automático;
+- bloqueio de criação de checkout quando a loja está offline ou fora do horário;
+- conversão de checkout já criado mesmo após fechamento posterior da loja;
 - tratamento de bordas de estoque com múltiplos itens problemáticos;
+- produto vendido até estoque zero permanecendo visível no cardápio como indisponível;
 - cancelamento de checkout e recovery público sem ressuscitar sessão inválida;
+- filtros da dashboard sem reload da página e sem reset de scroll;
+- navegação básica mobile no dashboard;
 - visibilidade pública de produto sem estoque com bloqueio de compra.
 
 ---

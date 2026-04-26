@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   title: "Início",
 };
 
+const HAS_REAL_PAYMENT = false;
+
 const bodyFont = Sora({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -19,90 +21,112 @@ const displayFont = Space_Grotesk({
   weight: ["500", "600", "700"],
 });
 
-const howItWorksSteps = [
+const paymentNarrative = HAS_REAL_PAYMENT
+  ? {
+      hero: "Com pagamento integrado, confirmação automática e entrada do pedido no painel depois da aprovação.",
+      checkout: "Pagamento integrado e confirmação automática quando a transação for aprovada.",
+      step: "Pagamento aprovado",
+      stepDescription: "A confirmação libera o pedido para o painel do comerciante.",
+      about: "A experiência conecta pagamento integrado, confirmação e operação no painel.",
+    }
+  : {
+      hero: "Nesta fase, o checkout está em modo demo e a base fica preparada para ativação futura de pagamento real.",
+      checkout: "Checkout estruturado em modo demo, com base preparada para pagamento real.",
+      step: "Checkout em modo demo",
+      stepDescription: "O fluxo simula a finalização para validar experiência e operação com transparência.",
+      about: "O checkout permanece em modo demo nesta etapa, sem afirmar pagamento real ativo.",
+    };
+
+const landingSections = [
+  { id: "inicio", label: "Início" },
+  { id: "produto", label: "Produto" },
+  { id: "como-funciona", label: "Como funciona" },
+  { id: "diferenciais", label: "Diferenciais" },
+  { id: "beneficios", label: "Benefícios" },
+  { id: "contato", label: "Contato" },
+] as const;
+
+const heroBadges = [
+  "Cardápio por link e QR Code",
+  "Painel de pedidos",
+  "Estoque e disponibilidade",
+  "Retirada no balcão",
+] as const;
+
+const flowSteps = [
   {
-    title: "Cadastro da loja",
-    description: "A conta é criada com os dados do estabelecimento e acesso ao painel administrativo.",
+    title: "Loja criada",
+    description: "O comerciante cadastra o estabelecimento e configura a operação.",
   },
   {
-    title: "Cardápio organizado",
-    description: "Categorias e produtos são configurados com disponibilidade e controle de estoque quando necessário.",
+    title: "Cardápio no ar",
+    description: "Categorias, produtos, disponibilidade e estoque ficam prontos para o cliente.",
   },
   {
-    title: "Acesso por link ou QR Code",
-    description: "O cliente abre o cardápio público da loja de forma rápida no celular, sem fricção.",
+    title: paymentNarrative.step,
+    description: paymentNarrative.stepDescription,
   },
   {
-    title: "Operação no balcão",
-    description: "Os pedidos entram no fluxo do dashboard para aceite, preparo e retirada.",
+    title: "Pedido no painel",
+    description: "A equipe aceita, prepara, finaliza e orienta a retirada.",
+  },
+] as const;
+
+const differentiators = [
+  {
+    title: "Operação simples de manter",
+    description: "Pausar pedidos, abrir manualmente ou usar horário automático sem complicar a rotina.",
+  },
+  {
+    title: "Cardápio que respeita estoque",
+    description: "Disponibilidade e estoque aparecem de forma clara para a loja e para o cliente.",
+  },
+  {
+    title: "Status público para reduzir dúvidas",
+    description: "O cliente acompanha o pedido e a equipe mantém o balcão mais organizado.",
+  },
+  {
+    title: "Atualização em tempo real",
+    description: "Painel, pedido e retirada seguem o andamento operacional da loja.",
   },
 ] as const;
 
 const merchantBenefits = [
   {
-    title: "Atendimento mais organizado",
-    description: "Pedidos e operação em um fluxo único para reduzir ruído no balcão.",
+    title: "Dashboard com indicadores",
+    description: "Filtros, alertas de estoque e visão rápida da operação no painel.",
   },
   {
-    title: "Cardápio digital sempre acessível",
-    description: "Compartilhamento por link e QR Code com atualização centralizada pelo painel.",
+    title: "Catálogo sob controle",
+    description: "Produtos, categorias, disponibilidade e modos operacionais no mesmo lugar.",
   },
   {
-    title: "Gestão prática de itens",
-    description: "Controle de categorias, produtos, visibilidade de venda e estoque no mesmo ambiente.",
+    title: "Fila de pedidos clara",
+    description: "Aceite, preparo, retirada e atualização em tempo real para a equipe.",
   },
   {
-    title: "Rotina operacional mais clara",
-    description: "Acompanhamento de status dos pedidos com foco em agilidade de retirada.",
+    title: "Estoque sem improviso",
+    description: "Itens baixos ou zerados ficam visíveis antes de virarem ruído no atendimento.",
   },
 ] as const;
 
 const customerBenefits = [
   {
-    title: "Acesso rápido ao cardápio",
-    description: "Entrada simples por URL pública da loja, ideal para uso em ponto de venda.",
+    title: "Acesso por link ou QR Code",
+    description: "O cliente abre o cardápio no celular sem instalar aplicativo.",
   },
   {
-    title: "Navegação objetiva",
-    description: "Busca por itens e visualização clara de produtos disponíveis.",
+    title: "Carrinho objetivo",
+    description: "Escolha de itens, quantidades e resumo com menos atrito.",
   },
   {
-    title: "Carrinho direto",
-    description: "Adição de produtos e continuidade do pedido com menos etapas.",
+    title: "Checkout estruturado",
+    description: "Fluxo de pedido em validação, com base preparada para pagamento real.",
   },
   {
-    title: "Acompanhamento do pedido",
-    description: "Consulta pública de status para o cliente acompanhar o andamento da retirada.",
+    title: "Status público",
+    description: "Acompanhamento até a retirada, com menos dúvidas no balcão.",
   },
-] as const;
-
-const productSurfaces = [
-  {
-    title: "Dashboard administrativo",
-    description: "Pedidos, produtos, categorias e configurações em uma visão operacional única.",
-  },
-  {
-    title: "Cardápio público por slug",
-    description: "Página própria da loja para atendimento por link direto ou QR Code.",
-  },
-  {
-    title: "Checkout em modo demo",
-    description: "Fluxo funcional de compra para apresentação e evolução até integração de pagamento real.",
-  },
-] as const;
-
-const teamMembers = [
-  "Kauan Henrique Silva Paulino",
-  "Gustavo Yukio Jochi",
-  "Thiago Ribeiro Modesto",
-] as const;
-
-const landingSections = [
-  { id: "inicio", label: "Início" },
-  { id: "como-funciona", label: "Como funciona" },
-  { id: "beneficios", label: "Benefícios" },
-  { id: "sobre", label: "Sobre" },
-  { id: "contato", label: "Contato" },
 ] as const;
 
 const navActionClass =
@@ -110,160 +134,216 @@ const navActionClass =
 
 export default function HomePage() {
   return (
-    <main
-      className={`${bodyFont.className} relative overflow-x-clip bg-[radial-gradient(118%_82%_at_14%_-10%,_rgba(251,191,36,0.26)_0%,_rgba(255,246,224,0.78)_33%,_rgba(246,249,253,0.95)_63%,_rgba(238,244,251,1)_100%)] text-zinc-900`}
-    >
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-zinc-50/22 to-zinc-100/32" />
-        <div className="absolute -left-24 -top-20 h-[22rem] w-[22rem] rounded-full bg-amber-300/30 blur-3xl" />
-        <div className="absolute -right-16 top-8 h-[20rem] w-[20rem] rounded-full bg-cyan-200/28 blur-3xl" />
-        <div className="absolute left-1/2 top-[34%] h-44 w-44 -translate-x-1/2 rounded-full bg-white/55 blur-3xl" />
-        <div className="absolute bottom-[22%] left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-indigo-100/32 blur-3xl" />
-        <div className="absolute -right-24 bottom-[12%] h-64 w-64 rounded-full bg-sky-100/28 blur-3xl" />
-      </div>
-
+    <main className={`${bodyFont.className} overflow-x-clip bg-[#f7f7f4] text-zinc-900`}>
       <LandingStickyNav sections={landingSections} />
 
       <section
         id="inicio"
-        className="mx-auto max-w-7xl scroll-mt-44 px-4 pb-8 pt-28 sm:px-6 sm:pb-10 sm:pt-32 md:scroll-mt-32 md:pt-28 lg:pb-14"
+        className="relative isolate scroll-mt-52 overflow-hidden bg-zinc-950 px-4 pt-32 text-white sm:scroll-mt-44 sm:px-6 sm:pt-36 md:scroll-mt-36 lg:pt-32"
       >
-        <div className="grid items-stretch gap-4 lg:grid-cols-[1.06fr_0.94fr] lg:gap-6">
-          <Reveal className="h-full">
-            <article className="cx-lift relative h-full rounded-3xl border border-zinc-200/85 bg-white/95 p-5 shadow-[0_30px_70px_-50px_rgba(24,24,27,0.6)] sm:p-7">
-              <div className="absolute right-4 top-4 hidden rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-medium text-zinc-500 md:block">
-                Plataforma para retirada no balcão
-              </div>
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(180deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:80px_80px]" />
+        <div className="absolute inset-x-0 bottom-0 -z-10 h-44 bg-gradient-to-t from-amber-500/12 to-transparent" />
 
-              <p className="inline-flex rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-900 md:hidden">
-                Plataforma para retirada no balcão
+        <div className="mx-auto grid max-w-7xl gap-8 pb-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-12 lg:pb-14">
+          <Reveal>
+            <div className="max-w-3xl">
+              <p className="inline-flex rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-100">
+                CardExpress para pedidos de retirada
               </p>
-
               <h1
-                className={`${displayFont.className} mt-3 max-w-2xl text-[1.95rem] font-semibold leading-[1.08] text-zinc-950 sm:text-[2.9rem] lg:text-[3.35rem]`}
+                className={`${displayFont.className} mt-4 text-[2.35rem] font-semibold leading-[1.04] text-white sm:text-[3.65rem] lg:text-[4.35rem] xl:text-[4.7rem]`}
               >
-                Atendimento mais ágil para a loja, experiência mais fluida para o cliente.
+                Organize pedidos, cardápio e retirada no balcão em um só lugar.
               </h1>
-
-              <p className="mt-4 max-w-2xl text-sm text-zinc-700 sm:text-base lg:text-lg">
-                O CardExpress conecta cardápio público, carrinho e operação de pedidos em um fluxo claro, pensado para
-                pequenos estabelecimentos de alimentação e venda rápida.
+              <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-200 sm:text-lg sm:leading-8">
+                O CardExpress ajuda lanchonetes, cafeterias e pontos de venda rápida a transformar o cardápio em um
+                fluxo claro de pedido, preparo, status público e retirada.
               </p>
+              <p className="mt-2.5 max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base">{paymentNarrative.hero}</p>
 
-              <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-                <Link
-                  href="/cadastro"
-                  className="cx-btn-primary min-h-11 px-5 py-3 text-sm font-semibold sm:min-h-12 sm:px-6 sm:text-base"
-                >
-                  Criar conta e começar
+              <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
+                <Link href="/cadastro" className="cx-btn-primary min-h-11 px-5 py-2.5 text-sm font-semibold sm:min-h-12 sm:px-6 sm:py-3 sm:text-base">
+                  Criar conta
                 </Link>
+                <a
+                  href="#produto"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 sm:min-h-12 sm:px-6 sm:py-3 sm:text-base"
+                >
+                  Ver produto
+                </a>
                 <Link
                   href="/login"
-                  className="cx-btn-secondary min-h-11 px-5 py-3 text-sm font-semibold sm:min-h-12 sm:px-6 sm:text-base"
+                  className="hidden min-h-12 items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-zinc-300 underline-offset-4 transition hover:text-white hover:underline sm:inline-flex sm:text-base"
                 >
                   Acessar painel
                 </Link>
-                <a
-                  href="#como-funciona"
-                  className="inline-flex min-h-11 items-center rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 underline-offset-4 transition hover:text-zinc-900 hover:underline sm:min-h-12"
-                >
-                  Ver funcionamento
-                </a>
               </div>
 
-              <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-                <article className="rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Cardápio</p>
-                  <p className="mt-1 text-xs font-semibold text-zinc-900">Link e QR Code</p>
-                </article>
-                <article className="rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Operação</p>
-                  <p className="mt-1 text-xs font-semibold text-zinc-900">Fluxo de pedidos</p>
-                </article>
-                <article className="rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Praticidade</p>
-                  <p className="mt-1 text-xs font-semibold text-zinc-900">Retirada no balcão</p>
-                </article>
-              </div>
-            </article>
-          </Reveal>
-
-          <Reveal delayMs={100} className="h-full">
-            <aside className="relative h-full rounded-3xl border border-zinc-200 bg-gradient-to-br from-zinc-950 to-zinc-800 p-4 text-white shadow-[0_32px_84px_-46px_rgba(24,24,27,0.85)] sm:p-5">
-              <div className="absolute inset-x-4 top-4 hidden items-center justify-between text-[11px] text-zinc-300 sm:flex">
-                <span className="font-semibold tracking-wide text-zinc-200">Visão de produto</span>
-                <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5">Fluxo funcional</span>
-              </div>
-
-              <div className="mt-1 rounded-2xl border border-white/10 bg-zinc-950/65 p-3 sm:mt-6 sm:p-4">
-                <div className="flex items-center justify-between text-xs text-zinc-300">
-                  <span className="font-semibold text-zinc-100">Dashboard operacional</span>
-                  <span>Hoje</span>
-                </div>
-
-                <div className="mt-2.5 grid grid-cols-3 gap-1.5 sm:mt-3 sm:gap-2">
-                  <div className="rounded-lg border border-emerald-400/25 bg-emerald-500/20 px-2 py-2 text-center">
-                    <p className="text-[10px] uppercase text-emerald-200">Aguardando</p>
-                    <p className="mt-1 text-base font-semibold text-emerald-100 sm:text-lg">6</p>
-                  </div>
-                  <div className="rounded-lg border border-sky-400/25 bg-sky-500/20 px-2 py-2 text-center">
-                    <p className="text-[10px] uppercase text-sky-200">Preparo</p>
-                    <p className="mt-1 text-base font-semibold text-sky-100 sm:text-lg">4</p>
-                  </div>
-                  <div className="rounded-lg border border-amber-400/25 bg-amber-500/20 px-2 py-2 text-center">
-                    <p className="text-[10px] uppercase text-amber-200">Retirada</p>
-                    <p className="mt-1 text-base font-semibold text-amber-100 sm:text-lg">3</p>
-                  </div>
-                </div>
-
-                <div className="mt-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-zinc-300">
-                  Prontidão operacional e status público alinhados à disponibilidade real da loja.
-                </div>
-              </div>
-
-              <div className="relative mt-3 ml-auto w-[80%] max-w-[232px] rounded-2xl border border-zinc-200/30 bg-white p-2.5 text-zinc-900 shadow-2xl sm:mt-4 sm:max-w-[270px] sm:p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Cardápio público</p>
-                <p className="mt-1 text-sm font-semibold">Hambúrguer Artesanal</p>
-                <p className="text-xs text-zinc-600">Retirada no balcão</p>
-                <div className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-2 text-xs text-zinc-700">
-                  Busca por item e carrinho simples para finalizar o pedido.
-                </div>
-              </div>
-
-              <p className="mt-4 text-xs text-zinc-300 sm:mt-5">
-                Checkout em modo demo nesta fase para validar experiência e operação com transparência.
-              </p>
-            </aside>
-          </Reveal>
-        </div>
-      </section>
-
-      <section
-        id="como-funciona"
-        className="relative scroll-mt-44 overflow-hidden bg-gradient-to-b from-white/74 via-white/94 to-zinc-50/74 py-10 sm:scroll-mt-32 sm:py-12"
-      >
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white/70 to-transparent" />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <Reveal>
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Como funciona</p>
-                <h2 className={`${displayFont.className} mt-2 text-2xl font-semibold text-zinc-900 sm:text-4xl`}>
-                  Fluxo operacional pensado para pequenos estabelecimentos
-                </h2>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {heroBadges.map((badge) => (
+                  <span
+                    key={badge}
+                    className="rounded-full border border-white/15 bg-white/[0.07] px-3 py-1 text-xs font-medium text-zinc-200"
+                  >
+                    {badge}
+                  </span>
+                ))}
               </div>
             </div>
           </Reveal>
 
-          <div className="-mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:snap-none md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-4">
-            {howItWorksSteps.map((step, index) => (
-              <Reveal key={step.title} delayMs={index * 70} className="min-w-[83%] snap-start md:min-w-0">
-                <article className="cx-lift h-full rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white">
-                    {index + 1}
+          <Reveal delayMs={120}>
+            <div className="relative rounded-2xl border border-white/15 bg-white/[0.07] p-3 shadow-[0_34px_100px_-48px_rgba(0,0,0,0.95)] sm:p-4">
+              <div className="grid gap-3 lg:grid-cols-[1.05fr_0.95fr]">
+                <div className="rounded-xl border border-white/10 bg-white p-4 text-zinc-900">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Cardápio público</p>
+                      <p className="mt-1 text-lg font-semibold">Café & Lanches Centro</p>
+                    </div>
+                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+                      Aberta
+                    </span>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {["Combo artesanal", "Pão de queijo", "Suco natural"].map((item, index) => (
+                      <div key={item} className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
+                        <div>
+                          <p className="text-sm font-semibold text-zinc-900">{item}</p>
+                          <p className="text-xs text-zinc-500">{index === 1 ? "Estoque baixo" : "Disponível agora"}</p>
+                        </div>
+                        <span className="text-sm font-semibold text-zinc-900">R$ {index === 0 ? "24,90" : "8,00"}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-3">
+                  <div className="rounded-xl border border-white/10 bg-zinc-900 p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Dashboard</p>
+                      <span className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs text-emerald-200">Ao vivo</span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-3 gap-2">
+                      <div className="rounded-lg bg-white/[0.07] p-2 text-center">
+                        <p className="text-lg font-semibold text-white">6</p>
+                        <p className="text-[10px] text-zinc-400">Fila</p>
+                      </div>
+                      <div className="rounded-lg bg-white/[0.07] p-2 text-center">
+                        <p className="text-lg font-semibold text-white">3</p>
+                        <p className="text-[10px] text-zinc-400">Preparo</p>
+                      </div>
+                      <div className="rounded-lg bg-white/[0.07] p-2 text-center">
+                        <p className="text-lg font-semibold text-white">2</p>
+                        <p className="text-[10px] text-zinc-400">Retirada</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-amber-200/40 bg-amber-200/12 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-100">Checkout</p>
+                    <p className="mt-2 text-sm font-semibold text-white">{paymentNarrative.checkout}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <section id="produto" className="scroll-mt-52 bg-[#f7f7f4] py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <Reveal>
+            <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Visão do produto</p>
+                <h2 className={`${displayFont.className} mt-3 text-3xl font-semibold text-zinc-950 sm:text-4xl`}>
+                  Um fluxo visual do pedido, sem espalhar a operação
+                </h2>
+                <p className="mt-4 text-sm leading-6 text-zinc-600 sm:text-base">
+                  O CardExpress organiza quatro momentos em uma experiência contínua: cardápio, checkout, dashboard e
+                  retirada. O comerciante não precisa alternar entre ferramentas para entender o que está acontecendo.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-[0_22px_70px_-55px_rgba(24,24,27,0.75)] sm:p-4">
+                <div className="grid gap-3 md:grid-cols-4">
+                  {[
+                    ["Cardápio", "Link público e QR Code"],
+                    ["Checkout", "Fluxo estruturado em validação"],
+                    ["Painel", "Pedidos, estoque e indicadores"],
+                    ["Retirada", "Status público para o cliente"],
+                  ].map(([title, description], index) => (
+                    <div
+                      key={title}
+                      className="relative rounded-xl border border-zinc-200 bg-zinc-50 p-4 transition duration-300 hover:border-zinc-300 hover:bg-white"
+                    >
+                      {index < 3 ? (
+                        <span className="absolute -right-3 top-1/2 hidden h-px w-6 bg-zinc-300 after:absolute after:-right-0.5 after:-top-[3px] after:h-2 after:w-2 after:rotate-45 after:border-r after:border-t after:border-zinc-300 md:block" />
+                      ) : null}
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-white text-xs font-semibold text-zinc-700">
+                        {index === 0 ? "QR" : index === 1 ? "OK" : index === 2 ? "PA" : "TV"}
+                      </span>
+                      <h3 className="mt-3 text-base font-semibold text-zinc-950">{title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-zinc-600">{description}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs text-zinc-500">
+                  {paymentNarrative.checkout}
+                </p>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <section id="como-funciona" className="scroll-mt-52 bg-white py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <Reveal>
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Como funciona</p>
+              <h2 className={`${displayFont.className} mt-3 text-3xl font-semibold text-zinc-950 sm:text-4xl`}>
+                Da configuração ao pedido pronto em poucos passos
+              </h2>
+            </div>
+          </Reveal>
+
+          <ol className="mt-8 grid gap-3 md:relative md:grid-cols-4 md:gap-6 md:border-t md:border-zinc-200 md:pt-7">
+            {flowSteps.map((step, index) => (
+              <Reveal key={step.title} delayMs={index * 70}>
+                <li className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 md:relative md:border-0 md:bg-transparent md:p-0 md:pr-5">
+                  <span className="mb-3 flex h-3 w-3 rounded-full bg-amber-400 ring-4 ring-amber-100 md:absolute md:-top-[34px] md:left-0 md:mb-0">
+                    <span className="sr-only">Etapa {index + 1}</span>
                   </span>
-                  <h3 className="mt-3 text-lg font-semibold text-zinc-900">{step.title}</h3>
-                  <p className="mt-2 text-sm text-zinc-600">{step.description}</p>
+                  <h3 className="text-base font-semibold text-zinc-950">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-zinc-600">{step.description}</p>
+                </li>
+              </Reveal>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section id="diferenciais" className="scroll-mt-52 bg-zinc-950 py-14 text-white sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
+        <div className="mx-auto grid max-w-7xl gap-9 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+          <Reveal>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Diferenciais</p>
+              <h2 className={`${displayFont.className} mt-3 text-3xl font-semibold text-white sm:text-4xl`}>
+                Feito para a rotina real de pequenos estabelecimentos
+              </h2>
+              <p className="mt-4 text-sm leading-6 text-zinc-400 sm:text-base">{paymentNarrative.about}</p>
+            </div>
+          </Reveal>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {differentiators.map((item, index) => (
+              <Reveal key={item.title} delayMs={index * 70}>
+                <article className="h-full rounded-xl border border-white/10 bg-white/[0.06] p-4 transition duration-300 hover:border-white/20 hover:bg-white/[0.08] sm:p-5">
+                  <span className="block h-1 w-10 rounded-full bg-amber-300" />
+                  <h3 className="mt-4 text-lg font-semibold text-white">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-zinc-400">{item.description}</p>
                 </article>
               </Reveal>
             ))}
@@ -271,172 +351,87 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section
-        id="beneficios"
-        className="relative scroll-mt-44 overflow-hidden bg-gradient-to-b from-zinc-50/62 via-white to-white/92 py-10 sm:scroll-mt-32 sm:py-12"
-      >
-        <div className="pointer-events-none absolute -left-20 top-6 h-40 w-40 rounded-full bg-amber-100/34 blur-3xl" />
+      <section id="beneficios" className="scroll-mt-52 bg-[#f7f7f4] py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <Reveal>
+            <div className="mb-7 max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Benefícios</p>
+              <h2 className={`${displayFont.className} mt-3 text-3xl font-semibold text-zinc-950 sm:text-4xl`}>
+                Uma experiência melhor para a loja e para quem retira
+              </h2>
+            </div>
+          </Reveal>
+
+          <Reveal delayMs={80}>
             <LandingBenefitsSection
               merchantBenefits={merchantBenefits}
               customerBenefits={customerBenefits}
-              merchantTitle="Mais clareza no atendimento e na operação"
-              customerTitle="Experiência rápida do cardápio à retirada"
+              merchantTitle="Mais controle no atendimento"
+              customerTitle="Menos dúvida até a retirada"
             />
           </Reveal>
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-gradient-to-b from-white via-zinc-50/68 to-white py-10 sm:py-12">
-        <div className="pointer-events-none absolute right-0 top-0 h-20 w-[34%] bg-gradient-to-l from-white/58 to-transparent" />
+      <section id="contato" className="scroll-mt-52 bg-white py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <Reveal>
-            <div className="mb-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Base funcional</p>
-              <h2 className={`${displayFont.className} mt-1 text-2xl font-semibold text-zinc-900 sm:text-3xl`}>
-                Núcleo operacional já validado no produto
-              </h2>
-            </div>
-          </Reveal>
-
-          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-3">
-            {productSurfaces.map((surface, index) => (
-              <Reveal key={surface.title} delayMs={index * 80} className="min-w-[80%] snap-start sm:min-w-0">
-                <article className="cx-lift h-full rounded-2xl border border-zinc-200 bg-zinc-50 p-4 shadow-sm sm:p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Base funcional</p>
-                  <h3 className="mt-2 text-lg font-semibold text-zinc-900">{surface.title}</h3>
-                  <p className="mt-2 text-sm text-zinc-600">{surface.description}</p>
-                </article>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="sobre"
-        className="relative scroll-mt-44 overflow-hidden bg-gradient-to-b from-zinc-50/62 via-white/95 to-white py-10 sm:scroll-mt-32 sm:py-12"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <Reveal>
-            <article className="cx-lift rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7">
-              <div className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr] lg:items-start">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Sobre o CardExpress</p>
-                  <h2 className={`${displayFont.className} mt-2 text-3xl font-semibold text-zinc-900 sm:text-4xl`}>
-                    Solução em evolução com base funcional sólida
-                  </h2>
-                  <p className="mt-4 max-w-4xl text-zinc-700">
-                    O CardExpress é um sistema para pequenos estabelecimentos que precisam organizar atendimento com
-                    cardápio digital e retirada no balcão. A plataforma já reúne dashboard operacional, rota pública da
-                    loja e fluxo de pedidos de ponta a ponta.
-                  </p>
-                  <p className="mt-3 max-w-4xl text-sm text-zinc-600">
-                    O checkout permanece em modo demo nesta etapa, permitindo validar experiência e operação com
-                    transparência enquanto a solução evolui para cenários de uso cada vez mais completos.
-                  </p>
-                </div>
-
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                  <article className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm text-zinc-700">
-                    Cardápio público por slug
-                  </article>
-                  <article className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm text-zinc-700">
-                    Operação de pedidos no dashboard
-                  </article>
-                  <article className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm text-zinc-700">
-                    Fluxo de checkout em modo demo
-                  </article>
-                </div>
-              </div>
-            </article>
-          </Reveal>
-        </div>
-      </section>
-
-      <section
-        id="contato"
-        className="relative scroll-mt-44 overflow-hidden bg-gradient-to-b from-white via-zinc-50/55 to-zinc-100/62 pb-10 pt-2 sm:scroll-mt-32 sm:pb-12 sm:pt-3"
-      >
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-zinc-300/34" />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-            <Reveal>
-              <article className="cx-lift rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Equipe e contato</p>
-                <h2 className={`${displayFont.className} mt-2 text-3xl font-semibold text-zinc-900 sm:text-4xl`}>
-                  Time responsável pelo CardExpress
+            <div className="rounded-2xl border border-zinc-200 bg-zinc-950 p-5 text-white shadow-sm sm:p-8 lg:grid lg:grid-cols-[1fr_auto] lg:items-center lg:gap-8">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Demonstração e contato</p>
+                <h2 className={`${displayFont.className} mt-3 text-3xl font-semibold text-white sm:text-4xl`}>
+                  Pronto para organizar sua operação de retirada?
                 </h2>
-                <p className="mt-3 text-sm text-zinc-600">
-                  Para apresentações, demonstrações e conversas sobre evolução do sistema, entre em contato com a equipe.
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
+                  Ideal para lanchonetes, cafeterias, trailers e pontos de venda rápida que precisam de cardápio,
+                  pedidos e status em uma rotina mais clara.
                 </p>
-
-                <div className="mt-4 grid grid-cols-2 gap-2.5">
-                  {teamMembers.map((member) => (
-                    <article
-                      key={member}
-                      className="rounded-xl border border-zinc-200 bg-zinc-50 p-3.5 transition duration-300 hover:border-zinc-300 hover:bg-white sm:p-4"
-                    >
-                      <p className="text-sm font-semibold text-zinc-900">{member}</p>
-                      <p className="mt-1 text-xs text-zinc-600">Equipe CardExpress</p>
-                    </article>
-                  ))}
-                </div>
-              </article>
-            </Reveal>
-
-            <Reveal delayMs={120}>
-              <aside className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-gradient-to-br from-zinc-950 to-zinc-800 p-5 text-white shadow-sm sm:p-7">
-                <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-amber-300/20 blur-2xl" />
-
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Contato institucional</p>
-                <p className={`${displayFont.className} mt-2 text-2xl font-semibold text-zinc-100 break-all`}>
-                  projetocardexpress@gmail.com
-                </p>
-                <p className="mt-4 text-sm text-zinc-300">
-                  Canal oficial para alinhamento de apresentações, validação da solução e próximas etapas de evolução do
-                  CardExpress.
-                </p>
+                <p className="mt-3 break-all text-xs font-semibold text-zinc-400">projetocardexpress@gmail.com</p>
+              </div>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:mt-0">
                 <a
                   href="https://mail.google.com/mail/?view=cm&fs=1&to=projetocardexpress@gmail.com&su=Contato%20sobre%20o%20CardExpress&body=Ol%C3%A1%2C%0A%0AGostaria%20de%20saber%20mais%20sobre%20o%20CardExpress.%0A%0ANome%3A%0AEstabelecimento%3A%0AMensagem%3A%0A"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Abrir composição de e-mail no Gmail para projetocardexpress@gmail.com"
                   title="Abrir composição de e-mail no Gmail"
-                  className="mt-6 inline-flex min-h-11 items-center rounded-xl border border-white/25 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                  className="cx-btn-primary min-h-11 px-5 py-3 text-sm font-semibold"
                 >
-                  Enviar e-mail
+                  Solicitar demonstração
                 </a>
-              </aside>
-            </Reveal>
-          </div>
+                <Link
+                  href="/cadastro"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                >
+                  Criar conta
+                </Link>
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 
-      <footer className="relative border-t border-zinc-200/70 bg-gradient-to-b from-zinc-950 to-zinc-900 text-zinc-200">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-
+      <footer className="border-t border-white/10 bg-zinc-950 text-zinc-200">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-start lg:gap-12">
           <div className="max-w-md">
             <p className={`${displayFont.className} text-xl font-semibold text-white`}>CardExpress</p>
             <p className="mt-2 text-sm text-zinc-400">
-              Sistema para pequenos estabelecimentos com cardápio digital e operação de retirada no balcão.
-            </p>
-            <p className="mt-3 text-xs text-zinc-500">
-              Solução em evolução para tornar o atendimento mais claro, rápido e confiável.
+              Cardápio digital, checkout estruturado e painel de pedidos para retirada no balcão.
             </p>
           </div>
 
           <nav className="grid gap-2 text-sm sm:grid-cols-2 lg:min-w-[320px]">
+            <a href="#produto" className={navActionClass}>
+              Produto
+            </a>
             <a href="#como-funciona" className={navActionClass}>
               Como funciona
             </a>
-            <a href="#sobre" className={navActionClass}>
-              Sobre
+            <a href="#diferenciais" className={navActionClass}>
+              Diferenciais
             </a>
             <a href="#contato" className={navActionClass}>
-              Equipe e contato
+              Contato
             </a>
             <Link href="/login" className={navActionClass}>
               Login
@@ -447,8 +442,8 @@ export default function HomePage() {
           </nav>
         </div>
 
-        <div className="border-t border-white/10 bg-zinc-950/80">
-          <div className="mx-auto max-w-7xl px-4 py-4 text-center text-xs text-zinc-400 sm:px-6">
+        <div className="border-t border-white/10 bg-zinc-950">
+          <div className="mx-auto max-w-7xl px-4 py-4 text-center text-xs text-zinc-500 sm:px-6">
             <p>© 2026 CardExpress. Todos os direitos reservados.</p>
           </div>
         </div>

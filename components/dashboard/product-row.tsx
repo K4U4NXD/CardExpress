@@ -146,6 +146,8 @@ export function ProductRow({
       return;
     }
 
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     deleteCancelButtonRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -161,6 +163,7 @@ export function ProductRow({
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
     };
   }, [deleteConfirmOpen]);
 
@@ -860,15 +863,14 @@ export function ProductRow({
 
       {deleteConfirmOpen ? (
         <div
-          className="fixed inset-0 z-[80]"
+          className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto overscroll-contain p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby={`delete-product-dialog-title-${product.id}`}
         >
-          <div className="absolute inset-0 bg-zinc-950/45 backdrop-blur-[1px]" onClick={closeDeleteConfirmation} />
+          <div className="absolute inset-0 bg-zinc-950/35" onClick={closeDeleteConfirmation} />
 
-          <div className="relative flex min-h-full items-center justify-center p-4">
-            <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl">
+          <div className="relative w-full max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-[0_24px_80px_-28px_rgba(24,24,27,0.85)] sm:p-6">
               <h2 id={`delete-product-dialog-title-${product.id}`} className="text-base font-semibold text-zinc-900">
                 Excluir produto?
               </h2>
@@ -893,7 +895,6 @@ export function ProductRow({
                   Confirmar exclusão
                 </button>
               </div>
-            </div>
           </div>
         </div>
       ) : null}

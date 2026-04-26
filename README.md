@@ -60,6 +60,12 @@ O projeto já possui uma base funcional sólida, com:
 - exclusão segura de produto com preservação de histórico;
 - confirmação refinada para exclusão de produto, no padrão do dashboard;
 - revisão de textos e acentuação nas páginas principais do painel e do acompanhamento público do pedido;
+- landing page comercial refinada, com hero, visão do produto, diferenciais, benefícios, CTA de demonstração e navegação responsiva;
+- navbar da landing com branding CARDEXPRESS no mobile;
+- modais de confirmação refinados para exclusão de categorias e produtos, sem alerta nativo do navegador;
+- bloqueio de rolagem do fundo enquanto modais de exclusão estão abertos;
+- alertas de produtos sem estoque e estoque baixo com scroll interno na Home do dashboard;
+- suíte E2E/smoke ampliada para cobrir modos operacionais, estoque zerado, dashboard e navegação mobile;
 
 ### Validação recente do fluxo crítico
 
@@ -136,6 +142,7 @@ Cenários validados localmente:
 - refinamento da versão mobile com cards numéricos menores e menos aninhamento visual;
 - remoção dos atalhos rápidos;
 - **atualização em tempo real** por loja.
+- listas de produtos sem estoque e estoque baixo com scroll interno para evitar quebra de layout quando houver muitos itens;
 
 ### Categorias
 
@@ -147,6 +154,7 @@ Cenários validados localmente:
 - excluir categoria quando não houver produtos vinculados;
 - formulário recolhido por padrão;
 - **atualização automática em tempo real** na tela de categorias.
+- confirmação customizada e refinada para exclusão de categoria, sem uso de alerta nativo do navegador;
 
 ### Produtos
 
@@ -165,7 +173,7 @@ Cenários validados localmente:
 - badges operacionais refinados;
 - exibição mais clara de estoque, disponibilidade e visibilidade pública;
 - formulário recolhido por padrão;
-- **atualização automática em tempo real** na tela de produtos.
+- modal de confirmação de exclusão refinado, com overlay mais limpo e bloqueio de rolagem do fundo enquanto aberto;
 
 ### Configurações da loja
 
@@ -1036,6 +1044,11 @@ Se a mudança envolver banco ou storage:
 * exclusão segura de produto com preservação de histórico;
 * confirmação refinada para exclusão de produto no dashboard;
 * revisão textual e ortográfica nas páginas principais do painel e no acompanhamento público do pedido;
+* landing page comercial refinada e responsiva;
+* navegação sticky da landing com branding CARDEXPRESS no mobile;
+* ampliação da suíte E2E/smoke para 13 cenários;
+* modais refinados de exclusão em categorias e produtos;
+* scroll interno nos alertas de estoque da Home do dashboard;
 
 ### Em andamento / pendente
 

@@ -51,6 +51,7 @@ export function LandingStickyNav({ sections }: LandingStickyNavProps) {
   const [activeId, setActiveId] = useState(sectionIds[0] ?? "");
   const [showTopAction, setShowTopAction] = useState(false);
   const ratioBySectionRef = useRef<Record<string, number>>({});
+  const mobileLinkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
 
   useEffect(() => {
     const observedSections = sectionIds
@@ -124,6 +125,28 @@ export function LandingStickyNav({ sections }: LandingStickyNavProps) {
     };
   }, [sectionIds]);
 
+  useEffect(() => {
+    if (!activeId || window.innerWidth >= 768) {
+      return;
+    }
+
+    mobileLinkRefs.current[activeId]?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [activeId]);
+
+  function handleMobileSectionClick(sectionId: string) {
+    window.setTimeout(() => {
+      mobileLinkRefs.current[sectionId]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }, 0);
+  }
+
   function handleBackToTop() {
     const firstSection = sectionIds[0];
     const firstSectionElement = firstSection ? document.getElementById(firstSection) : null;
@@ -137,25 +160,25 @@ export function LandingStickyNav({ sections }: LandingStickyNavProps) {
   }
 
   const activeClass = "border-zinc-900 bg-zinc-900 text-white";
-  const idleClass = "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50";
+  const idleClass = "border-zinc-200/80 bg-white/75 text-zinc-700 hover:border-zinc-300 hover:bg-white";
 
   return (
     <>
       <div className="fixed inset-x-0 top-0 z-50 hidden md:block">
-        <div className="mx-auto max-w-7xl px-4 pt-3 sm:px-6">
-          <div className="rounded-2xl border border-zinc-200/85 bg-white/86 p-2 shadow-xl shadow-zinc-900/8 backdrop-blur-xl">
+        <div className="mx-auto max-w-7xl px-4 pt-2 sm:px-6">
+          <div className="rounded-xl border border-zinc-200/75 bg-white/88 p-1 shadow-md shadow-zinc-900/10 backdrop-blur-xl">
             <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
               <a
                 href="#inicio"
-                className="inline-flex items-center rounded-xl px-3 py-2 transition duration-300 hover:bg-zinc-100"
+                className="inline-flex items-center rounded-lg px-2 py-1 transition duration-300 hover:bg-zinc-100"
               >
                 <Image
                   src={BRANDING.logoPath}
                   alt={BRANDING.productName}
-                  width={196}
-                  height={48}
+                  width={148}
+                  height={36}
                   priority
-                  className="h-auto w-auto max-w-[196px]"
+                  className="h-auto w-auto max-w-[148px]"
                 />
               </a>
 
@@ -168,7 +191,7 @@ export function LandingStickyNav({ sections }: LandingStickyNavProps) {
                       key={section.id}
                       href={`#${section.id}`}
                       aria-current={isActive ? "page" : undefined}
-                      className={`inline-flex min-h-10 items-center rounded-xl border px-3 py-2 text-sm font-medium transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
+                      className={`inline-flex min-h-8 shrink-0 items-center whitespace-nowrap rounded-lg border px-2 py-1 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
                         isActive ? activeClass : idleClass
                       }`}
                     >
@@ -182,7 +205,7 @@ export function LandingStickyNav({ sections }: LandingStickyNavProps) {
                 <button
                   type="button"
                   onClick={handleBackToTop}
-                  className={`inline-flex min-h-10 items-center rounded-xl border px-3 py-2 text-sm font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
+                  className={`inline-flex min-h-8 items-center rounded-lg border px-2 py-1 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
                     showTopAction
                       ? "border-zinc-300 bg-zinc-900 text-white hover:bg-zinc-800"
                       : "border-zinc-200 bg-white text-zinc-500 hover:text-zinc-700"
@@ -193,13 +216,13 @@ export function LandingStickyNav({ sections }: LandingStickyNavProps) {
                 </button>
                 <Link
                   href="/login"
-                  className="inline-flex min-h-10 items-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition duration-300 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
+                  className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 transition duration-300 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
                 >
                   Entrar
                 </Link>
                 <Link
                   href="/cadastro"
-                  className="inline-flex min-h-10 items-center rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition duration-300 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60"
+                  className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg bg-zinc-900 px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition duration-300 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60"
                 >
                   Criar conta
                 </Link>
@@ -209,69 +232,80 @@ export function LandingStickyNav({ sections }: LandingStickyNavProps) {
         </div>
       </div>
 
-      <div className="fixed inset-x-0 top-0 z-50 px-3 pt-2 md:hidden">
-        <div className="rounded-2xl border border-zinc-200/80 bg-white/92 p-2 shadow-xl shadow-zinc-900/12 backdrop-blur-xl">
-          <div className="mb-2 flex items-center justify-between gap-2 px-1">
+      <div className="fixed inset-x-0 top-0 z-50 px-2 pt-1.5 md:hidden">
+        <div className="rounded-xl border border-zinc-200/80 bg-white/92 p-1.5 shadow-md shadow-zinc-900/10 backdrop-blur-xl">
+          <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
             <a
               href="#inicio"
-              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold tracking-tight text-zinc-900 transition hover:bg-zinc-100"
+              className="inline-flex min-h-8 items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-bold tracking-tight text-zinc-900 transition hover:bg-zinc-100"
             >
               <Image
                 src={BRANDING.iconPath}
                 alt={BRANDING.productName}
-                width={20}
-                height={20}
-                className="h-5 w-5 rounded"
+                width={18}
+                height={18}
+                className="h-[18px] w-[18px] rounded"
                 priority
               />
-              <span>{BRANDING.shortName}</span>
+              <span className="whitespace-nowrap">CARDEXPRESS</span>
             </a>
             <div className="flex items-center gap-1.5">
               <Link
                 href="/login"
-                className="inline-flex min-h-9 items-center rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-zinc-700 transition duration-300 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
+                className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg border border-zinc-200 bg-white px-2 py-1 text-[11px] font-semibold text-zinc-700 transition duration-300 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
               >
                 Entrar
               </Link>
               <Link
                 href="/cadastro"
-                className="inline-flex min-h-9 items-center rounded-lg bg-zinc-900 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm transition duration-300 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60"
+                className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg bg-zinc-900 px-2 py-1 text-[11px] font-semibold text-white shadow-sm transition duration-300 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60"
               >
                 Criar conta
               </Link>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="navigation" aria-label="Navegação da landing">
-            {sections.map((section) => {
-              const isActive = activeId === section.id;
-
-              return (
-                <a
-                  key={section.id}
-                  href={`#${section.id}`}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`inline-flex min-h-9 shrink-0 items-center rounded-xl border px-3 py-1.5 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
-                    isActive ? activeClass : idleClass
-                  }`}
-                >
-                  {section.label}
-                </a>
-              );
-            })}
-
-            <button
-              type="button"
-              onClick={handleBackToTop}
-              className={`inline-flex min-h-9 shrink-0 items-center rounded-xl border px-3 py-1.5 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
-                showTopAction
-                  ? "border-zinc-300 bg-zinc-900 text-white hover:bg-zinc-800"
-                  : "border-zinc-200 bg-white text-zinc-500 hover:text-zinc-700"
-              }`}
-              aria-label="Voltar ao topo"
+          <div className="relative">
+            <div
+              className="flex items-center gap-2 overflow-x-auto pr-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              role="navigation"
+              aria-label="Navegação da landing"
             >
-              Topo
-            </button>
+              {sections.map((section) => {
+                const isActive = activeId === section.id;
+
+                return (
+                  <a
+                    key={section.id}
+                    href={`#${section.id}`}
+                    ref={(element) => {
+                      mobileLinkRefs.current[section.id] = element;
+                    }}
+                    onClick={() => handleMobileSectionClick(section.id)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`inline-flex min-h-8 shrink-0 items-center whitespace-nowrap rounded-lg border px-2.5 py-1 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
+                      isActive ? activeClass : idleClass
+                    }`}
+                  >
+                    {section.label}
+                  </a>
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={handleBackToTop}
+                className={`hidden min-h-8 shrink-0 items-center whitespace-nowrap rounded-lg border px-2.5 py-1 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
+                  showTopAction
+                    ? "border-zinc-300 bg-zinc-900 text-white hover:bg-zinc-800"
+                    : "border-zinc-200 bg-white text-zinc-500 hover:text-zinc-700"
+                }`}
+                aria-label="Voltar ao topo"
+              >
+                Topo
+              </button>
+            </div>
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white via-white/90 to-transparent" />
           </div>
         </div>
       </div>

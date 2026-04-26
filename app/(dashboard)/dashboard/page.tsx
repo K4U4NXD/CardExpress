@@ -319,8 +319,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
         .eq("track_stock", true)
         .is("archived_at", null)
         .lte("stock_quantity", 0)
-        .order("name", { ascending: true })
-        .limit(6),
+        .order("name", { ascending: true }),
       supabase
         .from("products")
         .select("id, name, stock_quantity", { count: "exact" })
@@ -330,8 +329,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
         .gt("stock_quantity", 0)
         .lte("stock_quantity", LOW_STOCK_THRESHOLD)
         .order("stock_quantity", { ascending: true })
-        .order("name", { ascending: true })
-        .limit(6),
+        .order("name", { ascending: true }),
       supabase
         .from("store_operational_periods")
         .select("opened_at, closed_at")
@@ -612,7 +610,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                         {outOfStockProductAlerts.length === 0 ? (
                           <p className="mt-3 text-sm text-zinc-600">Nenhum produto sem estoque agora.</p>
                         ) : (
-                          <ul className="mt-2 space-y-1.5">
+                          <ul className="mt-2 max-h-56 space-y-1.5 overflow-y-auto pr-1 sm:max-h-64 lg:max-h-72">
                             {outOfStockProductAlerts.map((product) => (
                               <li key={product.id} className="flex items-center justify-between gap-3 rounded-lg bg-white px-2.5 py-1.5 sm:px-3 sm:py-2">
                                 <span className="min-w-0 truncate text-xs font-medium text-zinc-900 sm:text-sm">{product.name}</span>
@@ -621,11 +619,6 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                             ))}
                           </ul>
                         )}
-                        {outOfStockProducts > outOfStockProductAlerts.length ? (
-                          <p className="mt-2 text-xs text-zinc-500">
-                            +{outOfStockProducts - outOfStockProductAlerts.length} produto(s) sem estoque.
-                          </p>
-                        ) : null}
                       </div>
 
                       <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
@@ -638,7 +631,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                         {lowStockProductAlerts.length === 0 ? (
                           <p className="mt-3 text-sm text-zinc-600">Nenhum produto com estoque baixo agora.</p>
                         ) : (
-                          <ul className="mt-2 space-y-1.5">
+                          <ul className="mt-2 max-h-56 space-y-1.5 overflow-y-auto pr-1 sm:max-h-64 lg:max-h-72">
                             {lowStockProductAlerts.map((product) => (
                               <li key={product.id} className="flex items-center justify-between gap-3 rounded-lg bg-white px-2.5 py-1.5 sm:px-3 sm:py-2">
                                 <span className="min-w-0 truncate text-xs font-medium text-zinc-900 sm:text-sm">{product.name}</span>
@@ -649,11 +642,6 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                             ))}
                           </ul>
                         )}
-                        {lowStockProducts > lowStockProductAlerts.length ? (
-                          <p className="mt-2 text-xs text-zinc-500">
-                            +{lowStockProducts - lowStockProductAlerts.length} produto(s) com estoque baixo.
-                          </p>
-                        ) : null}
                       </div>
                     </div>
                   </section>

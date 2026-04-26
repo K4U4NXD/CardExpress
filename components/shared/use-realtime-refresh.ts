@@ -242,7 +242,8 @@ export function useRealtimeRefresh({
     };
 
     const onFocus = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "visible" && pendingRefreshWhileHiddenRef.current) {
+        pendingRefreshWhileHiddenRef.current = false;
         refreshSoon();
       }
 

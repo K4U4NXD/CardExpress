@@ -43,6 +43,37 @@ const STORE_LOGO_ALLOWED_TYPES = new Set([
 ]);
 
 type QrDownloadStatus = "idle" | "error";
+type StoreOperationalMode = "offline" | "manual" | "schedule";
+
+const OPERATIONAL_MODE_OPTIONS: Array<{
+  value: StoreOperationalMode;
+  title: string;
+  description: string;
+}> = [
+  {
+    value: "offline",
+    title: "Loja offline",
+    description: "Pausa novos pedidos até você abrir a loja novamente.",
+  },
+  {
+    value: "manual",
+    title: "Aberta manualmente",
+    description: "Mantém a loja aberta até você mudar o modo operacional.",
+  },
+  {
+    value: "schedule",
+    title: "Horário automático",
+    description: "Recebe pedidos apenas dentro do horário configurado.",
+  },
+];
+
+function resolveOperationalMode(values: Pick<StoreSettingsFormValues, "accepts_orders" | "auto_accept_orders_by_schedule">): StoreOperationalMode {
+  if (!values.accepts_orders) {
+    return "offline";
+  }
+
+  return values.auto_accept_orders_by_schedule ? "schedule" : "manual";
+}
 
 function coerceTextValue(incomingValue: unknown, fallbackValue: unknown): string {
   if (typeof incomingValue === "string") {
@@ -77,6 +108,12 @@ function coerceFormValues(
     phone: coerceTextValue(incomingValues?.phone, fallbackValues.phone),
     logo_url: coerceTextValue(incomingValues?.logo_url, fallbackValues.logo_url),
     accepts_orders: coerceBooleanValue(incomingValues?.accepts_orders, fallbackValues.accepts_orders),
+    auto_accept_orders_by_schedule: coerceBooleanValue(
+      incomingValues?.auto_accept_orders_by_schedule,
+      fallbackValues.auto_accept_orders_by_schedule
+    ),
+    opening_time: coerceTextValue(incomingValues?.opening_time, fallbackValues.opening_time),
+    closing_time: coerceTextValue(incomingValues?.closing_time, fallbackValues.closing_time),
     public_message: coerceTextValue(incomingValues?.public_message, fallbackValues.public_message),
   };
 }
@@ -87,6 +124,9 @@ function normalizeFormValues(values: StoreSettingsFormValues): StoreSettingsForm
     phone: values.phone.trim(),
     logo_url: values.logo_url.trim(),
     accepts_orders: values.accepts_orders,
+    auto_accept_orders_by_schedule: values.auto_accept_orders_by_schedule,
+    opening_time: values.opening_time.trim(),
+    closing_time: values.closing_time.trim(),
     public_message: values.public_message.trim(),
   };
 }
@@ -97,6 +137,9 @@ function sameFormValues(a: StoreSettingsFormValues, b: StoreSettingsFormValues):
     a.phone === b.phone &&
     a.logo_url === b.logo_url &&
     a.accepts_orders === b.accepts_orders &&
+    a.auto_accept_orders_by_schedule === b.auto_accept_orders_by_schedule &&
+    a.opening_time === b.opening_time &&
+    a.closing_time === b.closing_time &&
     a.public_message === b.public_message
   );
 }
@@ -114,6 +157,9 @@ export function StoreSettingsForm({
         phone: coerceTextValue(initialValues.phone, ""),
         logo_url: coerceTextValue(initialValues.logo_url, ""),
         accepts_orders: coerceBooleanValue(initialValues.accepts_orders, false),
+        auto_accept_orders_by_schedule: coerceBooleanValue(initialValues.auto_accept_orders_by_schedule, false),
+        opening_time: coerceTextValue(initialValues.opening_time, ""),
+        closing_time: coerceTextValue(initialValues.closing_time, ""),
         public_message: coerceTextValue(initialValues.public_message, ""),
       }),
     [
@@ -121,6 +167,9 @@ export function StoreSettingsForm({
       initialValues.phone,
       initialValues.logo_url,
       initialValues.accepts_orders,
+      initialValues.auto_accept_orders_by_schedule,
+      initialValues.opening_time,
+      initialValues.closing_time,
       initialValues.public_message,
     ]
   );
@@ -227,6 +276,7 @@ export function StoreSettingsForm({
   }, [enqueueToast, pending, state.error, state.success]);
 
   const readiness = state.readiness ?? initialReadiness;
+  const operationalMode = resolveOperationalMode(values);
   const validation = useMemo(
     () =>
       validateStoreSettingsInput({
@@ -235,11 +285,14 @@ export function StoreSettingsForm({
         logoUrl: values.logo_url,
         publicMessage: values.public_message,
         acceptsOrders: values.accepts_orders,
+        autoAcceptOrdersBySchedule: values.auto_accept_orders_by_schedule,
+        openingTime: values.opening_time,
+        closingTime: values.closing_time,
       }),
     [values]
   );
   const readinessToggleError =
-    !readiness.isReady && values.accepts_orders
+    !readiness.isReady && operationalMode !== "offline"
       ? "A loja ainda não está pronta para operar. Resolva as pendências para ativar pedidos."
       : undefined;
   const normalizedCurrent = useMemo(() => normalizeFormValues(values), [values]);
@@ -248,7 +301,6 @@ export function StoreSettingsForm({
     validation.hasErrors || Boolean(readinessToggleError);
   const saveDisabled = pending || !isDirty || hasClientValidationError;
   const isRefreshBlocked = pending || isDirty;
-  const acceptsToggleDisabled = pending || (!readiness.isReady && !values.accepts_orders);
   const canonicalPublicUrl = useMemo(() => {
     if (typeof window === "undefined") {
       return initialValues.public_url;
@@ -263,8 +315,14 @@ export function StoreSettingsForm({
     validation.fieldErrors.logo_url ?? (serverFeedbackVisible ? state.fieldErrors?.logo_url : undefined);
   const publicMessageError =
     validation.fieldErrors.public_message ?? (serverFeedbackVisible ? state.fieldErrors?.public_message : undefined);
-  const acceptsOrdersError =
-    readinessToggleError ?? (serverFeedbackVisible ? state.fieldErrors?.accepts_orders : undefined);
+  const operationalModeError =
+    readinessToggleError ??
+    validation.fieldErrors.auto_accept_orders_by_schedule ??
+    (serverFeedbackVisible ? state.fieldErrors?.accepts_orders ?? state.fieldErrors?.auto_accept_orders_by_schedule : undefined);
+  const openingTimeError =
+    validation.fieldErrors.opening_time ?? (serverFeedbackVisible ? state.fieldErrors?.opening_time : undefined);
+  const closingTimeError =
+    validation.fieldErrors.closing_time ?? (serverFeedbackVisible ? state.fieldErrors?.closing_time : undefined);
   const uploadDisabled = logoUploadPending || pending || !selectedLogoFile;
   const logoUrlValue = coerceTextValue(values.logo_url, "");
   const logoPreviewUrl = logoUrlValue.trim();
@@ -272,6 +330,17 @@ export function StoreSettingsForm({
 
   function updateField<K extends keyof StoreSettingsFormValues>(key: K, value: StoreSettingsFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
+    if (hideServerFeedback) {
+      setHideServerFeedback(false);
+    }
+  }
+
+  function updateOperationalMode(nextMode: StoreOperationalMode) {
+    setValues((current) => ({
+      ...current,
+      accepts_orders: nextMode !== "offline",
+      auto_accept_orders_by_schedule: nextMode === "schedule",
+    }));
     if (hideServerFeedback) {
       setHideServerFeedback(false);
     }
@@ -492,6 +561,12 @@ export function StoreSettingsForm({
       ) : null}
 
       <input type="hidden" name="logo_url" value={logoUrlValue} />
+      <input type="hidden" name="accepts_orders" value={values.accepts_orders ? "on" : "off"} />
+      <input
+        type="hidden"
+        name="auto_accept_orders_by_schedule"
+        value={values.auto_accept_orders_by_schedule ? "on" : "off"}
+      />
 
       <div>
         <h2 className="text-sm font-semibold text-zinc-900">Dados básicos da loja</h2>
@@ -754,25 +829,94 @@ export function StoreSettingsForm({
         ) : null}
       </section>
 
-      <section className="rounded-xl border border-zinc-200 p-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-zinc-900">
-          <input
-            type="checkbox"
-            name="accepts_orders"
-            checked={values.accepts_orders}
-            disabled={acceptsToggleDisabled}
-            onChange={(event) => updateField("accepts_orders", event.target.checked)}
-            data-testid="settings-accepts-orders-toggle"
-            className="rounded border-zinc-300"
-          />
-          Loja aceitando pedidos
-        </label>
-        <p className="mt-2 text-xs text-zinc-600">
-          Só é possível ativar pedidos quando a loja estiver pronta para operar.
-        </p>
-        {acceptsOrdersError ? (
-          <p className="mt-2 text-sm text-amber-800">{acceptsOrdersError}</p>
-        ) : null}
+      <section className="rounded-xl border border-zinc-200 bg-zinc-50/85 p-4">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-zinc-900">Modo operacional da loja</p>
+          <p className="text-xs text-zinc-600">
+            Escolha um estado único para evitar controles conflitantes. A loja só recebe pedidos quando estiver pronta
+            para operar e o modo escolhido permitir.
+          </p>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {OPERATIONAL_MODE_OPTIONS.map((option) => {
+            const checked = operationalMode === option.value;
+            const disabled = pending || (!readiness.isReady && option.value !== "offline");
+
+            return (
+              <label
+                key={option.value}
+                className={`rounded-xl border bg-white p-3 text-sm transition ${
+                  checked ? "border-zinc-900 ring-1 ring-zinc-900" : "border-zinc-200 hover:border-zinc-300"
+                } ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+              >
+                <span className="flex items-start gap-2">
+                  <input
+                    type="radio"
+                    name="operational_mode"
+                    value={option.value}
+                    checked={checked}
+                    disabled={disabled}
+                    onChange={() => updateOperationalMode(option.value)}
+                    className="mt-1 border-zinc-300"
+                  />
+                  <span>
+                    <span className="block font-semibold text-zinc-900">{option.title}</span>
+                    <span className="mt-1 block text-xs leading-5 text-zinc-600">{option.description}</span>
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+
+        {operationalModeError ? <p className="mt-3 text-sm text-amber-800">{operationalModeError}</p> : null}
+
+        <div className="mt-4 rounded-xl border border-zinc-200 bg-white p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Horário de atendimento</p>
+          <p className="mt-1 text-xs text-zinc-600">
+            No modo automático, a loja aceita pedidos somente dentro da janela configurada. Intervalos que cruzam a
+            meia-noite, como 18:00 até 02:00, são permitidos.
+          </p>
+
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="settings-opening-time" className="block text-sm font-medium text-zinc-800">
+                Abertura
+              </label>
+              <input
+                id="settings-opening-time"
+                name="opening_time"
+                type="time"
+                value={values.opening_time}
+                disabled={pending || operationalMode !== "schedule"}
+                onChange={(event) => updateField("opening_time", event.target.value)}
+                aria-invalid={Boolean(openingTimeError)}
+                data-testid="settings-opening-time"
+                className="cx-input mt-1"
+              />
+              {openingTimeError ? <p className="mt-1 text-xs text-red-700">{openingTimeError}</p> : null}
+            </div>
+
+            <div>
+              <label htmlFor="settings-closing-time" className="block text-sm font-medium text-zinc-800">
+                Fechamento
+              </label>
+              <input
+                id="settings-closing-time"
+                name="closing_time"
+                type="time"
+                value={values.closing_time}
+                disabled={pending || operationalMode !== "schedule"}
+                onChange={(event) => updateField("closing_time", event.target.value)}
+                aria-invalid={Boolean(closingTimeError)}
+                data-testid="settings-closing-time"
+                className="cx-input mt-1"
+              />
+              {closingTimeError ? <p className="mt-1 text-xs text-red-700">{closingTimeError}</p> : null}
+            </div>
+          </div>
+        </div>
       </section>
 
       <section>

@@ -140,7 +140,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
         <div className="md:pl-60">
           <header className="sticky top-0 z-30 border-b border-zinc-200/80 bg-white/90 backdrop-blur-xl md:hidden">
             <div className="flex h-14 items-center justify-between px-4">
-              <div className="inline-flex items-center gap-2">
+              <div className="inline-flex min-w-0 items-center gap-2">
                 <Image
                   src={BRANDING.iconPath}
                   alt={BRANDING.productName}
@@ -149,7 +149,9 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                   className="h-[22px] w-[22px] rounded"
                   priority
                 />
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">{BRANDING.shortName}</p>
+                <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                  CARDEXPRESS
+                </p>
               </div>
               <button
                 type="button"

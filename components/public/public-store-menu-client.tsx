@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -11,6 +12,7 @@ import {
 } from "@/lib/public/cart";
 import { reconcileCartWithMenu } from "@/lib/public/cart-reconcile";
 import { isPublicMenuRowPurchasableNow, isPublicMenuRowVisible } from "@/lib/public/store-operational";
+import { getMillisecondsUntilNextServiceStatusChangeInSaoPaulo } from "@/lib/timezone";
 import { formatBRL } from "@/lib/validation/price";
 import type { PublicCartItem, PublicMenuRpcRow } from "@/types";
 
@@ -18,6 +20,11 @@ type PublicStoreMenuClientProps = {
   slug: string;
   acceptsOrders: boolean;
   ordersUnavailableMessage?: string | null;
+  schedule?: {
+    autoAcceptOrdersBySchedule: boolean;
+    openingTime: string | null;
+    closingTime: string | null;
+  };
   menuRows: PublicMenuRpcRow[];
 };
 
@@ -39,7 +46,14 @@ type MenuSection = {
   products: MenuProduct[];
 };
 
-export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMessage, menuRows }: PublicStoreMenuClientProps) {
+export function PublicStoreMenuClient({
+  slug,
+  acceptsOrders,
+  ordersUnavailableMessage,
+  schedule,
+  menuRows,
+}: PublicStoreMenuClientProps) {
+  const router = useRouter();
   const cartStorageKey = getPublicCartStorageKey(slug);
   const unavailableMessage = ordersUnavailableMessage ?? "A loja pausou temporariamente os pedidos.";
 
@@ -125,6 +139,30 @@ export function PublicStoreMenuClient({ slug, acceptsOrders, ordersUnavailableMe
 
     writePublicCartToStorage(cartStorageKey, cartItems);
   }, [cartItems, cartStorageKey, hasHydratedCart]);
+
+  useEffect(() => {
+    if (!schedule?.autoAcceptOrdersBySchedule) {
+      return;
+    }
+
+    const nextChangeMs = getMillisecondsUntilNextServiceStatusChangeInSaoPaulo(
+      schedule.openingTime,
+      schedule.closingTime,
+      new Date(),
+    );
+
+    if (!nextChangeMs || nextChangeMs <= 0) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      router.refresh();
+    }, nextChangeMs + 300);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [router, schedule?.autoAcceptOrdersBySchedule, schedule?.closingTime, schedule?.openingTime]);
 
   const totalItems = useMemo(
     () => cartItems.reduce((acc, item) => acc + item.quantity, 0),

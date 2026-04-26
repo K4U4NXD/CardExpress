@@ -21,6 +21,7 @@ import {
   saveOrderRecovery,
 } from "@/lib/public/flow-recovery";
 import { getPublicStoreOperationalState, isPublicMenuRowPurchasableNow } from "@/lib/public/store-operational";
+import { getMillisecondsUntilNextServiceStatusChangeInSaoPaulo } from "@/lib/timezone";
 import { formatDateTime } from "@/lib/orders/presenter";
 import { formatBRL } from "@/lib/validation/price";
 import type {
@@ -38,6 +39,11 @@ type PublicCheckoutClientProps = {
   storeName: string;
   acceptsOrders: boolean;
   ordersUnavailableMessage?: string | null;
+  schedule?: {
+    autoAcceptOrdersBySchedule: boolean;
+    openingTime: string | null;
+    closingTime: string | null;
+  };
   menuRows: PublicMenuRpcRow[];
 };
 
@@ -56,6 +62,7 @@ export function PublicCheckoutClient({
   storeName,
   acceptsOrders,
   ordersUnavailableMessage,
+  schedule,
   menuRows,
 }: PublicCheckoutClientProps) {
   const router = useRouter();
@@ -155,6 +162,30 @@ export function PublicCheckoutClient({
       // Ignora falhas de escrita local para manter o fluxo.
     }
   }, [customerName, customerPhone, customerStorageKey]);
+
+  useEffect(() => {
+    if (!schedule?.autoAcceptOrdersBySchedule) {
+      return;
+    }
+
+    const nextChangeMs = getMillisecondsUntilNextServiceStatusChangeInSaoPaulo(
+      schedule.openingTime,
+      schedule.closingTime,
+      new Date(),
+    );
+
+    if (!nextChangeMs || nextChangeMs <= 0) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      router.refresh();
+    }, nextChangeMs + 300);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [router, schedule?.autoAcceptOrdersBySchedule, schedule?.closingTime, schedule?.openingTime]);
 
   useEffect(() => {
     if (success) {
@@ -407,7 +438,7 @@ export function PublicCheckoutClient({
     }
 
     if (totalItems <= 0) {
-      setErrorMessage("Seu carrinho esta vazio.");
+      setErrorMessage("Seu carrinho está vazio.");
       return;
     }
 
@@ -459,6 +490,11 @@ export function PublicCheckoutClient({
       const currentMenuRows = Array.isArray(currentMenuResult.data) ? currentMenuResult.data : [];
       const currentOperationalState = getPublicStoreOperationalState({
         acceptsOrdersSetting: storeResult.data.accepts_orders,
+        acceptsOrdersManual: storeResult.data.accepts_orders_manual,
+        autoAcceptOrdersBySchedule: storeResult.data.auto_accept_orders_by_schedule,
+        openingTime: storeResult.data.opening_time,
+        closingTime: storeResult.data.closing_time,
+        isWithinServiceHours: storeResult.data.is_within_service_hours,
         menuRows: currentMenuRows,
       });
 
@@ -571,6 +607,11 @@ export function PublicCheckoutClient({
       const menuRowsNow = Array.isArray(menuResult.data) ? menuResult.data : [];
       const operationalState = getPublicStoreOperationalState({
         acceptsOrdersSetting: storeResult.data.accepts_orders,
+        acceptsOrdersManual: storeResult.data.accepts_orders_manual,
+        autoAcceptOrdersBySchedule: storeResult.data.auto_accept_orders_by_schedule,
+        openingTime: storeResult.data.opening_time,
+        closingTime: storeResult.data.closing_time,
+        isWithinServiceHours: storeResult.data.is_within_service_hours,
         menuRows: menuRowsNow,
       });
 
@@ -1028,7 +1069,7 @@ export function PublicCheckoutClient({
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_20px_40px_-30px_rgba(24,24,27,0.45)] sm:p-5">
         <h2 className="text-lg font-semibold text-zinc-900">Dados do cliente</h2>
-        <p className="mt-1 text-xs text-zinc-500">Esses dados sao usados para identificar e atualizar o pedido.</p>
+        <p className="mt-1 text-xs text-zinc-500">Esses dados são usados para identificar e atualizar o pedido.</p>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
             <label htmlFor="checkout-customer-name" className="block text-sm font-medium text-zinc-800">
@@ -1280,7 +1321,7 @@ function mapCreateCheckoutSessionError(
 
   if (normalized.includes("carrinho vazio")) {
     return {
-      message: "Seu carrinho esta vazio. Volte ao cardapio para adicionar itens.",
+      message: "Seu carrinho está vazio. Volte ao cardápio para adicionar itens.",
       shouldRefresh: true,
       problemProductIds: [],
     };

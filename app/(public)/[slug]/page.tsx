@@ -45,15 +45,9 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
   const { slug } = await params;
   const supabase = await createServerSupabaseClient();
 
-  const [storeResult, menuResult, storeBrandResult] = await Promise.all([
+  const [storeResult, menuResult] = await Promise.all([
     supabase.rpc("get_public_store_by_slug", { p_slug: slug }).maybeSingle<PublicStoreRpcRow>(),
     supabase.rpc("get_public_menu_by_slug", { p_slug: slug }).returns<PublicMenuRpcRow[]>(),
-    supabase
-      .from("stores")
-      .select("logo_url")
-      .eq("slug", slug)
-      .eq("is_active", true)
-      .maybeSingle(),
   ]);
 
   if (storeResult.error || !storeResult.data) {
@@ -61,14 +55,18 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
   }
 
   if (menuResult.error) {
-    throw new Error(`Erro ao carregar cardapio publico: ${menuResult.error.message}`);
+    throw new Error(`Erro ao carregar cardápio público: ${menuResult.error.message}`);
   }
 
   const menuRows: PublicMenuRpcRow[] = Array.isArray(menuResult.data) ? menuResult.data : [];
   const store = storeResult.data;
-  const storeLogoUrl = storeBrandResult.data?.logo_url ?? null;
   const operationalState = getPublicStoreOperationalState({
     acceptsOrdersSetting: store.accepts_orders,
+    acceptsOrdersManual: store.accepts_orders_manual,
+    autoAcceptOrdersBySchedule: store.auto_accept_orders_by_schedule,
+    openingTime: store.opening_time,
+    closingTime: store.closing_time,
+    isWithinServiceHours: store.is_within_service_hours,
     menuRows,
   });
 
@@ -78,8 +76,8 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
         title={store.name}
         description={
           operationalState.canPlaceOrders
-            ? "Cardapio digital atualizado para pedidos com retirada."
-            : "Pedidos indisponiveis no momento."
+            ? "Cardápio digital atualizado para pedidos com retirada."
+            : "Pedidos indisponíveis no momento."
         }
         sticky
         compact
@@ -96,7 +94,7 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
               <PublicStoreBrandBadge
                 storeName={store.name}
                 slug={store.slug}
-                logoUrl={storeLogoUrl}
+                logoUrl={store.logo_url}
                 showSlug={false}
               />
 
@@ -134,6 +132,11 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
             slug={store.slug}
             acceptsOrders={operationalState.canPlaceOrders}
             ordersUnavailableMessage={operationalState.unavailableMessage}
+            schedule={{
+              autoAcceptOrdersBySchedule: store.auto_accept_orders_by_schedule,
+              openingTime: store.opening_time,
+              closingTime: store.closing_time,
+            }}
             menuRows={menuRows}
           />
         </div>

@@ -18,6 +18,19 @@ const FALLBACK_READINESS: StoreReadinessResult = {
   activeAvailableProducts: 0,
 };
 
+function normalizeTimeToInput(value: string | null | undefined): string {
+  if (!value) {
+    return "";
+  }
+
+  const match = value.match(/^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
+  if (!match) {
+    return "";
+  }
+
+  return `${match[1]}:${match[2]}`;
+}
+
 /** Dados do estabelecimento (1 conta = 1 estabelecimento nesta fase). */
 export default async function DashboardSettingsPage() {
   const { supabase, store } = await getUserStore();
@@ -26,12 +39,15 @@ export default async function DashboardSettingsPage() {
   let errorMessage: string | null = null;
   let acceptsOrders = true;
   let publicMessage = "";
+  let autoAcceptOrdersBySchedule = false;
+  let openingTime = "";
+  let closingTime = "";
   let readiness = FALLBACK_READINESS;
 
   if (store) {
     const { data: settings, error: settingsError } = await supabase
       .from("store_settings")
-      .select("accepts_orders, public_message")
+      .select("accepts_orders, public_message, auto_accept_orders_by_schedule, opening_time, closing_time")
       .eq("store_id", store.id)
       .maybeSingle();
 
@@ -40,6 +56,9 @@ export default async function DashboardSettingsPage() {
     } else {
       acceptsOrders = settings?.accepts_orders ?? true;
       publicMessage = settings?.public_message ?? "";
+      autoAcceptOrdersBySchedule = settings?.auto_accept_orders_by_schedule ?? false;
+      openingTime = normalizeTimeToInput(settings?.opening_time);
+      closingTime = normalizeTimeToInput(settings?.closing_time);
     }
 
     try {
@@ -72,10 +91,7 @@ export default async function DashboardSettingsPage() {
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         {errorMessage ? (
-          <p
-            className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-            role="alert"
-          >
+          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
             {errorMessage}
           </p>
         ) : null}
@@ -95,6 +111,9 @@ export default async function DashboardSettingsPage() {
               public_path: publicStorePath ?? buildPublicStorePath(store.slug),
               public_url: publicStoreUrl ?? buildPublicStorePath(store.slug),
               accepts_orders: readiness.isReady ? acceptsOrders : false,
+              auto_accept_orders_by_schedule: autoAcceptOrdersBySchedule,
+              opening_time: openingTime,
+              closing_time: closingTime,
               public_message: publicMessage,
             }}
             initialReadiness={readiness}

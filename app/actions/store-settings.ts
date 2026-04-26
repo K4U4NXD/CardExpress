@@ -15,6 +15,9 @@ export type StoreSettingsFormValues = {
   phone: string;
   logo_url: string;
   accepts_orders: boolean;
+  auto_accept_orders_by_schedule: boolean;
+  opening_time: string;
+  closing_time: string;
   public_message: string;
 };
 
@@ -32,11 +35,16 @@ export type StoreLogoUploadActionResult = {
   logoUrl?: string;
 };
 
+type StoreOperationalMode = "offline" | "manual" | "schedule";
+
 function toFormValues(values: {
   name: string;
   phone: string;
   logoUrl: string | null;
   acceptsOrders: boolean;
+  autoAcceptOrdersBySchedule: boolean;
+  openingTime: string | null;
+  closingTime: string | null;
   publicMessage: string | null;
 }): StoreSettingsFormValues {
   return {
@@ -44,8 +52,73 @@ function toFormValues(values: {
     phone: values.phone,
     logo_url: values.logoUrl ?? "",
     accepts_orders: values.acceptsOrders,
+    auto_accept_orders_by_schedule: values.autoAcceptOrdersBySchedule,
+    opening_time: values.openingTime ?? "",
+    closing_time: values.closingTime ?? "",
     public_message: values.publicMessage ?? "",
   };
+}
+
+function resolveOperationalMode(values: {
+  acceptsOrders: boolean;
+  autoAcceptOrdersBySchedule: boolean;
+}): StoreOperationalMode {
+  if (!values.acceptsOrders) {
+    return "offline";
+  }
+
+  return values.autoAcceptOrdersBySchedule ? "schedule" : "manual";
+}
+
+async function syncManualOperationalPeriod({
+  supabase,
+  storeId,
+  nextMode,
+}: {
+  supabase: Awaited<ReturnType<typeof getUserStore>>["supabase"];
+  storeId: string;
+  nextMode: StoreOperationalMode;
+}): Promise<string | null> {
+  const nowIso = new Date().toISOString();
+
+  if (nextMode === "manual") {
+    const { data: openPeriod, error: openPeriodError } = await supabase
+      .from("store_operational_periods")
+      .select("id")
+      .eq("store_id", storeId)
+      .eq("mode", "manual")
+      .is("closed_at", null)
+      .limit(1)
+      .maybeSingle();
+
+    if (openPeriodError) {
+      return formatPostgrestError(openPeriodError);
+    }
+
+    if (openPeriod) {
+      return null;
+    }
+
+    const { error: insertError } = await supabase.from("store_operational_periods").insert({
+      store_id: storeId,
+      mode: "manual",
+      opened_at: nowIso,
+    });
+
+    return insertError ? formatPostgrestError(insertError) : null;
+  }
+
+  const { error: closeError } = await supabase
+    .from("store_operational_periods")
+    .update({
+      closed_at: nowIso,
+      updated_at: nowIso,
+    })
+    .eq("store_id", storeId)
+    .eq("mode", "manual")
+    .is("closed_at", null);
+
+  return closeError ? formatPostgrestError(closeError) : null;
 }
 
 function mapUnknownError(error: unknown): string {
@@ -120,6 +193,9 @@ export async function saveStoreSettingsAction(
   const rawLogoUrl = String(formData.get("logo_url") ?? "");
   const rawPublicMessage = String(formData.get("public_message") ?? "");
   const rawAcceptsOrders = formData.get("accepts_orders") === "on";
+  const rawAutoAcceptOrdersBySchedule = formData.get("auto_accept_orders_by_schedule") === "on";
+  const rawOpeningTime = String(formData.get("opening_time") ?? "");
+  const rawClosingTime = String(formData.get("closing_time") ?? "");
 
   const validation = validateStoreSettingsInput({
     name: rawName,
@@ -127,6 +203,9 @@ export async function saveStoreSettingsAction(
     logoUrl: rawLogoUrl,
     publicMessage: rawPublicMessage,
     acceptsOrders: rawAcceptsOrders,
+    autoAcceptOrdersBySchedule: rawAutoAcceptOrdersBySchedule,
+    openingTime: rawOpeningTime,
+    closingTime: rawClosingTime,
   });
 
   if (validation.hasErrors) {
@@ -162,6 +241,11 @@ export async function saveStoreSettingsAction(
   }
 
   const nextAcceptsOrders = readiness.isReady ? validation.values.acceptsOrders : false;
+  const nextAutoAcceptOrdersBySchedule = nextAcceptsOrders ? validation.values.autoAcceptOrdersBySchedule : false;
+  const nextOperationalMode = resolveOperationalMode({
+    acceptsOrders: nextAcceptsOrders,
+    autoAcceptOrdersBySchedule: nextAutoAcceptOrdersBySchedule,
+  });
   const fieldErrors: StoreSettingsFieldErrors = {};
 
   if (!readiness.isReady && validation.values.acceptsOrders) {
@@ -182,7 +266,11 @@ export async function saveStoreSettingsAction(
     return {
       error: formatPostgrestError(storeError),
       fieldErrors,
-      values: toFormValues({ ...validation.values, acceptsOrders: nextAcceptsOrders }),
+      values: toFormValues({
+        ...validation.values,
+        acceptsOrders: nextAcceptsOrders,
+        autoAcceptOrdersBySchedule: nextAutoAcceptOrdersBySchedule,
+      }),
       readiness,
     };
   }
@@ -191,6 +279,9 @@ export async function saveStoreSettingsAction(
     {
       store_id: store.id,
       accepts_orders: nextAcceptsOrders,
+      auto_accept_orders_by_schedule: nextAutoAcceptOrdersBySchedule,
+      opening_time: nextAutoAcceptOrdersBySchedule ? validation.values.openingTime : null,
+      closing_time: nextAutoAcceptOrdersBySchedule ? validation.values.closingTime : null,
       public_message: validation.values.publicMessage,
     },
     { onConflict: "store_id" }
@@ -200,12 +291,36 @@ export async function saveStoreSettingsAction(
     return {
       error: formatPostgrestError(settingsError),
       fieldErrors,
-      values: toFormValues({ ...validation.values, acceptsOrders: nextAcceptsOrders }),
+      values: toFormValues({
+        ...validation.values,
+        acceptsOrders: nextAcceptsOrders,
+        autoAcceptOrdersBySchedule: nextAutoAcceptOrdersBySchedule,
+      }),
+      readiness,
+    };
+  }
+
+  const periodSyncError = await syncManualOperationalPeriod({
+    supabase,
+    storeId: store.id,
+    nextMode: nextOperationalMode,
+  });
+
+  if (periodSyncError) {
+    return {
+      error: periodSyncError,
+      fieldErrors,
+      values: toFormValues({
+        ...validation.values,
+        acceptsOrders: nextAcceptsOrders,
+        autoAcceptOrdersBySchedule: nextAutoAcceptOrdersBySchedule,
+      }),
       readiness,
     };
   }
 
   revalidatePath("/dashboard/configuracoes");
+  revalidatePath("/dashboard");
   revalidatePath(`/${store.slug}`);
   revalidatePath(`/${store.slug}/checkout`);
   revalidatePath(`/${store.slug}/painel`);
@@ -217,7 +332,11 @@ export async function saveStoreSettingsAction(
         ? "Configurações salvas. A loja continua sem aceitar pedidos até ficar pronta para operar."
         : "Configurações salvas com sucesso.",
     fieldErrors: Object.keys(fieldErrors).length > 0 ? fieldErrors : undefined,
-    values: toFormValues({ ...validation.values, acceptsOrders: nextAcceptsOrders }),
+    values: toFormValues({
+      ...validation.values,
+      acceptsOrders: nextAcceptsOrders,
+      autoAcceptOrdersBySchedule: nextAutoAcceptOrdersBySchedule,
+    }),
     readiness,
   };
 }

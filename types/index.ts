@@ -22,6 +22,17 @@ export type Store = {
   logo_url: string | null;
 };
 
+/** Período operacional manual ou programado da loja. */
+export type StoreOperationalPeriod = {
+  id: string;
+  store_id: string;
+  opened_at: string;
+  closed_at: string | null;
+  mode: "manual" | "schedule";
+  created_at: string;
+  updated_at: string;
+};
+
 /** Categoria do cardápio (public.categories). */
 export type Category = {
   id: string;
@@ -108,6 +119,11 @@ export type PublicStoreRpcRow = {
   phone: string | null;
   logo_url: string | null;
   accepts_orders: boolean;
+  accepts_orders_manual: boolean;
+  auto_accept_orders_by_schedule: boolean;
+  opening_time: string | null;
+  closing_time: string | null;
+  is_within_service_hours: boolean;
   public_message: string | null;
 };
 

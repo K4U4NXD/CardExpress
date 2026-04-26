@@ -26,12 +26,17 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   }
 
   if (menuResult.error) {
-    throw new Error(`Erro ao carregar cardapio publico: ${menuResult.error.message}`);
+    throw new Error(`Erro ao carregar cardápio público: ${menuResult.error.message}`);
   }
 
   const menuRows: PublicMenuRpcRow[] = Array.isArray(menuResult.data) ? menuResult.data : [];
   const operationalState = getPublicStoreOperationalState({
     acceptsOrdersSetting: store.accepts_orders,
+    acceptsOrdersManual: store.accepts_orders_manual,
+    autoAcceptOrdersBySchedule: store.auto_accept_orders_by_schedule,
+    openingTime: store.opening_time,
+    closingTime: store.closing_time,
+    isWithinServiceHours: store.is_within_service_hours,
     menuRows,
   });
 
@@ -44,7 +49,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
         backLabel="Voltar ao cardápio"
         sticky
         compact
-        bottomContent={<p className="text-xs text-zinc-500">Etapa atual: revisao do carrinho e dados do cliente.</p>}
+        bottomContent={<p className="text-xs text-zinc-500">Etapa atual: revisão do carrinho e dados do cliente.</p>}
       />
 
       <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
@@ -87,6 +92,11 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
           storeName={store.name}
           acceptsOrders={operationalState.canPlaceOrders}
           ordersUnavailableMessage={operationalState.unavailableMessage}
+          schedule={{
+            autoAcceptOrdersBySchedule: store.auto_accept_orders_by_schedule,
+            openingTime: store.opening_time,
+            closingTime: store.closing_time,
+          }}
           menuRows={menuRows}
         />
       </div>

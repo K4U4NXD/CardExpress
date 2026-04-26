@@ -2,6 +2,11 @@ import type { PublicMenuRpcRow } from "@/types";
 
 type PublicStoreOperationalInput = {
   acceptsOrdersSetting: boolean;
+  acceptsOrdersManual?: boolean;
+  autoAcceptOrdersBySchedule?: boolean;
+  openingTime?: string | null;
+  closingTime?: string | null;
+  isWithinServiceHours?: boolean;
   menuRows: PublicMenuRpcRow[];
 };
 
@@ -13,6 +18,8 @@ export type PublicStoreOperationalState = {
   purchasableMenuItems: number;
   summaryLabel: string;
   unavailableMessage: string | null;
+  scheduleWindowLabel: string | null;
+  isOutsideServiceHours: boolean;
 };
 
 function toNonNegativeNumber(value: number | string | null | undefined) {
@@ -28,6 +35,30 @@ function toNonNegativeNumber(value: number | string | null | undefined) {
   }
 
   return null;
+}
+
+function normalizeTimeToHHMM(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const match = value.trim().match(/^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
+  if (!match) {
+    return null;
+  }
+
+  return `${match[1]}:${match[2]}`;
+}
+
+function buildScheduleWindowLabel(openingTime?: string | null, closingTime?: string | null) {
+  const opening = normalizeTimeToHHMM(openingTime);
+  const closing = normalizeTimeToHHMM(closingTime);
+
+  if (!opening || !closing) {
+    return null;
+  }
+
+  return `${opening} às ${closing}`;
 }
 
 function hasRenderableMenuProduct(row: PublicMenuRpcRow) {
@@ -90,6 +121,11 @@ export function countPurchasablePublicMenuItems(menuRows: PublicMenuRpcRow[]) {
 
 export function getPublicStoreOperationalState({
   acceptsOrdersSetting,
+  acceptsOrdersManual,
+  autoAcceptOrdersBySchedule,
+  openingTime,
+  closingTime,
+  isWithinServiceHours,
   menuRows,
 }: PublicStoreOperationalInput): PublicStoreOperationalState {
   const visibleMenuItems = countVisiblePublicMenuItems(menuRows);
@@ -97,6 +133,10 @@ export function getPublicStoreOperationalState({
   const isOperationallyReady = purchasableMenuItems > 0;
   const acceptsOrders = acceptsOrdersSetting;
   const canPlaceOrders = acceptsOrders && isOperationallyReady;
+  const manualAcceptsOrders = acceptsOrdersManual ?? acceptsOrdersSetting;
+  const hasAutoSchedule = autoAcceptOrdersBySchedule === true;
+  const withinServiceHours = hasAutoSchedule ? isWithinServiceHours === true : true;
+  const scheduleWindowLabel = buildScheduleWindowLabel(openingTime, closingTime);
 
   if (canPlaceOrders) {
     return {
@@ -107,10 +147,12 @@ export function getPublicStoreOperationalState({
       purchasableMenuItems,
       summaryLabel: "Aceitando pedidos",
       unavailableMessage: null,
+      scheduleWindowLabel,
+      isOutsideServiceHours: false,
     };
   }
 
-  if (!acceptsOrders) {
+  if (!manualAcceptsOrders) {
     return {
       isOperationallyReady,
       acceptsOrders,
@@ -119,6 +161,24 @@ export function getPublicStoreOperationalState({
       purchasableMenuItems,
       summaryLabel: "Pedidos pausados",
       unavailableMessage: "A loja pausou temporariamente o recebimento de novos pedidos. Tente novamente quando reabrir.",
+      scheduleWindowLabel,
+      isOutsideServiceHours: false,
+    };
+  }
+
+  if (hasAutoSchedule && !withinServiceHours) {
+    return {
+      isOperationallyReady,
+      acceptsOrders,
+      canPlaceOrders,
+      visibleMenuItems,
+      purchasableMenuItems,
+      summaryLabel: "Fora do horário de atendimento",
+      unavailableMessage: scheduleWindowLabel
+        ? `A loja está fora do horário de atendimento. Horário de atendimento: ${scheduleWindowLabel}.`
+        : "A loja está fora do horário de atendimento.",
+      scheduleWindowLabel,
+      isOutsideServiceHours: true,
     };
   }
 
@@ -129,8 +189,10 @@ export function getPublicStoreOperationalState({
       canPlaceOrders,
       visibleMenuItems,
       purchasableMenuItems,
-      summaryLabel: "Loja indisponivel para pedidos",
-      unavailableMessage: "Os itens do cardapio estao temporariamente indisponiveis para novos pedidos.",
+      summaryLabel: "Loja indisponível para pedidos",
+      unavailableMessage: "Os itens do cardápio estão temporariamente indisponíveis para novos pedidos.",
+      scheduleWindowLabel,
+      isOutsideServiceHours: false,
     };
   }
 
@@ -142,5 +204,7 @@ export function getPublicStoreOperationalState({
     purchasableMenuItems,
     summaryLabel: "Loja indisponível para pedidos",
     unavailableMessage: "A loja ainda não está pronta para receber pedidos agora.",
+    scheduleWindowLabel,
+    isOutsideServiceHours: false,
   };
 }

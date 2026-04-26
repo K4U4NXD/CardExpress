@@ -3,7 +3,17 @@ export const STORE_PUBLIC_MESSAGE_MAX_LENGTH = 280;
 export const STORE_LOGO_URL_MAX_LENGTH = 500;
 
 export type StoreSettingsFieldErrors = Partial<
-  Record<"name" | "phone" | "logo_url" | "public_message" | "accepts_orders", string>
+  Record<
+    | "name"
+    | "phone"
+    | "logo_url"
+    | "public_message"
+    | "accepts_orders"
+    | "auto_accept_orders_by_schedule"
+    | "opening_time"
+    | "closing_time",
+    string
+  >
 >;
 
 type StoreSettingsValidationInput = {
@@ -12,6 +22,9 @@ type StoreSettingsValidationInput = {
   logoUrl: string;
   publicMessage: string;
   acceptsOrders: boolean;
+  autoAcceptOrdersBySchedule: boolean;
+  openingTime: string;
+  closingTime: string;
 };
 
 export type StoreSettingsValidatedInput = {
@@ -21,7 +34,24 @@ export type StoreSettingsValidatedInput = {
   logoUrl: string | null;
   publicMessage: string | null;
   acceptsOrders: boolean;
+  autoAcceptOrdersBySchedule: boolean;
+  openingTime: string | null;
+  closingTime: string | null;
 };
+
+function normalizeTimeInput(rawValue: string): string | null {
+  const trimmed = rawValue.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const match = trimmed.match(/^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
+  if (!match) {
+    return null;
+  }
+
+  return `${match[1]}:${match[2]}`;
+}
 
 export function validateStoreSettingsInput(input: StoreSettingsValidationInput): {
   values: StoreSettingsValidatedInput;
@@ -35,6 +65,11 @@ export function validateStoreSettingsInput(input: StoreSettingsValidationInput):
   const logoUrl = logoUrlRaw || null;
   const publicMessageRaw = input.publicMessage.trim();
   const publicMessage = publicMessageRaw || null;
+  const autoAcceptOrdersBySchedule = input.autoAcceptOrdersBySchedule;
+  const openingTimeRaw = input.openingTime.trim();
+  const closingTimeRaw = input.closingTime.trim();
+  const openingTime = normalizeTimeInput(openingTimeRaw);
+  const closingTime = normalizeTimeInput(closingTimeRaw);
 
   const fieldErrors: StoreSettingsFieldErrors = {};
 
@@ -67,6 +102,28 @@ export function validateStoreSettingsInput(input: StoreSettingsValidationInput):
     }
   }
 
+  if (openingTimeRaw && !openingTime) {
+    fieldErrors.opening_time = "Informe um horário de abertura válido (HH:mm).";
+  }
+
+  if (closingTimeRaw && !closingTime) {
+    fieldErrors.closing_time = "Informe um horário de fechamento válido (HH:mm).";
+  }
+
+  if (autoAcceptOrdersBySchedule) {
+    if (!openingTime) {
+      fieldErrors.opening_time = "Informe o horário de abertura para ativar o horário automático.";
+    }
+
+    if (!closingTime) {
+      fieldErrors.closing_time = "Informe o horário de fechamento para ativar o horário automático.";
+    }
+
+    if (openingTime && closingTime && openingTime === closingTime) {
+      fieldErrors.closing_time = "Abertura e fechamento não podem ser iguais.";
+    }
+  }
+
   return {
     values: {
       name,
@@ -75,6 +132,9 @@ export function validateStoreSettingsInput(input: StoreSettingsValidationInput):
       logoUrl,
       publicMessage,
       acceptsOrders: input.acceptsOrders,
+      autoAcceptOrdersBySchedule,
+      openingTime,
+      closingTime,
     },
     fieldErrors,
     hasErrors: Object.keys(fieldErrors).length > 0,

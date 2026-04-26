@@ -47,6 +47,14 @@ O projeto já possui uma base funcional sólida, com:
 - branding público por loja;
 - logo da loja por URL ou upload;
 - melhorias amplas de UX em desktop e mobile;
+- dashboard reorganizada, com versão mobile mais compacta para operação em celular;
+- indicadores do dashboard com filtros de Hoje, Semana atual e Período operacional sem reload da página;
+- modos operacionais da loja: Loja offline, Aberta manualmente e Horário automático;
+- registro de período manual em `store_operational_periods`;
+- horário automático calculado com base em `America/Sao_Paulo`;
+- produto que zera estoque por venda continua visível no cardápio como indisponível;
+- `is_available` permanece como decisão manual do comerciante, sem pausa automática ao estoque chegar a zero;
+- redução de refresh desnecessário ao voltar foco para a aba;
 - **atualização em tempo real** nas rotas operacionais e públicas principais.
 - imagem de produto por URL ou upload;
 - exclusão segura de produto com preservação de histórico;
@@ -93,25 +101,34 @@ Cenários validados localmente:
 - gerenciamento de produtos;
 - gerenciamento operacional de pedidos;
 - configurações da loja;
-- melhorias de legibilidade e organização da Home do dashboard.
+- melhorias de legibilidade e organização da Home do dashboard;
+- dashboard mobile compactada, com status da loja, visão operacional, alertas, indicadores e últimos pedidos em blocos mais leves.
 
 ### Home do dashboard (`/dashboard`)
 
 - resumo operacional da loja;
-- métricas de:
+- visão operacional fixa com:
   - categorias ativas;
   - produtos aptos para compra;
+  - produtos sem estoque;
+  - produtos com estoque baixo;
   - pedidos aguardando aceite;
   - pedidos em preparo;
   - pedidos prontos para retirada;
-  - pedidos finalizados no dia;
-  - valor vendido no dia;
-  - ticket médio do dia;
-  - produtos sem estoque;
-  - produtos com estoque baixo;
-- top 5 produtos mais vendidos no dia;
+- indicadores com filtro por período:
+  - Hoje;
+  - Semana atual;
+  - Período operacional;
+- métricas por período:
+  - pedidos finalizados;
+  - total vendido;
+  - ticket médio;
+- top 5 produtos mais vendidos no período selecionado;
+- alertas de estoque com nomes dos produtos sem estoque e com estoque baixo;
 - lista de últimos pedidos;
+- troca de período nos indicadores sem reload da página e sem reset de scroll;
 - reorganização visual por grupos operacionais;
+- refinamento da versão mobile com cards numéricos menores e menos aninhamento visual;
 - remoção dos atalhos rápidos;
 - **atualização em tempo real** por loja.
 
@@ -125,8 +142,6 @@ Cenários validados localmente:
 - excluir categoria quando não houver produtos vinculados;
 - formulário recolhido por padrão;
 - **atualização automática em tempo real** na tela de categorias.
-
-### Produtos
 
 ### Produtos
 
@@ -156,7 +171,17 @@ Cenários validados localmente:
 - exibição e cópia do link público da loja;
 - QR Code do cardápio público;
 - mensagem pública da loja;
-- controle manual de aceitação de pedidos;
+- seletor único de modo operacional:
+  - **Loja offline**;
+  - **Aberta manualmente**;
+  - **Horário automático**;
+- horário de abertura e fechamento para o modo automático;
+- cálculo de horário automático com referência em `America/Sao_Paulo`;
+- abertura e fechamento de períodos manuais registrados em `store_operational_periods`;
+- regra de disponibilidade efetiva:
+  - loja offline não aceita pedidos;
+  - aberta manualmente aceita pedidos até o comerciante mudar o modo;
+  - horário automático aceita pedidos apenas dentro do intervalo definido;
 - resumo de prontidão operacional;
 - botão salvar habilitado apenas quando há alterações;
 - descarte de alterações;
@@ -262,6 +287,8 @@ As páginas públicas da loja usam branding da própria loja quando disponível:
 ### Regras de estoque no fluxo de pedidos
 
 - o estoque é abatido quando a `checkout_session` paga é convertida em pedido real;
+- quando o estoque chega a zero por venda, o produto continua com `is_available` inalterado;
+- produto ativo e com venda liberada continua aparecendo no cardápio mesmo com estoque zero, mas fica indisponível para compra;
 - ao **recusar** um pedido em `aguardando_aceite`, o sistema devolve o estoque;
 - ao **cancelar** um pedido em `em_preparo`, o sistema devolve o estoque;
 - o reembolso financeiro real **não** foi implementado nesta fase;
@@ -693,7 +720,8 @@ O CardExpress usa Realtime de forma **seletiva**, conforme o contexto de seguran
 * as páginas continuam usando RPCs e lógica server como **fonte da verdade**;
 * os eventos servem principalmente para disparar `refresh` da rota;
 * a implementação distingue contexto público e autenticado com revisão de segurança;
-* o frontend utiliza debounce, recuperação de conexão e atualização automática nas páginas principais.
+* o frontend utiliza debounce, recuperação de conexão e atualização automática nas páginas principais;
+* o refresh ao voltar foco para a aba foi reduzido para evitar recarregamentos sem sinal pendente.
 
 ---
 
@@ -767,8 +795,24 @@ Quando houver controle de estoque:
 
 Na área pública, a loja só deve aparecer como apta a receber pedidos quando:
 
-* `accepts_orders` está ativo;
+* o controle manual `accepts_orders` está ativo;
+* se o horário automático estiver ativo, o horário atual está dentro do intervalo configurado;
 * e existe cardápio público efetivamente disponível para pedido.
+
+Em resumo, a disponibilidade efetiva segue:
+
+* `effective_accepts_orders = accepts_orders_manual && dentro_do_horario_configurado` (quando o horário automático está ativo);
+* sem horário automático ativo, o comportamento permanece igual ao fluxo manual atual.
+
+### Modos operacionais e período operacional atual
+
+A tela de configurações apresenta um seletor único para evitar estados conflitantes:
+
+* **Loja offline**: grava `accepts_orders = false` e `auto_accept_orders_by_schedule = false`;
+* **Aberta manualmente**: grava `accepts_orders = true` e `auto_accept_orders_by_schedule = false`;
+* **Horário automático**: grava `accepts_orders = true`, `auto_accept_orders_by_schedule = true` e exige abertura/fechamento.
+
+Quando a loja passa para **Aberta manualmente**, o sistema registra um período em `store_operational_periods`. Quando ela passa para **Loja offline** ou **Horário automático**, o período manual aberto é fechado. Para o modo automático, o dashboard calcula a janela atual a partir dos horários configurados, sem cron, Edge Function ou serviço externo.
 
 ### Pedido público seguro
 
@@ -799,6 +843,7 @@ O projeto utiliza Supabase como backend principal.
 * `order_items`
 * `checkout_sessions`
 * `checkout_session_items`
+* `store_operational_periods`
 
 ### RPCs relevantes no estado atual
 
@@ -839,15 +884,28 @@ No estado atual, os blocos críticos estão versionados com migrations específi
 
 * checkout/conversão e guardas operacionais:
   * `20260403001920_public_checkout_order_flow.sql`
+  * `20260412172110_add_order_cancel_status_and_stock_revert.sql`
   * `20260414123000_harden_checkout_conversion_operational_guard.sql`
+  * `20260424100000_add_store_schedule_effective_availability.sql`
+  * `20260424153000_add_store_operational_periods.sql`
+  * `20260425203000_keep_product_available_when_stock_reaches_zero.sql`
 * realtime (dashboard/público):
   * `20260411163258_enable_realtime_for_orders.sql`
   * `20260411175544_broadcast_public_panel_refresh.sql`
   * `20260411175546_dashboard_home_realtime_refresh.sql`
   * `20260411175548_broadcast_public_order_refresh.sql`
   * `20260412193547_add_realtime_public_menu_and_dashboard_products.sql`
+  * `20260412221503_add_recent_called_orders_for_public_panel.sql`
+* cardápio público e produtos:
+  * `20260403120000_sync_product_availability_manual_control.sql`
+  * `20260418163844_show_out_of_stock_in_public_menu.sql`
+  * `20260421162000_products_archived_soft_delete.sql`
 * storage de logos em bucket público:
   * `20260420012418_storage_public_assets_store_logos.sql`
+* storage de imagens de produto em bucket público:
+  * `20260421150000_storage_public_assets_product_images.sql`
+
+Essas migrations cobrem o estado atual de produto com imagem por URL/upload, produto sem estoque visível e bloqueado no cardápio público, preservação de `is_available` quando o estoque zera por venda, exclusão segura por `archived_at`, modos operacionais com período manual registrado, painel público com últimos chamados e cancelamento/recusa com devolução de estoque.
 
 > Como parte do desenvolvimento, algumas alterações foram aplicadas manualmente no Supabase e depois versionadas no repositório. Sempre confirme se o histórico remoto e o local continuam coerentes.
 
@@ -959,11 +1017,15 @@ Se a mudança envolver banco ou storage:
 * painel público de retirada;
 * painel público em modo TV;
 * Home do dashboard com métricas operacionais;
+* dashboard mobile compactada;
+* indicadores por Hoje, Semana atual e Período operacional;
+* modos operacionais Loja offline, Aberta manualmente e Horário automático;
 * atualização em tempo real nas páginas principais;
 * suporte a pedido **cancelado**;
 * devolução de estoque em **recusa** e **cancelamento**;
 * melhorias amplas de responsividade e UX no dashboard e na área pública;
 * produtos sem estoque visíveis no cardápio, porém bloqueados para compra;
+* produto que zera estoque por venda permanece visível no cardápio como indisponível;
 * reordenação de categorias e produtos com drag and drop no desktop e fluxo compacto no mobile.
 * imagem de produto por URL e upload;
 * exclusão segura de produto com preservação de histórico;

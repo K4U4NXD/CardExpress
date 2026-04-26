@@ -858,6 +858,7 @@ export function StoreSettingsForm({
                     checked={checked}
                     disabled={disabled}
                     onChange={() => updateOperationalMode(option.value)}
+                    data-testid={`settings-operational-mode-${option.value}`}
                     className="mt-1 border-zinc-300"
                   />
                   <span>

@@ -49,6 +49,7 @@ export function DashboardIndicatorsPanel({ periods, topProductsLimit }: Dashboar
                 role="tab"
                 aria-selected={active}
                 onClick={() => setSelectedPeriod(period.key)}
+                data-testid={`dashboard-period-${period.key}`}
                 className={`flex-1 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-semibold transition sm:flex-none sm:px-3 ${
                   active ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
                 }`}

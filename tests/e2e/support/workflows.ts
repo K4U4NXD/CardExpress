@@ -18,6 +18,13 @@ export type CheckoutInput = {
   expectSessionCreated?: boolean;
 };
 
+export type StoreOperationalMode = "offline" | "manual" | "schedule";
+
+export type StoreOperationalModeOptions = {
+  openingTime?: string;
+  closingTime?: string;
+};
+
 export async function loginAsMerchant(page: Page, credentials: MerchantCredentials) {
   await page.goto("/login", { waitUntil: "domcontentloaded" });
 
@@ -44,51 +51,91 @@ export async function readStoreSlugFromSettings(page: Page) {
   return slug;
 }
 
-export async function setStoreAcceptsOrders(page: Page, acceptsOrders: boolean) {
+export async function setStoreOperationalMode(
+  page: Page,
+  mode: StoreOperationalMode,
+  options: StoreOperationalModeOptions = {}
+) {
   await page.goto("/dashboard/configuracoes", { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/\/dashboard\/configuracoes(?:\?.*)?$/);
 
-  const toggle = page.getByTestId("settings-accepts-orders-toggle");
+  const modeRadio = page.getByTestId(`settings-operational-mode-${mode}`);
   const saveButton = page.getByTestId("settings-save-button");
+  const openingTimeInput = page.getByTestId("settings-opening-time");
+  const closingTimeInput = page.getByTestId("settings-closing-time");
 
-  await expect(toggle).toBeVisible();
+  await expect(modeRadio).toBeVisible();
   await expect(saveButton).toBeVisible();
-  await expect(saveButton).toHaveText(/Salvar configurações/i, { timeout: 12_000 });
+  await expect(saveButton).toHaveText(/Salvar configura/i, { timeout: 12_000 });
 
-  const checked = await toggle.isChecked();
+  const wasChecked = await modeRadio.isChecked();
+  const openingTimeBefore = await openingTimeInput.inputValue();
+  const closingTimeBefore = await closingTimeInput.inputValue();
+  const requestedOpeningTime = options.openingTime?.trim();
+  const requestedClosingTime = options.closingTime?.trim();
 
-  if (checked === acceptsOrders) {
+  if (!wasChecked) {
+    await expect(modeRadio).toBeEnabled();
+    await modeRadio.check();
+  }
+
+  if (mode === "schedule") {
+    await expect(openingTimeInput).toBeEnabled({ timeout: 8_000 });
+    await expect(closingTimeInput).toBeEnabled({ timeout: 8_000 });
+
+    if (requestedOpeningTime) {
+      await openingTimeInput.fill(requestedOpeningTime);
+    }
+
+    if (requestedClosingTime) {
+      await closingTimeInput.fill(requestedClosingTime);
+    }
+  }
+
+  const scheduleTimesAlreadyMatch =
+    mode !== "schedule" ||
+    ((!requestedOpeningTime || openingTimeBefore === requestedOpeningTime) &&
+      (!requestedClosingTime || closingTimeBefore === requestedClosingTime));
+
+  if (wasChecked && scheduleTimesAlreadyMatch) {
     await expect(saveButton).toBeDisabled();
+    await expect(modeRadio).toBeChecked();
     return;
   }
 
-  await expect(toggle).toBeEnabled();
-
-  if (acceptsOrders) {
-    await toggle.check();
-  } else {
-    await toggle.uncheck();
-  }
-
-  await expect.poll(async () => await toggle.isChecked(), {
+  await expect.poll(async () => await modeRadio.isChecked(), {
     timeout: 8_000,
-    message: "O toggle de aceitacao de pedidos nao mudou para o estado esperado.",
-  }).toBe(acceptsOrders);
+    message: `O modo operacional '${mode}' nao ficou selecionado antes de salvar.`,
+  }).toBe(true);
 
   await expect.poll(async () => await saveButton.isEnabled(), {
     timeout: 8_000,
-    message: "O botao Salvar configuracoes nao habilitou apos mudar o toggle.",
+    message: "O botao Salvar configuracoes nao habilitou apos mudar o modo operacional.",
   }).toBe(true);
 
   await saveButton.click();
 
-  await expect.poll(async () => await toggle.isChecked(), {
+  await expect.poll(async () => await modeRadio.isChecked(), {
     timeout: 12_000,
-    message: "O estado salvo do toggle nao refletiu o valor esperado.",
-  }).toBe(acceptsOrders);
+    message: `O modo operacional salvo nao refletiu '${mode}'.`,
+  }).toBe(true);
 
-  await expect(saveButton).toHaveText(/Salvar configurações/i, { timeout: 12_000 });
+  if (mode === "schedule") {
+    if (requestedOpeningTime) {
+      await expect(openingTimeInput).toHaveValue(requestedOpeningTime, { timeout: 12_000 });
+    }
+
+    if (requestedClosingTime) {
+      await expect(closingTimeInput).toHaveValue(requestedClosingTime, { timeout: 12_000 });
+    }
+  }
+
+  await expect(saveButton).toHaveText(/Salvar configura/i, { timeout: 12_000 });
   await expect(saveButton).toBeDisabled({ timeout: 12_000 });
+}
+
+export async function setStoreAcceptsOrders(page: Page, acceptsOrders: boolean) {
+  await setStoreOperationalMode(page, acceptsOrders ? "manual" : "offline");
 }
 
 export async function createCategoryIfMissing(page: Page, categoryName: string) {

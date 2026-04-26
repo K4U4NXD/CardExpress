@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { test, expect, type Browser } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 import {
   addMenuProductQuantity,
@@ -14,7 +14,7 @@ import {
   loginAsMerchant,
   productCardByName,
   readStoreSlugFromSettings,
-  setStoreAcceptsOrders,
+  setStoreOperationalMode,
   simulatePaymentAndWaitForOrderPage,
   waitForOrderRowByMarker,
 } from "./support/workflows";
@@ -62,10 +62,65 @@ const seedData = {
       price: "9,90",
       stock: 0,
     },
+    soldToZero: {
+      name: `E2E Zera Estoque ${runId}`,
+      price: "10,00",
+      stock: 1,
+    },
   },
 };
 
 let storeSlug = "";
+
+function getSaoPauloMinuteOfDay() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0");
+  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? "0");
+
+  return hour * 60 + minute;
+}
+
+function formatMinuteAsHHMM(totalMinutes: number) {
+  const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+  const hour = Math.floor(normalized / 60);
+  const minute = normalized % 60;
+
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+function buildScheduleWindowContainingNow() {
+  const now = getSaoPauloMinuteOfDay();
+
+  return {
+    openingTime: formatMinuteAsHHMM(now - 60),
+    closingTime: formatMinuteAsHHMM(now + 60),
+  };
+}
+
+function buildScheduleWindowOutsideNow() {
+  const now = getSaoPauloMinuteOfDay();
+
+  return {
+    openingTime: formatMinuteAsHHMM(now + 60),
+    closingTime: formatMinuteAsHHMM(now + 120),
+  };
+}
+
+async function expectCheckoutCreationBlocked(page: Page, marker: string, messagePattern: RegExp) {
+  await createCheckoutSession(page, {
+    customerName: `${customerBaseName} ${marker}`,
+    customerPhone,
+    note: marker,
+    expectSessionCreated: false,
+  });
+  await expect(page.getByText(messagePattern).first()).toBeVisible({ timeout: 10_000 });
+}
 
 test.describe.serial("CardExpress critical smoke", () => {
   test.skip(
@@ -74,6 +129,7 @@ test.describe.serial("CardExpress critical smoke", () => {
   );
 
   test.beforeAll(async ({ browser }) => {
+    test.setTimeout(180_000);
     fs.mkdirSync(path.dirname(authStatePath), { recursive: true });
 
     const context = await browser.newContext();
@@ -90,7 +146,8 @@ test.describe.serial("CardExpress critical smoke", () => {
       await createProductIfMissing(page, seedData.categoryName, seedData.products.edgeStockOne);
       await createProductIfMissing(page, seedData.categoryName, seedData.products.edgeStockTwo);
       await createProductIfMissing(page, seedData.categoryName, seedData.products.outOfStockVisible);
-      await setStoreAcceptsOrders(page, true);
+      await createProductIfMissing(page, seedData.categoryName, seedData.products.soldToZero);
+      await setStoreOperationalMode(page, "manual");
 
       await context.storageState({ path: authStatePath });
     } finally {
@@ -215,17 +272,20 @@ test.describe.serial("CardExpress critical smoke", () => {
     }
   });
 
-  test("Cenario 3 - bloqueio operacional de checkout/conversao", async ({ browser }) => {
+  test("Cenario 3 - loja offline bloqueia nova sessao, mas nao conversao de checkout ja criado", async ({ browser }) => {
     const merchantContext = await browser.newContext({ storageState: authStatePath });
     const publicContext = await browser.newContext();
+    const blockedContext = await browser.newContext();
 
     const merchantPage = await merchantContext.newPage();
     const publicPage = await publicContext.newPage();
+    const blockedPage = await blockedContext.newPage();
 
     try {
       const marker = `SMOKE-S3-${Date.now()}`;
+      const blockedMarker = `SMOKE-S3-BLOCKED-${Date.now()}`;
 
-      await setStoreAcceptsOrders(merchantPage, true);
+      await setStoreOperationalMode(merchantPage, "manual");
 
       await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
       await addMenuProductQuantity(publicPage, seedData.products.happySecondary.name, 1);
@@ -237,34 +297,152 @@ test.describe.serial("CardExpress critical smoke", () => {
         note: marker,
       });
 
-      await setStoreAcceptsOrders(merchantPage, false);
+      await blockedPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
+      await addMenuProductQuantity(blockedPage, seedData.products.happyPrimary.name, 1);
+      await goToPublicCheckout(blockedPage, storeSlug);
 
-      await publicPage.reload({ waitUntil: "domcontentloaded" });
-      await expect(publicPage.getByRole("heading", { name: /checkout criada/i })).toBeVisible();
+      await setStoreOperationalMode(merchantPage, "offline");
 
-      await publicPage.getByTestId("checkout-simulate-payment").click();
-      await expect(publicPage).toHaveURL(new RegExp(`/${storeSlug}/checkout(?:\\?.*)?$`));
-      await expect(publicPage.getByText(/bloquead|indispon[ií]vel|aceitando pedidos|temporariamente/i)).toBeVisible({
+      await simulatePaymentAndWaitForOrderPage(publicPage, storeSlug);
+      await expect(publicPage.getByRole("heading", { name: /pedido/i })).toBeVisible();
+
+      await blockedPage.reload({ waitUntil: "domcontentloaded" });
+      await expectCheckoutCreationBlocked(blockedPage, blockedMarker, /pausou|pedidos pausados|indispon/i);
+    } finally {
+      await setStoreOperationalMode(merchantPage, "manual");
+      await Promise.all([merchantContext.close(), publicContext.close(), blockedContext.close()]);
+    }
+  });
+
+  test("Cenario 4 - loja offline mantem cardapio visivel e bloqueia checkout", async ({ browser }) => {
+    const merchantContext = await browser.newContext({ storageState: authStatePath });
+    const publicContext = await browser.newContext();
+
+    const merchantPage = await merchantContext.newPage();
+    const publicPage = await publicContext.newPage();
+
+    try {
+      const marker = `SMOKE-S4-OFFLINE-${Date.now()}`;
+
+      await setStoreOperationalMode(merchantPage, "manual");
+      await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
+      await addMenuProductQuantity(publicPage, seedData.products.happyPrimary.name, 1);
+
+      await setStoreOperationalMode(merchantPage, "offline");
+
+      await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
+      await expect(publicPage.getByText(/pedidos pausados|pausou temporariamente/i).first()).toBeVisible({
         timeout: 15_000,
       });
 
-      await setStoreAcceptsOrders(merchantPage, true);
+      const card = productCardByName(publicPage, seedData.products.happyPrimary.name);
+      await expect(card).toBeVisible({ timeout: 15_000 });
+      await expect(card.locator('[data-testid^="menu-increase-"], [data-testid^="menu-add-"]').first()).toBeDisabled();
 
-      await publicPage.reload({ waitUntil: "domcontentloaded" });
-      await expect(publicPage.getByRole("heading", { name: /checkout criada/i })).toBeVisible();
-      await simulatePaymentAndWaitForOrderPage(publicPage, storeSlug);
+      await publicPage.goto(`/${storeSlug}/checkout`, { waitUntil: "domcontentloaded" });
+      await expectCheckoutCreationBlocked(publicPage, marker, /pausou|pedidos pausados|indispon/i);
     } finally {
-      await setStoreAcceptsOrders(merchantPage, true);
+      await setStoreOperationalMode(merchantPage, "manual");
       await Promise.all([merchantContext.close(), publicContext.close()]);
     }
   });
 
-  test("Cenario 4 - borda de estoque com multiplos itens problemáticos", async ({ browser }) => {
+  test("Cenario 5 - aberta manualmente permite checkout e pedido", async ({ browser }) => {
+    const merchantContext = await browser.newContext({ storageState: authStatePath });
+    const publicContext = await browser.newContext();
+
+    const merchantPage = await merchantContext.newPage();
+    const publicPage = await publicContext.newPage();
+
+    try {
+      const marker = `SMOKE-S5-MANUAL-${Date.now()}`;
+
+      await setStoreOperationalMode(merchantPage, "manual");
+
+      await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
+      await addMenuProductQuantity(publicPage, seedData.products.happyPrimary.name, 1);
+      await goToPublicCheckout(publicPage, storeSlug);
+      await createCheckoutSession(publicPage, {
+        customerName: `${customerBaseName} S5`,
+        customerPhone,
+        note: marker,
+      });
+      await simulatePaymentAndWaitForOrderPage(publicPage, storeSlug);
+
+      await expect(publicPage.getByRole("heading", { name: /pedido/i })).toBeVisible();
+      await expect(publicPage).toHaveURL(new RegExp(`/${storeSlug}/pedido/[^?]+\\?token=`));
+    } finally {
+      await setStoreOperationalMode(merchantPage, "manual");
+      await Promise.all([merchantContext.close(), publicContext.close()]);
+    }
+  });
+
+  test("Cenario 6 - horario automatico dentro do horario permite checkout e pedido", async ({ browser }) => {
+    const merchantContext = await browser.newContext({ storageState: authStatePath });
+    const publicContext = await browser.newContext();
+
+    const merchantPage = await merchantContext.newPage();
+    const publicPage = await publicContext.newPage();
+
+    try {
+      const marker = `SMOKE-S6-SCHEDULE-IN-${Date.now()}`;
+      const { openingTime, closingTime } = buildScheduleWindowContainingNow();
+
+      await setStoreOperationalMode(merchantPage, "schedule", { openingTime, closingTime });
+
+      await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
+      await addMenuProductQuantity(publicPage, seedData.products.happySecondary.name, 1);
+      await goToPublicCheckout(publicPage, storeSlug);
+      await createCheckoutSession(publicPage, {
+        customerName: `${customerBaseName} S6`,
+        customerPhone,
+        note: marker,
+      });
+      await simulatePaymentAndWaitForOrderPage(publicPage, storeSlug);
+
+      await expect(publicPage.getByRole("heading", { name: /pedido/i })).toBeVisible();
+    } finally {
+      await setStoreOperationalMode(merchantPage, "manual");
+      await Promise.all([merchantContext.close(), publicContext.close()]);
+    }
+  });
+
+  test("Cenario 7 - horario automatico fora do horario bloqueia nova sessao", async ({ browser }) => {
+    const merchantContext = await browser.newContext({ storageState: authStatePath });
+    const publicContext = await browser.newContext();
+
+    const merchantPage = await merchantContext.newPage();
+    const publicPage = await publicContext.newPage();
+
+    try {
+      const marker = `SMOKE-S7-SCHEDULE-OUT-${Date.now()}`;
+      const { openingTime, closingTime } = buildScheduleWindowOutsideNow();
+
+      await setStoreOperationalMode(merchantPage, "manual");
+      await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
+      await addMenuProductQuantity(publicPage, seedData.products.happyPrimary.name, 1);
+
+      await setStoreOperationalMode(merchantPage, "schedule", { openingTime, closingTime });
+
+      await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
+      await expect(publicPage.getByText(/fora do hor[aá]rio de atendimento/i).first()).toBeVisible({
+        timeout: 15_000,
+      });
+
+      await publicPage.goto(`/${storeSlug}/checkout`, { waitUntil: "domcontentloaded" });
+      await expectCheckoutCreationBlocked(publicPage, marker, /fora do hor[aá]rio de atendimento/i);
+    } finally {
+      await setStoreOperationalMode(merchantPage, "manual");
+      await Promise.all([merchantContext.close(), publicContext.close()]);
+    }
+  });
+
+  test("Cenario 8 - borda de estoque com multiplos itens problematicos", async ({ browser }) => {
     const publicContext = await browser.newContext();
     const publicPage = await publicContext.newPage();
 
     try {
-      const marker = `SMOKE-S4-${Date.now()}`;
+      const marker = `SMOKE-S8-${Date.now()}`;
 
       await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
       await addMenuProductQuantity(publicPage, seedData.products.edgeStockOne.name, 2);
@@ -272,7 +450,7 @@ test.describe.serial("CardExpress critical smoke", () => {
 
       await goToPublicCheckout(publicPage, storeSlug);
       await createCheckoutSession(publicPage, {
-        customerName: `${customerBaseName} S4`,
+        customerName: `${customerBaseName} S8`,
         customerPhone,
         note: marker,
         expectSessionCreated: false,
@@ -300,19 +478,19 @@ test.describe.serial("CardExpress critical smoke", () => {
     }
   });
 
-  test("Cenario 5 - cancelamento e recovery sem ressuscitar sessao invalida", async ({ browser }) => {
+  test("Cenario 9 - cancelamento e recovery sem ressuscitar sessao invalida", async ({ browser }) => {
     const publicContext = await browser.newContext();
     const publicPage = await publicContext.newPage();
 
     try {
-      const orderMarker = `SMOKE-S5-ORDER-${Date.now()}`;
-      const checkoutMarker = `SMOKE-S5-CHECKOUT-${Date.now()}`;
+      const orderMarker = `SMOKE-S9-ORDER-${Date.now()}`;
+      const checkoutMarker = `SMOKE-S9-CHECKOUT-${Date.now()}`;
 
       await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
       await addMenuProductQuantity(publicPage, seedData.products.happyPrimary.name, 1);
       await goToPublicCheckout(publicPage, storeSlug);
       await createCheckoutSession(publicPage, {
-        customerName: `${customerBaseName} S5A`,
+        customerName: `${customerBaseName} S9A`,
         customerPhone,
         note: orderMarker,
       });
@@ -322,7 +500,7 @@ test.describe.serial("CardExpress critical smoke", () => {
       await addMenuProductQuantity(publicPage, seedData.products.happySecondary.name, 1);
       await goToPublicCheckout(publicPage, storeSlug);
       await createCheckoutSession(publicPage, {
-        customerName: `${customerBaseName} S5B`,
+        customerName: `${customerBaseName} S9B`,
         customerPhone,
         note: checkoutMarker,
       });
@@ -368,7 +546,7 @@ test.describe.serial("CardExpress critical smoke", () => {
     }
   });
 
-  test("Cenario 6 - produto com estoque 0 visivel e bloqueado para compra", async ({ browser }) => {
+  test("Cenario 10 - produto com estoque 0 visivel e bloqueado para compra", async ({ browser }) => {
     const publicContext = await browser.newContext();
     const publicPage = await publicContext.newPage();
 
@@ -390,6 +568,105 @@ test.describe.serial("CardExpress critical smoke", () => {
       await expect(publicPage.locator('[data-testid^="checkout-cart-item-"]').first()).toBeVisible({ timeout: 10_000 });
     } finally {
       await publicContext.close();
+    }
+  });
+
+  test("Cenario 11 - produto vendido de estoque 1 para 0 continua visivel e indisponivel", async ({ browser }) => {
+    const merchantContext = await browser.newContext({ storageState: authStatePath });
+    const publicContext = await browser.newContext();
+
+    const merchantPage = await merchantContext.newPage();
+    const publicPage = await publicContext.newPage();
+
+    try {
+      const marker = `SMOKE-S11-STOCK-ZERO-${Date.now()}`;
+
+      await setStoreOperationalMode(merchantPage, "manual");
+
+      await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
+      await addMenuProductQuantity(publicPage, seedData.products.soldToZero.name, 1);
+      await goToPublicCheckout(publicPage, storeSlug);
+      await createCheckoutSession(publicPage, {
+        customerName: `${customerBaseName} S11`,
+        customerPhone,
+        note: marker,
+      });
+      await simulatePaymentAndWaitForOrderPage(publicPage, storeSlug);
+
+      await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
+
+      const soldToZeroCard = productCardByName(publicPage, seedData.products.soldToZero.name);
+      await expect(soldToZeroCard).toBeVisible({ timeout: 15_000 });
+      await expect(soldToZeroCard.locator('[data-testid^="menu-stock-badge-"]')).toContainText(/Sem estoque/i, {
+        timeout: 15_000,
+      });
+      await expect(soldToZeroCard.locator('[data-testid^="menu-out-of-stock-"]')).toContainText(/indispon[ií]vel/i);
+      await expect(soldToZeroCard.locator('[data-testid^="menu-add-"]')).toBeDisabled();
+    } finally {
+      await setStoreOperationalMode(merchantPage, "manual");
+      await Promise.all([merchantContext.close(), publicContext.close()]);
+    }
+  });
+
+  test("Cenario 12 - filtros da dashboard nao navegam nem resetam scroll", async ({ browser }) => {
+    const merchantContext = await browser.newContext({ storageState: authStatePath });
+    const merchantPage = await merchantContext.newPage();
+
+    try {
+      await merchantPage.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      await expect(merchantPage.getByRole("heading", { name: "Início" })).toBeVisible();
+
+      const reloadToken = `reload-token-${Date.now()}`;
+      await merchantPage.evaluate((token) => {
+        (window as Window & { __cardexpressE2eReloadToken?: string }).__cardexpressE2eReloadToken = token;
+        window.scrollTo(0, Math.max(320, document.body.scrollHeight / 2));
+      }, reloadToken);
+
+      await expect.poll(async () => await merchantPage.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+
+      for (const testId of ["dashboard-period-today", "dashboard-period-week", "dashboard-period-service"]) {
+        await merchantPage.getByTestId(testId).click();
+        await expect(merchantPage).toHaveURL(/\/dashboard(?:\?.*)?$/);
+
+        await expect
+          .poll(async () =>
+            merchantPage.evaluate(
+              () => (window as Window & { __cardexpressE2eReloadToken?: string }).__cardexpressE2eReloadToken ?? null,
+            ),
+          )
+          .toBe(reloadToken);
+
+        await expect.poll(async () => await merchantPage.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+      }
+    } finally {
+      await merchantContext.close();
+    }
+  });
+
+  test("Cenario 13 - dashboard mobile abre menu e navega", async ({ browser }) => {
+    const merchantContext = await browser.newContext({
+      storageState: authStatePath,
+      viewport: { width: 390, height: 844 },
+    });
+    const merchantPage = await merchantContext.newPage();
+
+    try {
+      await merchantPage.goto("/dashboard", { waitUntil: "domcontentloaded" });
+
+      await expect(merchantPage.getByText("CARDEXPRESS", { exact: true })).toBeVisible();
+      await merchantPage.getByRole("button", { name: "Menu" }).click();
+
+      const mobileNav = merchantPage.getByRole("dialog", { name: "Menu do dashboard" });
+      await expect(mobileNav).toBeVisible();
+      await expect(mobileNav.getByRole("link", { name: "Pedidos" })).toBeVisible();
+
+      await mobileNav.getByRole("link", { name: "Produtos" }).click();
+      await expect(merchantPage).toHaveURL(/\/dashboard\/produtos(?:\?.*)?$/);
+      await expect(merchantPage.getByRole("heading", { name: "Produtos", exact: true })).toBeVisible({
+        timeout: 15_000,
+      });
+    } finally {
+      await merchantContext.close();
     }
   });
 });

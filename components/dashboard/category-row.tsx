@@ -1,39 +1,40 @@
 "use client";
 
-import {
-  deleteCategoryAction,
-  toggleCategoryActiveAction,
-  updateCategoryNameAction,
-} from "@/app/actions/categories";
+import { updateCategoryNameAction } from "@/app/actions/categories";
+import { SelectionCheckbox } from "@/components/dashboard/selection-checkbox";
 import type { Category } from "@/types";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 type CategoryRowProps = {
   category: Category;
   onEditingChange?: (categoryId: string, isEditing: boolean) => void;
+  isSelected?: boolean;
+  selectionDisabled?: boolean;
+  onToggleSelected?: () => void;
   isFirst: boolean;
   isLast: boolean;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   isMoveBusy?: boolean;
   hasMoveIssue?: boolean;
+  editRequestToken?: number;
 };
 
 export function CategoryRow({
   category,
   onEditingChange,
+  isSelected = false,
+  selectionDisabled = false,
+  onToggleSelected,
   isFirst,
   isLast,
   onMoveUp,
   onMoveDown,
   isMoveBusy = false,
   hasMoveIssue = false,
+  editRequestToken = 0,
 }: CategoryRowProps) {
   const [editing, setEditing] = useState(false);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const pendingDeleteFormRef = useRef<HTMLFormElement | null>(null);
-  const skipDeleteConfirmRef = useRef(false);
-  const deleteCancelButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const setEditingState = (isEditing: boolean) => {
     setEditing(isEditing);
@@ -47,66 +48,26 @@ export function CategoryRow({
   }, [category.id, onEditingChange]);
 
   useEffect(() => {
-    if (!deleteConfirmOpen) {
-      return;
+    if (editRequestToken > 0) {
+      setEditingState(true);
     }
-
-    const previousBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    deleteCancelButtonRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") {
-        return;
-      }
-
-      event.preventDefault();
-      closeDeleteConfirmation();
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousBodyOverflow;
-    };
-  }, [deleteConfirmOpen]);
-
-  function requestDeleteConfirmation(event: FormEvent<HTMLFormElement>) {
-    if (skipDeleteConfirmRef.current) {
-      skipDeleteConfirmRef.current = false;
-      return;
-    }
-
-    event.preventDefault();
-    pendingDeleteFormRef.current = event.currentTarget;
-    setDeleteConfirmOpen(true);
-  }
-
-  function closeDeleteConfirmation() {
-    setDeleteConfirmOpen(false);
-    pendingDeleteFormRef.current = null;
-  }
-
-  function confirmDeleteCategory() {
-    const form = pendingDeleteFormRef.current;
-    if (!form) {
-      setDeleteConfirmOpen(false);
-      return;
-    }
-
-    skipDeleteConfirmRef.current = true;
-    form.requestSubmit();
-    setDeleteConfirmOpen(false);
-    pendingDeleteFormRef.current = null;
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editRequestToken]);
 
   return (
     <>
-      <div className="flex flex-col gap-2.5 rounded-xl border border-zinc-200/80 bg-zinc-50/65 p-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-4">
+      <div
+        className={`flex flex-col gap-2.5 rounded-xl border p-3.5 transition sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-4 ${
+          isSelected
+            ? "border-zinc-300 bg-zinc-50/90 shadow-[0_14px_32px_-28px_rgba(24,24,27,0.7)] ring-1 ring-zinc-300/70"
+            : "border-zinc-200/80 bg-zinc-50/65"
+        }`}
+      >
         <div className="min-w-0 flex-1">
           {!editing ? (
             <div className="mb-2.5 flex items-center justify-between sm:hidden">
               <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Ordem na lista</p>
+              <div className="flex items-center gap-2">
               <div
                 className={`inline-flex items-center gap-1 rounded-lg border bg-white px-1 py-1 ${
                   hasMoveIssue ? "border-red-300" : "border-zinc-200"
@@ -130,6 +91,7 @@ export function CategoryRow({
                 >
                   <span aria-hidden>↓</span>
                 </button>
+              </div>
               </div>
             </div>
           ) : null}
@@ -169,7 +131,7 @@ export function CategoryRow({
         </div>
 
         <div className="border-t border-zinc-200/80 pt-2.5 sm:hidden">
-          <div className="mb-2">
+          <div className="flex items-center justify-between gap-3">
             <span
               className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                 category.is_active
@@ -179,41 +141,28 @@ export function CategoryRow({
             >
               {category.is_active ? "Ativa" : "Inativa"}
             </span>
+            {!editing ? (
+              <SelectionCheckbox
+                checked={isSelected}
+                onChange={onToggleSelected ?? (() => undefined)}
+                disabled={selectionDisabled}
+                label={`Selecionar categoria ${category.name}`}
+              />
+            ) : null}
           </div>
-
-          {!editing ? (
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setEditingState(true)}
-                className="cx-btn-secondary w-full justify-center px-2.5 py-1.5 text-xs"
-              >
-                Editar
-              </button>
-              <form action={toggleCategoryActiveAction} className="w-full">
-                <input type="hidden" name="category_id" value={category.id} />
-                <button
-                  type="submit"
-                  className="cx-btn-secondary w-full justify-center px-2.5 py-1.5 text-xs"
-                >
-                  {category.is_active ? "Desativar" : "Ativar"}
-                </button>
-              </form>
-
-              <form action={deleteCategoryAction} className="col-span-2" onSubmit={requestDeleteConfirmation}>
-                <input type="hidden" name="category_id" value={category.id} />
-                <button
-                  type="submit"
-                  className="w-full rounded-xl border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50"
-                >
-                  Excluir
-                </button>
-              </form>
-            </div>
-          ) : null}
         </div>
 
         <div className="hidden sm:flex sm:items-center sm:gap-2.5">
+          {!editing ? (
+            <SelectionCheckbox
+              checked={isSelected}
+              onChange={onToggleSelected ?? (() => undefined)}
+              disabled={selectionDisabled}
+              label={`Selecionar categoria ${category.name}`}
+              testId={`category-select-${category.id}`}
+            />
+          ) : null}
+
           <span
             className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
               category.is_active
@@ -224,76 +173,8 @@ export function CategoryRow({
             {category.is_active ? "Ativa" : "Inativa"}
           </span>
 
-          {!editing ? (
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setEditingState(true)}
-                className="cx-btn-secondary px-3 py-1.5"
-              >
-                Editar
-              </button>
-              <form action={toggleCategoryActiveAction} className="inline">
-                <input type="hidden" name="category_id" value={category.id} />
-                <button
-                  type="submit"
-                  className="cx-btn-secondary px-3 py-1.5"
-                >
-                  {category.is_active ? "Desativar" : "Ativar"}
-                </button>
-              </form>
-              <form action={deleteCategoryAction} className="inline" onSubmit={requestDeleteConfirmation}>
-                <input type="hidden" name="category_id" value={category.id} />
-                <button
-                  type="submit"
-                  className="rounded-xl border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50"
-                >
-                  Excluir
-                </button>
-              </form>
-            </div>
-          ) : null}
         </div>
       </div>
-
-      {deleteConfirmOpen ? (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto overscroll-contain p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={`delete-category-dialog-title-${category.id}`}
-        >
-          <div className="absolute inset-0 bg-zinc-950/35" onClick={closeDeleteConfirmation} />
-
-          <div className="relative w-full max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-[0_24px_80px_-28px_rgba(24,24,27,0.85)] sm:p-6">
-              <h2 id={`delete-category-dialog-title-${category.id}`} className="text-base font-semibold text-zinc-900">
-                Excluir categoria?
-              </h2>
-              <p className="mt-2 text-sm text-zinc-600">
-                Excluir a categoria &quot;{category.name}&quot;? Esta ação não pode ser desfeita. Categorias com produtos
-                vinculados não podem ser excluídas.
-              </p>
-
-              <div className="mt-5 flex justify-end gap-2">
-                <button
-                  ref={deleteCancelButtonRef}
-                  type="button"
-                  onClick={closeDeleteConfirmation}
-                  className="cx-btn-secondary px-3 py-2"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmDeleteCategory}
-                  className="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
-                >
-                  Confirmar exclusão
-                </button>
-              </div>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }

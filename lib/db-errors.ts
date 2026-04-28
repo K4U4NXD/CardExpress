@@ -16,7 +16,7 @@ export function formatPostgrestError(err: PgError): string {
       return "Já existe uma categoria com este nome na sua loja.";
     }
     if (combined.includes("product") || combined.includes("category_id")) {
-      return "Já existe um produto com este nome nesta categoria. Use outro nome ou troque de categoria.";
+      return "Já existe um produto com este nome na categoria principal. Use outro nome ou troque de categoria.";
     }
     return "Já existe um registro com os mesmos dados. Verifique nomes únicos na loja.";
   }

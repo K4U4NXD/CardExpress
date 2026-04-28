@@ -72,6 +72,28 @@ function safeDecode(value: string) {
   }
 }
 
+function toToastSafeErrorText(value: string) {
+  const decoded = safeDecode(value).trim();
+  const lower = decoded.toLowerCase();
+  const looksTechnical =
+    lower.includes("23503") ||
+    lower.includes("fk") ||
+    lower.includes("foreign key") ||
+    lower.includes("on delete") ||
+    lower.includes("failed") ||
+    lower.includes("skipped") ||
+    lower.includes("total solicitado") ||
+    lower.includes("row-level security") ||
+    lower.includes("rls") ||
+    lower.length > 140;
+
+  if (!decoded || looksTechnical) {
+    return "Não foi possível concluir a ação.";
+  }
+
+  return decoded;
+}
+
 function hashToBase36(input: string) {
   let hash = 0;
 
@@ -138,8 +160,8 @@ export function DashboardQueryFlash() {
       enqueueToast({
         id: erroToastId,
         tone: "error",
-        title: "Falha ao concluir ação",
-        text: safeDecode(erro),
+        title: "Ação não concluída",
+        text: toToastSafeErrorText(erro),
       });
     }
 

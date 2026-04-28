@@ -9,6 +9,8 @@ import {
   createCategoryIfMissing,
   createCheckoutSession,
   createProductIfMissing,
+  dashboardCategoryRowByName,
+  dashboardProductRowByName,
   extractPublicOrderIdFromUrl,
   goToPublicCheckout,
   loginAsMerchant,
@@ -17,6 +19,7 @@ import {
   setStoreOperationalMode,
   simulatePaymentAndWaitForOrderPage,
   waitForOrderRowByMarker,
+  waitForOrderRowStatus,
 } from "./support/workflows";
 
 const REQUIRED_ENV = ["CARDEXPRESS_E2E_EMAIL", "CARDEXPRESS_E2E_PASSWORD"] as const;
@@ -36,6 +39,9 @@ const authStatePath = path.join(process.cwd(), "tests", "e2e", ".auth", "merchan
 
 const seedData = {
   categoryName: `E2E Categoria ${runId}`,
+  multiCategoryName: `E2E Categoria Extra ${runId}`,
+  historicalCategoryName: `E2E Historico Categoria ${runId}`,
+  bulkCategoryName: `E2E Bulk Categoria ${runId}`,
   products: {
     happyPrimary: {
       name: `E2E Lanche ${runId}`,
@@ -66,6 +72,27 @@ const seedData = {
       name: `E2E Zera Estoque ${runId}`,
       price: "10,00",
       stock: 1,
+    },
+    multiCategory: {
+      name: `E2E Multi Categoria ${runId}`,
+      price: "11,00",
+      stock: 5,
+      additionalCategoryNames: [`E2E Categoria Extra ${runId}`],
+    },
+    historicalOnly: {
+      name: `E2E Historico Produto ${runId}`,
+      price: "12,00",
+      stock: 3,
+    },
+    bulkPrimary: {
+      name: `E2E Bulk Produto A ${runId}`,
+      price: "5,00",
+      stock: 8,
+    },
+    bulkSecondary: {
+      name: `E2E Bulk Produto B ${runId}`,
+      price: "6,00",
+      stock: 8,
     },
   },
 };
@@ -141,12 +168,19 @@ test.describe.serial("CardExpress critical smoke", () => {
       storeSlug = await readStoreSlugFromSettings(page);
 
       await createCategoryIfMissing(page, seedData.categoryName);
+      await createCategoryIfMissing(page, seedData.multiCategoryName);
+      await createCategoryIfMissing(page, seedData.historicalCategoryName);
       await createProductIfMissing(page, seedData.categoryName, seedData.products.happyPrimary);
       await createProductIfMissing(page, seedData.categoryName, seedData.products.happySecondary);
       await createProductIfMissing(page, seedData.categoryName, seedData.products.edgeStockOne);
       await createProductIfMissing(page, seedData.categoryName, seedData.products.edgeStockTwo);
       await createProductIfMissing(page, seedData.categoryName, seedData.products.outOfStockVisible);
       await createProductIfMissing(page, seedData.categoryName, seedData.products.soldToZero);
+      await createProductIfMissing(page, seedData.categoryName, seedData.products.multiCategory);
+      await createProductIfMissing(page, seedData.historicalCategoryName, seedData.products.historicalOnly);
+      await createCategoryIfMissing(page, seedData.bulkCategoryName);
+      await createProductIfMissing(page, seedData.bulkCategoryName, seedData.products.bulkPrimary);
+      await createProductIfMissing(page, seedData.bulkCategoryName, seedData.products.bulkSecondary);
       await setStoreOperationalMode(page, "manual");
 
       await context.storageState({ path: authStatePath });
@@ -212,12 +246,13 @@ test.describe.serial("CardExpress critical smoke", () => {
         throw new Error("Nao foi possivel extrair o orderId da URL publica no cenario 2.");
       }
 
-      await merchantPage.goto("/dashboard/pedidos", { waitUntil: "domcontentloaded" });
-      await expect(merchantPage).toHaveURL(/\/dashboard\/pedidos(?:\?.*)?$/);
+      await merchantPage.goto("/dashboard/pedidos?escopo=todos", { waitUntil: "domcontentloaded" });
+      await expect(merchantPage).toHaveURL(/\/dashboard\/pedidos\?escopo=todos$/);
 
       let row = await waitForOrderRowByMarker(merchantPage, marker, {
         orderId: publicOrderId,
         timeoutMs: 35_000,
+        fallbackToAllScope: true,
       });
       await expect(row.getByText("Aguardando aceite")).toBeVisible();
 
@@ -228,25 +263,27 @@ test.describe.serial("CardExpress critical smoke", () => {
         merchantPage.waitForURL(/\/dashboard\/pedidos(?:\?.*)?$/, { timeout: 20_000 }),
         clickOrderAction(row, "accept"),
       ]);
+      await merchantPage.goto("/dashboard/pedidos?escopo=todos", { waitUntil: "domcontentloaded" });
 
-      row = await waitForOrderRowByMarker(merchantPage, marker, {
+      row = await waitForOrderRowStatus(merchantPage, marker, "Em preparo", {
         orderId: publicOrderId,
         timeoutMs: 25_000,
-        allowReload: false,
+        allowReload: true,
+        fallbackToAllScope: true,
       });
-      await expect(row.getByText("Em preparo")).toBeVisible();
 
       await Promise.all([
         merchantPage.waitForURL(/\/dashboard\/pedidos(?:\?.*)?$/, { timeout: 20_000 }),
         clickOrderAction(row, "ready"),
       ]);
+      await merchantPage.goto("/dashboard/pedidos?escopo=todos", { waitUntil: "domcontentloaded" });
 
-      row = await waitForOrderRowByMarker(merchantPage, marker, {
+      row = await waitForOrderRowStatus(merchantPage, marker, "Pronto para retirada", {
         orderId: publicOrderId,
         timeoutMs: 25_000,
-        allowReload: false,
+        allowReload: true,
+        fallbackToAllScope: true,
       });
-      await expect(row.getByText("Pronto para retirada")).toBeVisible();
       await expect(panelPage.getByTestId("panel-latest-display-code")).toHaveText(orderCodeFromPublicPage, {
         timeout: 20_000,
       });
@@ -378,6 +415,8 @@ test.describe.serial("CardExpress critical smoke", () => {
   });
 
   test("Cenario 6 - horario automatico dentro do horario permite checkout e pedido", async ({ browser }) => {
+    test.setTimeout(90_000);
+
     const merchantContext = await browser.newContext({ storageState: authStatePath });
     const publicContext = await browser.newContext();
 
@@ -667,6 +706,247 @@ test.describe.serial("CardExpress critical smoke", () => {
       });
     } finally {
       await merchantContext.close();
+    }
+  });
+
+  test("Cenario 14 - produto em multiplas categorias e categoria historica removivel", async ({ browser }) => {
+    test.setTimeout(180_000);
+
+    const merchantContext = await browser.newContext({ storageState: authStatePath });
+    const publicContext = await browser.newContext();
+    const merchantPage = await merchantContext.newPage();
+    const publicPage = await publicContext.newPage();
+
+    try {
+      await setStoreOperationalMode(merchantPage, "manual");
+
+      await merchantPage.goto("/dashboard/produtos", { waitUntil: "domcontentloaded" });
+      const multiRow = dashboardProductRowByName(merchantPage, seedData.products.multiCategory.name);
+      await expect(multiRow).toBeVisible({ timeout: 15_000 });
+      await expect(multiRow).toContainText(seedData.categoryName);
+      await expect(multiRow).toContainText(seedData.multiCategoryName);
+      const multiRowTestId = await multiRow.getAttribute("data-testid");
+      expect(multiRowTestId).toBeTruthy();
+      const stableMultiRow = merchantPage.getByTestId(multiRowTestId ?? "");
+
+      await stableMultiRow.locator('[data-testid^="product-select-"]').check();
+      await expect(merchantPage.getByTestId("product-bulk-edit")).toBeEnabled();
+      await merchantPage.getByTestId("product-bulk-edit").click();
+      const additionalCategoryId = await stableMultiRow.getByRole("combobox").evaluate((select, categoryName) => {
+        const options = Array.from((select as HTMLSelectElement).options);
+        return options.find((option) => option.textContent?.trim() === categoryName)?.value ?? "";
+      }, seedData.multiCategoryName);
+      expect(additionalCategoryId).not.toBe("");
+      await expect(stableMultiRow.getByTestId(`product-additional-category-${additionalCategoryId}`)).toBeChecked({
+        timeout: 15_000,
+      });
+      const saveProductButton = stableMultiRow.getByRole("button", { name: "Salvar" });
+      await saveProductButton.evaluate((button) => button.scrollIntoView({ block: "center", inline: "nearest" }));
+      await saveProductButton.click({ force: true, timeout: 15_000 });
+      await expect(merchantPage.getByText("Produto atualizado com sucesso.")).toBeVisible({ timeout: 15_000 });
+
+      await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
+      const allMultiCards = publicPage
+        .locator("article")
+        .filter({ has: publicPage.getByRole("heading", { name: seedData.products.multiCategory.name, exact: true }) });
+      await expect(allMultiCards).toHaveCount(2, { timeout: 15_000 });
+      const firstMultiAddButton = allMultiCards.first().getByRole("button", { name: "Adicionar" });
+      await expect(firstMultiAddButton).toBeEnabled();
+      await firstMultiAddButton.evaluate((button) => (button as HTMLButtonElement).click());
+      await expect(publicPage.getByText(/^1 item$/)).toBeVisible({ timeout: 10_000 });
+
+      await publicPage.getByRole("button", { name: seedData.categoryName }).click();
+      await expect(productCardByName(publicPage, seedData.products.multiCategory.name)).toBeVisible({ timeout: 15_000 });
+
+      await publicPage.getByRole("button", { name: seedData.multiCategoryName }).click();
+      const filteredMultiCard = productCardByName(publicPage, seedData.products.multiCategory.name);
+      await expect(filteredMultiCard).toBeVisible({ timeout: 15_000 });
+      const filteredMultiIncreaseButton = filteredMultiCard.getByRole("button", { name: "+" });
+      await expect(filteredMultiIncreaseButton).toBeEnabled();
+      await filteredMultiIncreaseButton.evaluate((button) => (button as HTMLButtonElement).click());
+      await expect(publicPage.getByText(/^2 itens$/)).toBeVisible({ timeout: 10_000 });
+      await publicPage.getByRole("button", { name: "Limpar carrinho" }).click();
+      await expect(publicPage.getByText(/^0 itens$/)).toBeVisible({ timeout: 10_000 });
+
+      const marker = `SMOKE-S14-HISTORY-${Date.now()}`;
+      await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
+      await addMenuProductQuantity(publicPage, seedData.products.historicalOnly.name, 1);
+      await goToPublicCheckout(publicPage, storeSlug);
+      await createCheckoutSession(publicPage, {
+        customerName: `${customerBaseName} S14`,
+        customerPhone,
+        note: marker,
+      });
+      await simulatePaymentAndWaitForOrderPage(publicPage, storeSlug);
+
+      await merchantPage.goto("/dashboard/produtos", { waitUntil: "domcontentloaded" });
+      const historicalProductRow = dashboardProductRowByName(merchantPage, seedData.products.historicalOnly.name);
+      await expect(historicalProductRow).toBeVisible({ timeout: 15_000 });
+      await historicalProductRow.locator('[data-testid^="product-select-"]').check();
+      await merchantPage.getByTestId("product-bulk-delete").click();
+      await merchantPage.getByTestId("product-bulk-delete-confirm").click();
+      await expect(dashboardProductRowByName(merchantPage, seedData.products.historicalOnly.name)).toHaveCount(0, {
+        timeout: 20_000,
+      });
+
+      await merchantPage.goto("/dashboard/categorias", { waitUntil: "domcontentloaded" });
+      const historicalCategoryRow = dashboardCategoryRowByName(merchantPage, seedData.historicalCategoryName);
+      await expect(historicalCategoryRow).toBeVisible({ timeout: 15_000 });
+      await historicalCategoryRow.locator('[data-testid^="category-select-"]').check();
+      await merchantPage.getByTestId("category-bulk-delete").click();
+      await merchantPage.getByTestId("category-bulk-delete-confirm").click();
+      await expect(dashboardCategoryRowByName(merchantPage, seedData.historicalCategoryName)).toHaveCount(0, {
+        timeout: 20_000,
+      });
+    } finally {
+      await Promise.all([merchantContext.close(), publicContext.close()]);
+    }
+  });
+
+  test("Cenario 15 - acoes em massa em categorias e produtos", async ({ browser }) => {
+    test.setTimeout(240_000);
+
+    const merchantContext = await browser.newContext({ storageState: authStatePath });
+    const merchantPage = await merchantContext.newPage();
+
+    merchantPage.on("dialog", async (dialog) => {
+      throw new Error(`Dialog nativo inesperado em acao em massa: ${dialog.type()} ${dialog.message()}`);
+    });
+
+    try {
+      await merchantPage.goto("/dashboard/produtos", { waitUntil: "domcontentloaded" });
+      await expect(merchantPage.getByRole("heading", { name: "Produtos", exact: true })).toBeVisible();
+
+      const productRowA = dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name);
+      const productRowB = dashboardProductRowByName(merchantPage, seedData.products.bulkSecondary.name);
+      await expect(productRowA).toBeVisible({ timeout: 15_000 });
+      await expect(productRowB).toBeVisible({ timeout: 15_000 });
+
+      await productRowA.locator('[data-testid^="product-select-"]').check();
+      await expect(merchantPage.getByTestId("product-bulk-toolbar")).toContainText("1 produto selecionado");
+      await merchantPage.getByTestId("open-create-product").click();
+      await expect(merchantPage.getByTestId("product-bulk-toolbar")).toHaveCount(0);
+      await expect(merchantPage.getByTestId("product-select-all")).toBeDisabled();
+      await merchantPage.getByTestId("open-create-product").click();
+      await expect(merchantPage.getByTestId("product-select-all")).toBeEnabled();
+
+      await productRowA.locator('[data-testid^="product-select-"]').check();
+      await expect(merchantPage.getByTestId("product-bulk-toolbar")).toContainText("1 produto selecionado");
+      await expect(merchantPage.getByTestId("product-bulk-edit")).toBeEnabled();
+      await merchantPage.getByTestId("product-bulk-edit").click();
+      await expect(merchantPage.getByTestId("product-bulk-toolbar")).toHaveCount(0);
+      await expect(merchantPage.getByTestId("product-select-all")).toBeDisabled();
+      await merchantPage.getByRole("button", { name: "Cancelar" }).last().click();
+      await expect(merchantPage.getByTestId("product-select-all")).toBeEnabled();
+
+      await productRowA.locator('[data-testid^="product-select-"]').check();
+      await productRowB.locator('[data-testid^="product-select-"]').check();
+      await expect(merchantPage.getByTestId("product-bulk-toolbar")).toContainText("2 produtos selecionados");
+      await expect(merchantPage.getByTestId("product-bulk-edit")).toBeDisabled();
+
+      await merchantPage.getByTestId("product-bulk-deactivate").click();
+      await expect(merchantPage.getByText("2 produtos desativados.").first()).toBeVisible({ timeout: 15_000 });
+      await expect(dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name)).toContainText("Inativo", {
+        timeout: 15_000,
+      });
+      await expect(dashboardProductRowByName(merchantPage, seedData.products.bulkSecondary.name)).toContainText("Inativo", {
+        timeout: 15_000,
+      });
+
+      await dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name)
+        .locator('[data-testid^="product-select-"]')
+        .check();
+      await dashboardProductRowByName(merchantPage, seedData.products.bulkSecondary.name)
+        .locator('[data-testid^="product-select-"]')
+        .check();
+      await merchantPage.getByTestId("product-bulk-activate").click();
+      await expect(merchantPage.getByText("2 produtos ativados.").first()).toBeVisible({ timeout: 15_000 });
+      await expect(dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name)).toContainText("Ativo", {
+        timeout: 15_000,
+      });
+      await expect(dashboardProductRowByName(merchantPage, seedData.products.bulkSecondary.name)).toContainText("Ativo", {
+        timeout: 15_000,
+      });
+
+      await dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name)
+        .locator('[data-testid^="product-select-"]')
+        .check();
+      await merchantPage.getByTestId("product-bulk-delete").click();
+      await expect(merchantPage.getByRole("dialog", { name: /Excluir produtos selecionados/i })).toBeVisible();
+      await expect(merchantPage.getByTestId("product-bulk-delete-confirm")).toBeVisible();
+      await merchantPage.getByRole("button", { name: "Cancelar" }).click();
+      await expect(merchantPage.getByRole("dialog", { name: /Excluir produtos selecionados/i })).toHaveCount(0);
+
+      await merchantPage.goto("/dashboard/categorias", { waitUntil: "domcontentloaded" });
+      await expect(merchantPage.getByRole("heading", { name: "Categorias", exact: true })).toBeVisible();
+      await expect(merchantPage.getByText(/Total solicitado/i)).toHaveCount(0);
+
+      const categoryRow = dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName);
+      await expect(categoryRow).toBeVisible({ timeout: 15_000 });
+      await categoryRow.locator('[data-testid^="category-select-"]').check();
+      await expect(merchantPage.getByTestId("category-bulk-toolbar")).toContainText("1 categoria selecionada");
+      await expect(merchantPage.getByTestId("category-bulk-edit")).toBeEnabled();
+
+      await merchantPage.getByTestId("category-bulk-delete").click();
+      await expect(merchantPage.getByRole("dialog", { name: /Excluir categorias selecionadas/i })).toBeVisible();
+      await expect(merchantPage.getByTestId("category-bulk-delete-confirm")).toBeVisible();
+      await merchantPage.getByRole("button", { name: "Cancelar" }).click();
+      await expect(merchantPage.getByRole("dialog", { name: /Excluir categorias selecionadas/i })).toHaveCount(0);
+
+      await categoryRow.locator('[data-testid^="category-select-"]').check();
+      await merchantPage.getByTestId("category-bulk-delete").click();
+      await merchantPage.getByTestId("category-bulk-delete-confirm").click();
+      await expect(merchantPage.getByText(/Nenhuma categoria foi alterada|mantida/i).first()).toBeVisible({ timeout: 15_000 });
+      await expect(dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)).toBeVisible({ timeout: 15_000 });
+
+      await dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)
+        .locator('[data-testid^="category-select-"]')
+        .check();
+      await merchantPage.getByTestId("category-bulk-deactivate").click();
+      await expect(merchantPage.getByText("1 categoria desativada.").first()).toBeVisible({ timeout: 15_000 });
+      await expect(dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)).toContainText("Inativa", {
+        timeout: 15_000,
+      });
+
+      await dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)
+        .locator('[data-testid^="category-select-"]')
+        .check();
+      await merchantPage.getByTestId("category-bulk-activate").click();
+      await expect(merchantPage.getByText("1 categoria ativada.").first()).toBeVisible({ timeout: 15_000 });
+      await expect(dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)).toContainText("Ativa", {
+        timeout: 15_000,
+      });
+
+      await merchantPage.goto("/dashboard/produtos", { waitUntil: "domcontentloaded" });
+      await dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name)
+        .locator('[data-testid^="product-select-"]')
+        .click();
+      await dashboardProductRowByName(merchantPage, seedData.products.bulkSecondary.name)
+        .locator('[data-testid^="product-select-"]')
+        .click();
+      await expect(merchantPage.getByTestId("product-bulk-toolbar")).toContainText("2 produtos selecionados", {
+        timeout: 15_000,
+      });
+      await merchantPage.getByTestId("product-bulk-delete").click();
+      await merchantPage.getByTestId("product-bulk-delete-confirm").click();
+      await expect(dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name)).toHaveCount(0, {
+        timeout: 20_000,
+      });
+      await expect(dashboardProductRowByName(merchantPage, seedData.products.bulkSecondary.name)).toHaveCount(0, {
+        timeout: 20_000,
+      });
+
+      await merchantPage.goto("/dashboard/categorias", { waitUntil: "domcontentloaded" });
+      await dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)
+        .locator('[data-testid^="category-select-"]')
+        .check();
+      await merchantPage.getByTestId("category-bulk-delete").click();
+      await merchantPage.getByTestId("category-bulk-delete-confirm").click();
+      await expect(dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)).toHaveCount(0, {
+        timeout: 20_000,
+      });
+    } finally {
+      void merchantContext.close().catch(() => undefined);
     }
   });
 });

@@ -35,6 +35,35 @@ export default async function DashboardProductsPage() {
 
     products = (prodData ?? []) as Product[];
     categories = (catData ?? []) as Category[];
+
+    const productIds = products.map((product) => product.id);
+    if (productIds.length > 0) {
+      const { data: productCategoryRows } = await supabase
+        .from("product_categories")
+        .select("product_id, category_id")
+        .eq("store_id", store.id)
+        .in("product_id", productIds);
+
+      const categoryIdsByProduct = new Map<string, string[]>();
+      for (const row of productCategoryRows ?? []) {
+        const current = categoryIdsByProduct.get(row.product_id) ?? [];
+        current.push(row.category_id);
+        categoryIdsByProduct.set(row.product_id, current);
+      }
+
+      products = products.map((product) => {
+        const associatedCategoryIds = categoryIdsByProduct.get(product.id) ?? [];
+        const categoryIds = Array.from(
+          new Set([product.category_id, ...associatedCategoryIds].filter((id): id is string => Boolean(id)))
+        );
+
+        return {
+          ...product,
+          category_ids: categoryIds,
+          additional_category_ids: categoryIds.filter((id) => id !== product.category_id),
+        };
+      });
+    }
   }
 
   if (!store) {

@@ -23,8 +23,109 @@ export type ProductFormState = {
   error?: string;
 };
 
+export type BulkProductsActionResult = {
+  ok: boolean;
+  requested: number;
+  updated: number;
+  deleted: number;
+  archived: number;
+  skipped: number;
+  failed: number;
+  message: string;
+  reasons: string[];
+};
+
 function redirectWithNotice(notice: string) {
   redirect(`${PATH}?aviso=${encodeURIComponent(notice)}&flash=${buildFlashToken()}`);
+}
+
+function emptyBulkProductsResult(requested: number, message: string): BulkProductsActionResult {
+  return {
+    ok: false,
+    requested,
+    updated: 0,
+    deleted: 0,
+    archived: 0,
+    skipped: requested,
+    failed: 0,
+    message,
+    reasons: [message],
+  };
+}
+
+function normalizeBulkIds(ids: string[]) {
+  const requested = Array.isArray(ids) ? ids.length : 0;
+  const cleanIds = Array.isArray(ids)
+    ? ids.map((id) => String(id ?? "").trim()).filter(Boolean)
+    : [];
+  const uniqueIds = Array.from(new Set(cleanIds));
+  const invalidCount = requested - cleanIds.length;
+  const duplicateCount = cleanIds.length - uniqueIds.length;
+
+  return { requested, uniqueIds, invalidCount, duplicateCount };
+}
+
+function buildBulkProductsMessage(input: {
+  action: "activate" | "deactivate" | "pause" | "enable" | "delete";
+  requested: number;
+  updated: number;
+  deleted: number;
+  archived: number;
+  skipped: number;
+  failed: number;
+  reasons: string[];
+}) {
+  const changed = input.updated + input.deleted + input.archived;
+  const ignored = input.skipped + input.failed;
+
+  if (changed === 0) {
+    return "Nenhum produto foi alterado.";
+  }
+
+  const ignoredText = ignored > 0 ? ` ${ignored} ${ignored === 1 ? "item ignorado" : "itens ignorados"}.` : "";
+
+  if (input.action === "delete") {
+    const parts: string[] = [];
+    if (input.deleted > 0) {
+      parts.push(`${input.deleted} ${input.deleted === 1 ? "produto excluído" : "produtos excluídos"}`);
+    }
+    if (input.archived > 0) {
+      parts.push(`${input.archived} ${input.archived === 1 ? "produto arquivado" : "produtos arquivados"}`);
+    }
+
+    return `${parts.join(" e ")}.${ignoredText}`;
+  }
+
+  const actionLabel =
+    input.action === "activate"
+      ? input.updated === 1
+        ? "ativado"
+        : "ativados"
+      : input.action === "deactivate"
+        ? input.updated === 1
+          ? "desativado"
+          : "desativados"
+        : input.action === "enable"
+          ? input.updated === 1
+            ? "disponibilizado"
+            : "disponibilizados"
+          : input.updated === 1
+            ? "pausado"
+            : "pausados";
+
+  return `${input.updated} ${input.updated === 1 ? "produto" : "produtos"} ${actionLabel}.${ignoredText}`;
+}
+
+async function fetchProductsForBulk(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  storeId: string,
+  productIds: string[]
+) {
+  return supabase
+    .from("products")
+    .select("id, is_active, is_available, archived_at")
+    .eq("store_id", storeId)
+    .in("id", productIds);
 }
 
 function isProductHistoryDeleteError(err: { code?: string; message?: string; details?: string }): boolean {
@@ -43,9 +144,20 @@ async function archiveProductForHistory(
 ) {
   const archivedAt = new Date().toISOString();
 
+  const { error: unlinkError } = await supabase
+    .from("product_categories")
+    .delete()
+    .eq("store_id", storeId)
+    .eq("product_id", productId);
+
+  if (unlinkError) {
+    return { error: unlinkError };
+  }
+
   return supabase
     .from("products")
     .update({
+      category_id: null,
       archived_at: archivedAt,
       is_active: false,
       is_available: false,
@@ -152,6 +264,103 @@ async function assertCategoryAllowedForProduct(
   return { ok: false as const, message: "Escolha uma categoria ativa." };
 }
 
+function parseAdditionalCategoryIds(formData: FormData, primaryCategoryId: string) {
+  const rawIds = formData
+    .getAll("additional_category_ids")
+    .map((value) => String(value ?? "").trim())
+    .filter(Boolean);
+
+  return Array.from(new Set([primaryCategoryId, ...rawIds]));
+}
+
+async function assertCategoriesAllowedForProduct(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  storeId: string,
+  categoryIds: string[],
+  previousCategoryIds: string[] = []
+) {
+  const uniqueCategoryIds = Array.from(new Set(categoryIds.map((id) => String(id ?? "").trim()).filter(Boolean)));
+
+  if (uniqueCategoryIds.length === 0) {
+    return { ok: false as const, message: "Selecione ao menos uma categoria." };
+  }
+
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, is_active")
+    .eq("store_id", storeId)
+    .in("id", uniqueCategoryIds);
+
+  if (error) {
+    return { ok: false as const, message: formatPostgrestError(error) };
+  }
+
+  const previous = new Set(previousCategoryIds);
+  const rows = data ?? [];
+  const foundIds = new Set(rows.map((row) => row.id));
+  const missing = uniqueCategoryIds.some((id) => !foundIds.has(id));
+  const inactiveNew = rows.some((row) => !row.is_active && !previous.has(row.id));
+
+  if (missing) {
+    return { ok: false as const, message: "Categoria não encontrada nesta loja." };
+  }
+
+  if (inactiveNew) {
+    return { ok: false as const, message: "Escolha categorias adicionais ativas." };
+  }
+
+  return { ok: true as const, categoryIds: uniqueCategoryIds };
+}
+
+async function syncProductCategories(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  storeId: string,
+  productId: string,
+  categoryIds: string[]
+) {
+  const uniqueCategoryIds = Array.from(new Set(categoryIds.map((id) => String(id ?? "").trim()).filter(Boolean)));
+
+  const { error: deleteError } = await supabase
+    .from("product_categories")
+    .delete()
+    .eq("store_id", storeId)
+    .eq("product_id", productId);
+
+  if (deleteError) {
+    return { error: deleteError };
+  }
+
+  if (uniqueCategoryIds.length === 0) {
+    return { error: null };
+  }
+
+  return supabase.from("product_categories").insert(
+    uniqueCategoryIds.map((categoryId) => ({
+      store_id: storeId,
+      product_id: productId,
+      category_id: categoryId,
+    }))
+  );
+}
+
+async function fetchProductCategoryIds(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  storeId: string,
+  productId: string
+) {
+  const { data, error } = await supabase
+    .from("product_categories")
+    .select("category_id")
+    .eq("store_id", storeId)
+    .eq("product_id", productId);
+
+  if (error) {
+    return [];
+  }
+
+  return (data ?? []).map((row) => row.category_id);
+}
+
 export async function createProductAction(
   _prev: void | ProductFormState,
   formData: FormData
@@ -161,6 +370,7 @@ export async function createProductAction(
   const priceRaw = String(formData.get("price") ?? "");
   const categoryId = String(formData.get("category_id") ?? "").trim();
   const imageUrlRaw = String(formData.get("image_url") ?? "").trim();
+  const categoryIds = parseAdditionalCategoryIds(formData, categoryId);
 
   if (!name) {
     return { error: "O nome do produto é obrigatório." };
@@ -194,6 +404,11 @@ export async function createProductAction(
     return { error: catOk.message };
   }
 
+  const categoriesOk = await assertCategoriesAllowedForProduct(supabase, store.id, categoryIds);
+  if (!categoriesOk.ok) {
+    return { error: categoriesOk.message };
+  }
+
   const { data: last } = await supabase
     .from("products")
     .select("sort_order")
@@ -207,7 +422,7 @@ export async function createProductAction(
   const description = descriptionRaw || null;
   const image_url = imageNormalization.value;
 
-  const { error } = await supabase.from("products").insert({
+  const { data: insertedProduct, error } = await supabase.from("products").insert({
     store_id: store.id,
     category_id: categoryId,
     name,
@@ -219,10 +434,16 @@ export async function createProductAction(
     track_stock: stock.track_stock,
     stock_quantity: stock.stock_quantity,
     sort_order: nextOrder,
-  });
+  }).select("id").single();
 
-  if (error) {
-    return { error: formatPostgrestError(error) };
+  if (error || !insertedProduct) {
+    return { error: formatPostgrestError(error ?? { message: "Não foi possível criar o produto." }) };
+  }
+
+  const { error: syncError } = await syncProductCategories(supabase, store.id, insertedProduct.id, categoriesOk.categoryIds);
+  if (syncError) {
+    await supabase.from("products").delete().eq("id", insertedProduct.id).eq("store_id", store.id);
+    return { error: formatPostgrestError(syncError) };
   }
 
   revalidateStoreViews(store.slug);
@@ -236,6 +457,7 @@ export async function updateProductAction(formData: FormData) {
   const priceRaw = String(formData.get("price") ?? "");
   const categoryId = String(formData.get("category_id") ?? "").trim();
   const imageUrlRaw = String(formData.get("image_url") ?? "").trim();
+  const categoryIds = parseAdditionalCategoryIds(formData, categoryId);
 
   if (!productId || !name || !categoryId) {
     redirect(`${PATH}?aviso=erro-campos`);
@@ -271,6 +493,18 @@ export async function updateProductAction(formData: FormData) {
     redirect(`${PATH}?erro=${encodeURIComponent(catOk.message)}`);
   }
 
+  const previousCategoryIds = Array.from(
+    new Set(
+      [row.category_id, ...(await fetchProductCategoryIds(supabase, store.id, productId))].filter(
+        (id): id is string => Boolean(id)
+      )
+    )
+  );
+  const categoriesOk = await assertCategoriesAllowedForProduct(supabase, store.id, categoryIds, previousCategoryIds);
+  if (!categoriesOk.ok) {
+    redirect(`${PATH}?erro=${encodeURIComponent(categoriesOk.message)}`);
+  }
+
   const description = descriptionRaw || null;
   const image_url = imageNormalization.value;
 
@@ -292,6 +526,11 @@ export async function updateProductAction(formData: FormData) {
 
   if (error) {
     redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(error))}`);
+  }
+
+  const { error: syncError } = await syncProductCategories(supabase, store.id, productId, categoriesOk.categoryIds);
+  if (syncError) {
+    redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(syncError))}`);
   }
 
   revalidateStoreViews(store.slug);
@@ -503,6 +742,377 @@ export async function reorderProductsAction(orderedProductIds: string[]): Promis
 
   revalidateStoreViews(store.slug);
   return { ok: true };
+}
+
+export async function bulkSetProductsActiveAction(
+  productIds: string[],
+  active: boolean
+): Promise<BulkProductsActionResult> {
+  const { requested, uniqueIds, invalidCount, duplicateCount } = normalizeBulkIds(productIds);
+
+  if (requested === 0 || uniqueIds.length === 0) {
+    return emptyBulkProductsResult(requested, "Selecione ao menos um produto para continuar.");
+  }
+
+  const { supabase, store } = await getUserStore();
+  if (!store) {
+    return emptyBulkProductsResult(requested, "Nenhuma loja vinculada à sua conta.");
+  }
+
+  const reasons: string[] = [];
+  if (invalidCount > 0) {
+    reasons.push(`${invalidCount} ${invalidCount === 1 ? "ID inválido foi ignorado" : "IDs inválidos foram ignorados"}.`);
+  }
+  if (duplicateCount > 0) {
+    reasons.push(`${duplicateCount} ${duplicateCount === 1 ? "seleção repetida foi ignorada" : "seleções repetidas foram ignoradas"}.`);
+  }
+
+  const { data: rows, error: rowsError } = await fetchProductsForBulk(supabase, store.id, uniqueIds);
+
+  if (rowsError) {
+    return {
+      ok: false,
+      requested,
+      updated: 0,
+      deleted: 0,
+      archived: 0,
+      skipped: invalidCount + duplicateCount,
+      failed: uniqueIds.length,
+      message: "Não foi possível atualizar os produtos selecionados.",
+      reasons: [formatPostgrestError(rowsError)],
+    };
+  }
+
+  const foundIds = new Set((rows ?? []).map((row) => row.id));
+  const activeRows = (rows ?? []).filter((row) => !row.archived_at);
+  const archivedCount = (rows ?? []).length - activeRows.length;
+  const missingCount = uniqueIds.length - foundIds.size;
+
+  if (missingCount > 0) {
+    reasons.push(
+      `${missingCount} ${
+        missingCount === 1
+          ? "produto não pertence a esta loja ou não existe"
+          : "produtos não pertencem a esta loja ou não existem"
+      }.`
+    );
+  }
+  if (archivedCount > 0) {
+    reasons.push(`${archivedCount} ${archivedCount === 1 ? "produto já estava arquivado" : "produtos já estavam arquivados"}.`);
+  }
+
+  let updated = 0;
+  let failed = 0;
+  const targetIds = activeRows.map((row) => row.id);
+
+  if (targetIds.length > 0) {
+    const payload = active
+      ? { is_active: true, updated_at: new Date().toISOString() }
+      : { is_active: false, is_available: false, updated_at: new Date().toISOString() };
+
+    const { data: updatedRows, error } = await supabase
+      .from("products")
+      .update(payload)
+      .eq("store_id", store.id)
+      .is("archived_at", null)
+      .in("id", targetIds)
+      .select("id");
+
+    if (error) {
+      failed = targetIds.length;
+      reasons.push(formatPostgrestError(error));
+    } else {
+      updated = updatedRows?.length ?? targetIds.length;
+    }
+  }
+
+  const skipped = invalidCount + duplicateCount + missingCount + archivedCount;
+  const message = buildBulkProductsMessage({
+    action: active ? "activate" : "deactivate",
+    requested,
+    updated,
+    deleted: 0,
+    archived: 0,
+    skipped,
+    failed,
+    reasons,
+  });
+
+  revalidateStoreViews(store.slug);
+  return {
+    ok: failed === 0,
+    requested,
+    updated,
+    deleted: 0,
+    archived: 0,
+    skipped,
+    failed,
+    message,
+    reasons,
+  };
+}
+
+export async function bulkSetProductsAvailabilityAction(
+  productIds: string[],
+  available: boolean
+): Promise<BulkProductsActionResult> {
+  const { requested, uniqueIds, invalidCount, duplicateCount } = normalizeBulkIds(productIds);
+
+  if (requested === 0 || uniqueIds.length === 0) {
+    return emptyBulkProductsResult(requested, "Selecione ao menos um produto para continuar.");
+  }
+
+  const { supabase, store } = await getUserStore();
+  if (!store) {
+    return emptyBulkProductsResult(requested, "Nenhuma loja vinculada à sua conta.");
+  }
+
+  const reasons: string[] = [];
+  if (invalidCount > 0) {
+    reasons.push(`${invalidCount} ${invalidCount === 1 ? "ID inválido foi ignorado" : "IDs inválidos foram ignorados"}.`);
+  }
+  if (duplicateCount > 0) {
+    reasons.push(`${duplicateCount} ${duplicateCount === 1 ? "seleção repetida foi ignorada" : "seleções repetidas foram ignoradas"}.`);
+  }
+
+  const { data: rows, error: rowsError } = await fetchProductsForBulk(supabase, store.id, uniqueIds);
+
+  if (rowsError) {
+    return {
+      ok: false,
+      requested,
+      updated: 0,
+      deleted: 0,
+      archived: 0,
+      skipped: invalidCount + duplicateCount,
+      failed: uniqueIds.length,
+      message: "Não foi possível atualizar os produtos selecionados.",
+      reasons: [formatPostgrestError(rowsError)],
+    };
+  }
+
+  const foundIds = new Set((rows ?? []).map((row) => row.id));
+  const notArchivedRows = (rows ?? []).filter((row) => !row.archived_at);
+  const archivedCount = (rows ?? []).length - notArchivedRows.length;
+  const inactiveCount = available ? notArchivedRows.filter((row) => !row.is_active).length : 0;
+  const targetRows = available ? notArchivedRows.filter((row) => row.is_active) : notArchivedRows;
+  const missingCount = uniqueIds.length - foundIds.size;
+
+  if (missingCount > 0) {
+    reasons.push(
+      `${missingCount} ${
+        missingCount === 1
+          ? "produto não pertence a esta loja ou não existe"
+          : "produtos não pertencem a esta loja ou não existem"
+      }.`
+    );
+  }
+  if (archivedCount > 0) {
+    reasons.push(`${archivedCount} ${archivedCount === 1 ? "produto já estava arquivado" : "produtos já estavam arquivados"}.`);
+  }
+  if (inactiveCount > 0) {
+    reasons.push(
+      `${inactiveCount} ${
+        inactiveCount === 1
+          ? "produto inativo não teve a venda disponibilizada"
+          : "produtos inativos não tiveram a venda disponibilizada"
+      }.`
+    );
+  }
+
+  let updated = 0;
+  let failed = 0;
+  const targetIds = targetRows.map((row) => row.id);
+
+  if (targetIds.length > 0) {
+    const { data: updatedRows, error } = await supabase
+      .from("products")
+      .update({ is_available: available, updated_at: new Date().toISOString() })
+      .eq("store_id", store.id)
+      .is("archived_at", null)
+      .in("id", targetIds)
+      .select("id");
+
+    if (error) {
+      failed = targetIds.length;
+      reasons.push(formatPostgrestError(error));
+    } else {
+      updated = updatedRows?.length ?? targetIds.length;
+    }
+  }
+
+  const skipped = invalidCount + duplicateCount + missingCount + archivedCount + inactiveCount;
+  const message = buildBulkProductsMessage({
+    action: available ? "enable" : "pause",
+    requested,
+    updated,
+    deleted: 0,
+    archived: 0,
+    skipped,
+    failed,
+    reasons,
+  });
+
+  revalidateStoreViews(store.slug);
+  return {
+    ok: failed === 0,
+    requested,
+    updated,
+    deleted: 0,
+    archived: 0,
+    skipped,
+    failed,
+    message,
+    reasons,
+  };
+}
+
+export async function bulkDeleteProductsAction(productIds: string[]): Promise<BulkProductsActionResult> {
+  const { requested, uniqueIds, invalidCount, duplicateCount } = normalizeBulkIds(productIds);
+
+  if (requested === 0 || uniqueIds.length === 0) {
+    return emptyBulkProductsResult(requested, "Selecione ao menos um produto para continuar.");
+  }
+
+  const { supabase, store } = await getUserStore();
+  if (!store) {
+    return emptyBulkProductsResult(requested, "Nenhuma loja vinculada à sua conta.");
+  }
+
+  const reasons: string[] = [];
+  if (invalidCount > 0) {
+    reasons.push(`${invalidCount} ${invalidCount === 1 ? "ID inválido foi ignorado" : "IDs inválidos foram ignorados"}.`);
+  }
+  if (duplicateCount > 0) {
+    reasons.push(`${duplicateCount} ${duplicateCount === 1 ? "seleção repetida foi ignorada" : "seleções repetidas foram ignoradas"}.`);
+  }
+
+  const { data: rows, error: rowsError } = await fetchProductsForBulk(supabase, store.id, uniqueIds);
+
+  if (rowsError) {
+    return {
+      ok: false,
+      requested,
+      updated: 0,
+      deleted: 0,
+      archived: 0,
+      skipped: invalidCount + duplicateCount,
+      failed: uniqueIds.length,
+      message: "Não foi possível concluir a ação.",
+      reasons: [formatPostgrestError(rowsError)],
+    };
+  }
+
+  const foundIds = new Set((rows ?? []).map((row) => row.id));
+  const targetIds = (rows ?? []).filter((row) => !row.archived_at).map((row) => row.id);
+  const archivedBeforeCount = (rows ?? []).length - targetIds.length;
+  const missingCount = uniqueIds.length - foundIds.size;
+
+  if (missingCount > 0) {
+    reasons.push(
+      `${missingCount} ${
+        missingCount === 1
+          ? "produto não pertence a esta loja ou não existe"
+          : "produtos não pertencem a esta loja ou não existem"
+      }.`
+    );
+  }
+  if (archivedBeforeCount > 0) {
+    reasons.push(
+      `${archivedBeforeCount} ${
+        archivedBeforeCount === 1 ? "produto já estava arquivado" : "produtos já estavam arquivados"
+      }.`
+    );
+  }
+
+  let deleted = 0;
+  let archived = 0;
+  let failed = 0;
+
+  for (const productId of targetIds) {
+    const [orderItemsHistoryResult, checkoutItemsHistoryResult] = await Promise.all([
+      supabase
+        .from("order_items")
+        .select("id", { count: "exact", head: true })
+        .eq("product_id", productId),
+      supabase
+        .from("checkout_session_items")
+        .select("id", { count: "exact", head: true })
+        .eq("product_id", productId),
+    ]);
+
+    if (orderItemsHistoryResult.error || checkoutItemsHistoryResult.error) {
+      failed += 1;
+      reasons.push(
+        formatPostgrestError(orderItemsHistoryResult.error ?? checkoutItemsHistoryResult.error ?? { message: "Erro ao validar histórico." })
+      );
+      continue;
+    }
+
+    const hasHistory =
+      (orderItemsHistoryResult.count ?? 0) > 0 || (checkoutItemsHistoryResult.count ?? 0) > 0;
+
+    if (hasHistory) {
+      const { error: archiveError } = await archiveProductForHistory(supabase, store.id, productId);
+      if (archiveError) {
+        failed += 1;
+        reasons.push(formatPostgrestError(archiveError));
+      } else {
+        archived += 1;
+      }
+      continue;
+    }
+
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", productId)
+      .eq("store_id", store.id)
+      .is("archived_at", null);
+
+    if (error) {
+      if (isProductHistoryDeleteError(error)) {
+        const { error: archiveError } = await archiveProductForHistory(supabase, store.id, productId);
+        if (archiveError) {
+          failed += 1;
+          reasons.push(formatPostgrestError(archiveError));
+        } else {
+          archived += 1;
+        }
+      } else {
+        failed += 1;
+        reasons.push(formatPostgrestError(error));
+      }
+    } else {
+      deleted += 1;
+    }
+  }
+
+  const skipped = invalidCount + duplicateCount + missingCount + archivedBeforeCount;
+  const uniqueReasons = Array.from(new Set(reasons));
+  const message = buildBulkProductsMessage({
+    action: "delete",
+    requested,
+    updated: 0,
+    deleted,
+    archived,
+    skipped,
+    failed,
+    reasons: uniqueReasons,
+  });
+
+  revalidateStoreViews(store.slug);
+  return {
+    ok: failed === 0,
+    requested,
+    updated: 0,
+    deleted,
+    archived,
+    skipped,
+    failed,
+    message,
+    reasons: uniqueReasons,
+  };
 }
 
 export async function deleteProductAction(formData: FormData) {

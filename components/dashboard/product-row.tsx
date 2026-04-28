@@ -1,11 +1,7 @@
 "use client";
 
-import {
-  deleteProductAction,
-  toggleProductActiveAction,
-  toggleProductAvailabilityAction,
-  updateProductAction,
-} from "@/app/actions/products";
+import { updateProductAction } from "@/app/actions/products";
+import { SelectionCheckbox } from "@/components/dashboard/selection-checkbox";
 import {
   buildStoreProductImageObjectPath,
   PRODUCT_IMAGE_BUCKET,
@@ -22,12 +18,16 @@ type ProductRowProps = {
   categoryName: string;
   categoryOptions: CategoryOption[];
   onEditingChange?: (productId: string, isEditing: boolean) => void;
+  isSelected?: boolean;
+  selectionDisabled?: boolean;
+  onToggleSelected?: () => void;
   isFirst: boolean;
   isLast: boolean;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   isMoveBusy?: boolean;
   hasMoveIssue?: boolean;
+  editRequestToken?: number;
 };
 
 const PRODUCT_IMAGE_MAX_BYTES = 3 * 1024 * 1024;
@@ -77,27 +77,31 @@ export function ProductRow({
   categoryName,
   categoryOptions,
   onEditingChange,
+  isSelected = false,
+  selectionDisabled = false,
+  onToggleSelected,
   isFirst,
   isLast,
   onMoveUp,
   onMoveDown,
   isMoveBusy = false,
   hasMoveIssue = false,
+  editRequestToken = 0,
 }: ProductRowProps) {
   const [editing, setEditing] = useState(false);
   const [trackStock, setTrackStock] = useState<boolean>(() => Boolean(product.track_stock));
   const [imageMode, setImageMode] = useState<"url" | "upload">("url");
   const [editImageUrl, setEditImageUrl] = useState<string>(() => normalizeImageUrlValue(product.image_url));
+  const [selectedPrimaryCategoryId, setSelectedPrimaryCategoryId] = useState(() => product.category_id ?? "");
+  const [selectedAdditionalCategoryIds, setSelectedAdditionalCategoryIds] = useState<Set<string>>(
+    () => new Set(product.additional_category_ids ?? [])
+  );
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreviewBroken, setImagePreviewBroken] = useState(false);
   const [imageUploadPending, setImageUploadPending] = useState(false);
   const [imageUploadFeedback, setImageUploadFeedback] = useState<ProductImageUploadFeedback | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const imageFileInputRef = useRef<HTMLInputElement | null>(null);
   const supabaseClientRef = useRef<ReturnType<typeof createBrowserSupabaseClient> | null>(null);
-  const pendingDeleteFormRef = useRef<HTMLFormElement | null>(null);
-  const skipDeleteConfirmRef = useRef(false);
-  const deleteCancelButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const selectedImageFileName = selectedImageFile?.name ?? "";
 
@@ -117,11 +121,21 @@ export function ProductRow({
   }, [editImageUrl]);
 
   useEffect(() => {
+    if (editRequestToken > 0) {
+      resetEditImageState();
+      setEditingState(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editRequestToken]);
+
+  useEffect(() => {
     if (!editing) {
       setEditImageUrl(normalizeImageUrlValue(product.image_url));
       setTrackStock(Boolean(product.track_stock));
+      setSelectedPrimaryCategoryId(product.category_id ?? "");
+      setSelectedAdditionalCategoryIds(new Set(product.additional_category_ids ?? []));
     }
-  }, [editing, product.image_url, product.track_stock]);
+  }, [editing, product.additional_category_ids, product.category_id, product.image_url, product.track_stock]);
 
   useEffect(() => {
     if (typeof trackStock !== "boolean") {
@@ -142,32 +156,6 @@ export function ProductRow({
   }, [editImageUrl, product.id]);
 
   useEffect(() => {
-    if (!deleteConfirmOpen) {
-      return;
-    }
-
-    const previousBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    deleteCancelButtonRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") {
-        return;
-      }
-
-      event.preventDefault();
-      setDeleteConfirmOpen(false);
-      pendingDeleteFormRef.current = null;
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousBodyOverflow;
-    };
-  }, [deleteConfirmOpen]);
-
-  useEffect(() => {
     if (imageMode !== "url") {
       return;
     }
@@ -182,6 +170,8 @@ export function ProductRow({
     setImageMode("url");
     setEditImageUrl(normalizeImageUrlValue(product.image_url));
     setTrackStock(Boolean(product.track_stock));
+    setSelectedPrimaryCategoryId(product.category_id ?? "");
+    setSelectedAdditionalCategoryIds(new Set(product.additional_category_ids ?? []));
     setSelectedImageFile(null);
     setImagePreviewBroken(false);
     setImageUploadFeedback(null);
@@ -385,33 +375,29 @@ export function ProductRow({
     clearUploadInput();
   }
 
-  function requestDeleteConfirmation(event: React.FormEvent<HTMLFormElement>) {
-    if (skipDeleteConfirmRef.current) {
-      skipDeleteConfirmRef.current = false;
-      return;
-    }
+  function handlePrimaryCategoryChange(categoryId: string) {
+    setSelectedPrimaryCategoryId(categoryId);
+    setSelectedAdditionalCategoryIds((current) => {
+      if (!current.has(categoryId)) {
+        return current;
+      }
 
-    event.preventDefault();
-    pendingDeleteFormRef.current = event.currentTarget;
-    setDeleteConfirmOpen(true);
+      const next = new Set(current);
+      next.delete(categoryId);
+      return next;
+    });
   }
 
-  function closeDeleteConfirmation() {
-    setDeleteConfirmOpen(false);
-    pendingDeleteFormRef.current = null;
-  }
-
-  function confirmDeleteProduct() {
-    const form = pendingDeleteFormRef.current;
-    if (!form) {
-      setDeleteConfirmOpen(false);
-      return;
-    }
-
-    skipDeleteConfirmRef.current = true;
-    form.requestSubmit();
-    setDeleteConfirmOpen(false);
-    pendingDeleteFormRef.current = null;
+  function handleAdditionalCategoryChange(categoryId: string, checked: boolean) {
+    setSelectedAdditionalCategoryIds((current) => {
+      const next = new Set(current);
+      if (checked) {
+        next.add(categoryId);
+      } else {
+        next.delete(categoryId);
+      }
+      return next;
+    });
   }
 
   const isVisibleOnPublicMenu = product.is_active && product.is_available;
@@ -421,14 +407,29 @@ export function ProductRow({
   const stockSummary = product.track_stock
     ? `${product.stock_quantity} ${product.stock_quantity === 1 ? "unidade" : "unidades"}`
     : "sem controle de estoque";
+  const additionalCategoryIds = product.additional_category_ids ?? [];
+  const additionalCategoryNames = additionalCategoryIds
+    .map((categoryId) => categoryOptions.find((category) => category.id === categoryId)?.name)
+    .filter((name): name is string => Boolean(name));
 
   return (
     <>
-      <div className="rounded-2xl border border-zinc-200 bg-white p-3 md:p-4 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)]">
+      <div
+        className={`rounded-2xl border p-3 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)] transition md:p-4 ${
+          isSelected ? "border-zinc-300 bg-zinc-50/80 ring-1 ring-zinc-300/70" : "border-zinc-200 bg-white"
+        }`}
+      >
       {!editing ? (
         <div className="space-y-2.5 md:space-y-3">
           <div className="mb-0.5 flex items-center justify-between md:hidden">
             <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Ordem na lista</p>
+            <div className="flex items-center gap-2">
+              <SelectionCheckbox
+                checked={isSelected}
+                onChange={onToggleSelected ?? (() => undefined)}
+                disabled={selectionDisabled}
+                label={`Selecionar produto ${product.name}`}
+              />
             <div
               className={`inline-flex items-center gap-1 rounded-lg border bg-white px-1 py-1 ${
                 hasMoveIssue ? "border-red-300" : "border-zinc-200"
@@ -453,6 +454,7 @@ export function ProductRow({
                 <span aria-hidden>↓</span>
               </button>
             </div>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-start justify-between gap-2.5 md:gap-3">
@@ -462,6 +464,19 @@ export function ProductRow({
                 <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-700">
                   {categoryName}
                 </span>
+                {additionalCategoryNames.slice(0, 2).map((name) => (
+                  <span
+                    key={name}
+                    className="rounded-full border border-zinc-200 bg-white px-2.5 py-0.5 text-[11px] font-medium text-zinc-600"
+                  >
+                    {name}
+                  </span>
+                ))}
+                {additionalCategoryNames.length > 2 ? (
+                  <span className="rounded-full border border-zinc-200 bg-white px-2.5 py-0.5 text-[11px] font-medium text-zinc-600">
+                    +{additionalCategoryNames.length - 2} categorias
+                  </span>
+                ) : null}
               </div>
               {product.description ? (
                 <p className="overflow-hidden text-sm text-zinc-600 [display:-webkit-box] [-webkit-line-clamp:1] md:[-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
@@ -472,9 +487,20 @@ export function ProductRow({
               )}
             </div>
 
-            <div className="shrink-0 rounded-lg md:rounded-xl border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 md:px-3 md:py-2 text-right">
-              <p className="hidden md:block text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Preço</p>
-              <p className="text-base font-semibold leading-tight text-zinc-900 sm:text-lg">{formatBRL(product.price)}</p>
+            <div className="flex shrink-0 items-start gap-2">
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-right md:rounded-xl md:px-3 md:py-2">
+                <p className="hidden text-[10px] font-semibold uppercase tracking-wide text-zinc-500 md:block">Preço</p>
+                <p className="text-base font-semibold leading-tight text-zinc-900 sm:text-lg">{formatBRL(product.price)}</p>
+              </div>
+              <div className="hidden md:block">
+                <SelectionCheckbox
+                  checked={isSelected}
+                  onChange={onToggleSelected ?? (() => undefined)}
+                  disabled={selectionDisabled}
+                  label={`Selecionar produto ${product.name}`}
+                  testId={`product-select-${product.id}`}
+                />
+              </div>
             </div>
           </div>
 
@@ -520,104 +546,6 @@ export function ProductRow({
             </p>
           </div>
 
-          <div className="md:hidden border-t border-zinc-200/80 pt-2.5">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setTrackStock(Boolean(product.track_stock));
-                  resetEditImageState();
-                  setEditingState(true);
-                }}
-                className="cx-btn-secondary w-full justify-center px-2.5 py-1.5 text-xs"
-              >
-                Editar
-              </button>
-              <form action={toggleProductActiveAction} className="w-full">
-                <input type="hidden" name="product_id" value={product.id} />
-                <button type="submit" className="cx-btn-secondary w-full justify-center px-2.5 py-1.5 text-xs">
-                  {product.is_active ? "Desativar" : "Ativar"}
-                </button>
-              </form>
-
-              {product.is_active ? (
-                <form action={toggleProductAvailabilityAction} className="col-span-2">
-                  <input type="hidden" name="product_id" value={product.id} />
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-medium text-emerald-800 transition hover:bg-emerald-50"
-                  >
-                    {product.is_available ? "Pausar venda" : "Disponibilizar"}
-                  </button>
-                </form>
-              ) : null}
-
-              <form
-                action={deleteProductAction}
-                className="col-span-2"
-                onSubmit={requestDeleteConfirmation}
-              >
-                <input type="hidden" name="product_id" value={product.id} />
-                <button
-                  type="submit"
-                  className="w-full rounded-xl border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50"
-                >
-                  Excluir
-                </button>
-              </form>
-            </div>
-          </div>
-
-          <div className="hidden md:block rounded-xl border border-zinc-200 bg-zinc-50/80 p-2.5">
-            <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTrackStock(Boolean(product.track_stock));
-                    resetEditImageState();
-                    setEditingState(true);
-                  }}
-                  className="cx-btn-secondary px-3 py-2"
-                >
-                  Editar
-                </button>
-                {product.is_active ? (
-                  <form action={toggleProductAvailabilityAction} className="inline">
-                    <input type="hidden" name="product_id" value={product.id} />
-                    <button
-                      type="submit"
-                      className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50"
-                    >
-                      {product.is_available ? "Pausar venda" : "Disponibilizar"}
-                    </button>
-                  </form>
-                ) : null}
-                <form action={toggleProductActiveAction} className="inline">
-                  <input type="hidden" name="product_id" value={product.id} />
-                  <button type="submit" className="cx-btn-secondary px-3 py-2">
-                    {product.is_active ? "Desativar" : "Ativar"}
-                  </button>
-                </form>
-              </div>
-
-              <div className="flex sm:justify-end">
-                <form
-                  action={deleteProductAction}
-                  className="inline"
-                  onSubmit={requestDeleteConfirmation}
-                >
-                  <input type="hidden" name="product_id" value={product.id} />
-                  <button
-                    type="submit"
-                    className="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50"
-                  >
-                    Excluir
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
         </div>
       ) : (
         <form action={updateProductAction} className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
@@ -658,7 +586,8 @@ export function ProductRow({
               <select
                 name="category_id"
                 required
-                defaultValue={product.category_id}
+                value={selectedPrimaryCategoryId}
+                onChange={(event) => handlePrimaryCategoryChange(event.target.value)}
                 className="cx-select mt-1"
               >
                 {categoryOptions.map((c) => (
@@ -667,6 +596,42 @@ export function ProductRow({
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-200 bg-white p-3">
+            <p className="text-sm font-semibold text-zinc-900">Categorias adicionais</p>
+            <p className="mt-1 text-xs text-zinc-600">O produto aparecerá em todas as categorias selecionadas.</p>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {categoryOptions.map((category) => {
+                const isPrimary = selectedPrimaryCategoryId === category.id;
+                const isChecked = isPrimary || selectedAdditionalCategoryIds.has(category.id);
+
+                return (
+                  <label
+                    key={category.id}
+                    className={`flex min-h-10 items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+                      isPrimary
+                        ? "border-zinc-300 bg-zinc-50 text-zinc-500"
+                        : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-300"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      name="additional_category_ids"
+                      value={category.id}
+                      disabled={isPrimary}
+                      checked={isChecked}
+                      onChange={(event) => handleAdditionalCategoryChange(category.id, event.target.checked)}
+                      data-testid={`product-additional-category-${category.id}`}
+                      className="rounded border-zinc-300 disabled:opacity-70"
+                    />
+                    <span className="min-w-0 flex-1 truncate">{category.name}</span>
+                    {isPrimary ? <span className="text-[11px] font-medium text-zinc-500">Principal</span> : null}
+                  </label>
+                );
+              })}
             </div>
           </div>
 
@@ -860,7 +825,7 @@ export function ProductRow({
         </form>
       )}
       </div>
-
+      {/*
       {deleteConfirmOpen ? (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto overscroll-contain p-4"
@@ -898,6 +863,7 @@ export function ProductRow({
           </div>
         </div>
       ) : null}
+      */}
     </>
   );
 }

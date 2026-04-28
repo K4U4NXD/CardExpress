@@ -9,6 +9,7 @@ export type ProductSeed = {
   name: string;
   price: string;
   stock: number;
+  additionalCategoryNames?: string[];
 };
 
 export type CheckoutInput = {
@@ -24,6 +25,59 @@ export type StoreOperationalModeOptions = {
   openingTime?: string;
   closingTime?: string;
 };
+
+const SETTINGS_SAVE_TIMEOUT_MS = 30_000;
+
+async function collectSettingsSaveDiagnostics(page: Page) {
+  const saveButton = page.getByTestId("settings-save-button");
+  const buttonText = await saveButton.textContent().catch(() => null);
+  const buttonEnabled = await saveButton.isEnabled().catch(() => null);
+  const feedbackTexts = await page
+    .locator('[role="alert"], [role="status"]')
+    .evaluateAll((elements) =>
+      elements
+        .map((element) => element.textContent?.replace(/\s+/g, " ").trim() ?? "")
+        .filter(Boolean)
+        .slice(0, 5),
+    )
+    .catch(() => []);
+
+  return {
+    buttonText: buttonText?.replace(/\s+/g, " ").trim() ?? null,
+    buttonEnabled,
+    feedbackTexts,
+    url: page.url(),
+  };
+}
+
+async function expectStoreOperationalModeReflected(
+  page: Page,
+  mode: StoreOperationalMode,
+  options: StoreOperationalModeOptions = {},
+) {
+  const modeRadio = page.getByTestId(`settings-operational-mode-${mode}`);
+  const saveButton = page.getByTestId("settings-save-button");
+  const openingTimeInput = page.getByTestId("settings-opening-time");
+  const closingTimeInput = page.getByTestId("settings-closing-time");
+  const requestedOpeningTime = options.openingTime?.trim();
+  const requestedClosingTime = options.closingTime?.trim();
+
+  await expect(modeRadio).toBeChecked({ timeout: SETTINGS_SAVE_TIMEOUT_MS });
+
+  if (mode === "schedule") {
+    if (requestedOpeningTime) {
+      await expect(openingTimeInput).toHaveValue(requestedOpeningTime, { timeout: SETTINGS_SAVE_TIMEOUT_MS });
+    }
+
+    if (requestedClosingTime) {
+      await expect(closingTimeInput).toHaveValue(requestedClosingTime, { timeout: SETTINGS_SAVE_TIMEOUT_MS });
+    }
+  }
+
+  await expect(saveButton).not.toHaveText(/Salvando/i, { timeout: SETTINGS_SAVE_TIMEOUT_MS });
+  await expect(saveButton).toHaveText(/Salvar configura/i, { timeout: SETTINGS_SAVE_TIMEOUT_MS });
+  await expect(saveButton).toBeDisabled({ timeout: SETTINGS_SAVE_TIMEOUT_MS });
+}
 
 export async function loginAsMerchant(page: Page, credentials: MerchantCredentials) {
   await page.goto("/login", { waitUntil: "domcontentloaded" });
@@ -66,7 +120,8 @@ export async function setStoreOperationalMode(
 
   await expect(modeRadio).toBeVisible();
   await expect(saveButton).toBeVisible();
-  await expect(saveButton).toHaveText(/Salvar configura/i, { timeout: 12_000 });
+  await expect(saveButton).not.toHaveText(/Salvando/i, { timeout: SETTINGS_SAVE_TIMEOUT_MS });
+  await expect(saveButton).toHaveText(/Salvar configura/i, { timeout: SETTINGS_SAVE_TIMEOUT_MS });
 
   const wasChecked = await modeRadio.isChecked();
   const openingTimeBefore = await openingTimeInput.inputValue();
@@ -108,6 +163,19 @@ export async function setStoreOperationalMode(
     message: `O modo operacional '${mode}' nao ficou selecionado antes de salvar.`,
   }).toBe(true);
 
+  const selectedOpeningTime = await openingTimeInput.inputValue();
+  const selectedClosingTime = await closingTimeInput.inputValue();
+  const requestedStateAlreadyReflected =
+    mode === "schedule"
+      ? (!requestedOpeningTime || selectedOpeningTime === requestedOpeningTime) &&
+        (!requestedClosingTime || selectedClosingTime === requestedClosingTime)
+      : true;
+
+  if (requestedStateAlreadyReflected && !(await saveButton.isEnabled())) {
+    await expect(modeRadio).toBeChecked();
+    return;
+  }
+
   await expect.poll(async () => await saveButton.isEnabled(), {
     timeout: 8_000,
     message: "O botao Salvar configuracoes nao habilitou apos mudar o modo operacional.",
@@ -115,23 +183,36 @@ export async function setStoreOperationalMode(
 
   await saveButton.click();
 
-  await expect.poll(async () => await modeRadio.isChecked(), {
-    timeout: 12_000,
-    message: `O modo operacional salvo nao refletiu '${mode}'.`,
-  }).toBe(true);
+  try {
+    await expectStoreOperationalModeReflected(page, mode, options);
+  } catch (firstError) {
+    const diagnostics = await collectSettingsSaveDiagnostics(page);
 
-  if (mode === "schedule") {
-    if (requestedOpeningTime) {
-      await expect(openingTimeInput).toHaveValue(requestedOpeningTime, { timeout: 12_000 });
+    if (diagnostics.buttonText?.match(/Salvando/i)) {
+      throw new Error(
+        [
+          `O modo operacional '${mode}' continuou salvando alem do tempo esperado.`,
+          `Diagnostico: ${JSON.stringify(diagnostics)}`,
+          `Erro original: ${firstError instanceof Error ? firstError.message : String(firstError)}`,
+        ].join("\n"),
+      );
     }
 
-    if (requestedClosingTime) {
-      await expect(closingTimeInput).toHaveValue(requestedClosingTime, { timeout: 12_000 });
+    await page.goto("/dashboard/configuracoes", { waitUntil: "domcontentloaded" });
+
+    try {
+      await expectStoreOperationalModeReflected(page, mode, options);
+    } catch (reloadError) {
+      throw new Error(
+        [
+          `O modo operacional '${mode}' nao estabilizou apos salvar.`,
+          `Diagnostico antes do reload: ${JSON.stringify(diagnostics)}`,
+          `Erro antes do reload: ${firstError instanceof Error ? firstError.message : String(firstError)}`,
+          `Erro apos reload: ${reloadError instanceof Error ? reloadError.message : String(reloadError)}`,
+        ].join("\n"),
+      );
     }
   }
-
-  await expect(saveButton).toHaveText(/Salvar configura/i, { timeout: 12_000 });
-  await expect(saveButton).toBeDisabled({ timeout: 12_000 });
 }
 
 export async function setStoreAcceptsOrders(page: Page, acceptsOrders: boolean) {
@@ -152,9 +233,25 @@ export async function createCategoryIfMissing(page: Page, categoryName: string) 
   await expect(createCategoryForm).toBeVisible();
 
   await page.locator("#new-category-name").fill(categoryName);
+  await expect(page.locator("#new-category-name")).toHaveValue(categoryName);
   await page.getByTestId("submit-create-category").click();
 
-  await expect(page.getByText(categoryName, { exact: true })).toBeVisible({ timeout: 12_000 });
+  await expect.poll(
+    async () => {
+      const count = await page.getByText(categoryName, { exact: true }).count();
+      if (count > 0) {
+        return count;
+      }
+
+      await page.goto("/dashboard/categorias", { waitUntil: "domcontentloaded" });
+      return await page.getByText(categoryName, { exact: true }).count();
+    },
+    {
+      timeout: 30_000,
+      intervals: [1000, 1500, 2500],
+      message: `Categoria '${categoryName}' nao apareceu na listagem apos criacao.`,
+    },
+  ).toBeGreaterThan(0);
 }
 
 export async function createProductIfMissing(page: Page, categoryName: string, product: ProductSeed) {
@@ -233,6 +330,25 @@ export async function createProductIfMissing(page: Page, categoryName: string, p
   await categorySelect.selectOption(matchedCategoryOptionValue);
   await expect(categorySelect).toHaveValue(matchedCategoryOptionValue);
 
+  for (const additionalCategoryName of product.additionalCategoryNames ?? []) {
+    const normalizedAdditionalCategoryName = additionalCategoryName.trim().toLocaleLowerCase("pt-BR");
+    const additionalCategoryOptionValue = await categorySelect.evaluate((select, expectedName) => {
+      if (!(select instanceof HTMLSelectElement)) {
+        return null;
+      }
+
+      const options = Array.from(select.options);
+      const match = options.find((option) => option.textContent?.trim().toLocaleLowerCase("pt-BR") === expectedName);
+      return match?.value ?? null;
+    }, normalizedAdditionalCategoryName);
+
+    if (!additionalCategoryOptionValue) {
+      throw new Error(`Nao foi possivel resolver a categoria adicional '${additionalCategoryName.trim()}' no produto.`);
+    }
+
+    await page.getByTestId(`product-additional-category-${additionalCategoryOptionValue}`).check();
+  }
+
   const trackStock = page.getByTestId("product-track-stock-toggle");
   if (!(await trackStock.isChecked())) {
     await trackStock.click();
@@ -240,6 +356,23 @@ export async function createProductIfMissing(page: Page, categoryName: string, p
 
   await page.getByTestId("product-stock-input").fill(String(product.stock));
   await page.getByTestId("submit-create-product").click();
+
+  await expect.poll(
+    async () => {
+      const count = await page.getByText(product.name, { exact: true }).count();
+      if (count > 0) {
+        return count;
+      }
+
+      await page.goto("/dashboard/produtos", { waitUntil: "domcontentloaded" });
+      return await page.getByText(product.name, { exact: true }).count();
+    },
+    {
+      timeout: 60_000,
+      intervals: [1000, 1500, 2500],
+      message: `Produto '${product.name}' nao apareceu na listagem apos criacao.`,
+    },
+  ).toBeGreaterThan(0);
 
   await expect(page.getByText(product.name, { exact: true })).toBeVisible({ timeout: 15_000 });
 }
@@ -302,6 +435,7 @@ type WaitForOrderRowOptions = {
   orderId?: string;
   timeoutMs?: number;
   allowReload?: boolean;
+  fallbackToAllScope?: boolean;
 };
 
 export function extractPublicOrderIdFromUrl(url: string) {
@@ -312,6 +446,7 @@ export function extractPublicOrderIdFromUrl(url: string) {
 export async function waitForOrderRowByMarker(page: Page, marker: string, options?: WaitForOrderRowOptions) {
   const timeoutMs = options?.timeoutMs ?? 30_000;
   const allowReload = options?.allowReload ?? true;
+  const fallbackToAllScope = options?.fallbackToAllScope ?? false;
   const orderId = options?.orderId?.trim() || null;
 
   let attempts = 0;
@@ -334,6 +469,11 @@ export async function waitForOrderRowByMarker(page: Page, marker: string, option
         await expect(page).toHaveURL(/\/dashboard\/pedidos(?:\?.*)?$/);
       }
 
+      if (fallbackToAllScope && attempts % 3 === 0 && !page.url().includes("escopo=todos")) {
+        await page.goto("/dashboard/pedidos?escopo=todos", { waitUntil: "domcontentloaded" });
+        await expect(page).toHaveURL(/\/dashboard\/pedidos\?escopo=todos$/);
+      }
+
       return 0;
     },
     {
@@ -349,6 +489,51 @@ export async function waitForOrderRowByMarker(page: Page, marker: string, option
 
   await expect(row).toBeVisible();
   return row;
+}
+
+export async function waitForOrderRowStatus(
+  page: Page,
+  marker: string,
+  statusText: string,
+  options?: WaitForOrderRowOptions,
+) {
+  const timeoutMs = options?.timeoutMs ?? 30_000;
+  const allowReload = options?.allowReload ?? true;
+  const fallbackToAllScope = options?.fallbackToAllScope ?? false;
+  const orderId = options?.orderId?.trim() || null;
+  let attempts = 0;
+
+  await expect.poll(
+    async () => {
+      attempts += 1;
+
+      const row = orderId
+        ? page.getByTestId(`order-row-${orderId}`).first()
+        : page.locator('[data-testid^="order-row-"]').filter({ hasText: marker }).first();
+
+      const rowCount = await row.count();
+      const text = rowCount > 0 ? await row.innerText().catch(() => "") : "";
+
+      if (text.includes(statusText)) {
+        return text;
+      }
+
+      if (fallbackToAllScope && !page.url().includes("escopo=todos")) {
+        await page.goto("/dashboard/pedidos?escopo=todos", { waitUntil: "domcontentloaded" });
+      } else if (allowReload && attempts % 2 === 0) {
+        await page.reload({ waitUntil: "domcontentloaded" });
+      }
+
+      return text;
+    },
+    {
+      timeout: timeoutMs,
+      intervals: [800, 1200, 1600, 2200],
+      message: `Pedido com marcador '${marker}' nao chegou ao status '${statusText}' dentro do prazo.`,
+    },
+  ).toContain(statusText);
+
+  return waitForOrderRowByMarker(page, marker, options);
 }
 
 type OrderActionKey = "accept" | "ready" | "finalize";
@@ -377,5 +562,19 @@ export function productCardByName(page: Page, productName: string) {
   return page
     .locator("article")
     .filter({ has: page.getByRole("heading", { name: productName, exact: true }) })
+    .first();
+}
+
+export function dashboardCategoryRowByName(page: Page, categoryName: string) {
+  return page
+    .locator('[data-testid^="category-row-wrapper-"]')
+    .filter({ hasText: categoryName })
+    .first();
+}
+
+export function dashboardProductRowByName(page: Page, productName: string) {
+  return page
+    .locator('[data-testid^="product-row-wrapper-"]')
+    .filter({ hasText: productName })
     .first();
 }

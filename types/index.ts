@@ -48,7 +48,9 @@ export type Category = {
 export type Product = {
   id: string;
   store_id: string;
-  category_id: string;
+  category_id: string | null;
+  category_ids?: string[];
+  additional_category_ids?: string[];
   name: string;
   description: string | null;
   price: number;

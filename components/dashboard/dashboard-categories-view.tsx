@@ -1,12 +1,20 @@
 "use client";
 
-import { reorderCategoriesAction } from "@/app/actions/categories";
-import { type DragEvent, useEffect, useMemo, useState } from "react";
+import {
+  bulkDeleteCategoriesAction,
+  bulkSetCategoriesActiveAction,
+  reorderCategoriesAction,
+  type BulkCategoriesActionResult,
+} from "@/app/actions/categories";
+import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 import { CategoryRow } from "@/components/dashboard/category-row";
 import { CreateCategoryForm } from "@/components/dashboard/create-category-form";
 import { DashboardProductsRealtimeSync } from "@/components/dashboard/dashboard-products-realtime-sync";
+import { SelectionCheckbox } from "@/components/dashboard/selection-checkbox";
 import { PageHeader } from "@/components/layout/page-header";
+import { useToast } from "@/components/shared/toast-provider";
 import type { Category } from "@/types";
 
 type DashboardCategoriesViewProps = {
@@ -29,6 +37,8 @@ function reorderById<T extends { id: string }>(items: T[], draggedId: string, ta
 }
 
 export function DashboardCategoriesView({ storeId, categories }: DashboardCategoriesViewProps) {
+  const router = useRouter();
+  const { enqueueToast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [orderedCategories, setOrderedCategories] = useState(categories);
   const [editingById, setEditingById] = useState<Record<string, boolean>>({});
@@ -36,9 +46,21 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
   const [dropTargetCategoryId, setDropTargetCategoryId] = useState<string | null>(null);
   const [pendingReorderCategoryId, setPendingReorderCategoryId] = useState<string | null>(null);
   const [reorderIssueCategoryId, setReorderIssueCategoryId] = useState<string | null>(null);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(() => new Set());
+  const [categoryEditRequest, setCategoryEditRequest] = useState<{ id: string; token: number } | null>(null);
+  const [bulkFeedback, setBulkFeedback] = useState<BulkCategoriesActionResult | null>(null);
+  const [bulkDetailsOpen, setBulkDetailsOpen] = useState(false);
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
+  const [isBulkPending, startBulkTransition] = useTransition();
+  const bulkDeleteCancelButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     setOrderedCategories(categories);
+    const currentIds = new Set(categories.map((category) => category.id));
+    setSelectedCategoryIds((previous) => {
+      const next = new Set(Array.from(previous).filter((id) => currentIds.has(id)));
+      return next.size === previous.size ? previous : next;
+    });
   }, [categories]);
 
   useEffect(() => {
@@ -56,9 +78,61 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
   }, [reorderIssueCategoryId]);
 
   const isAnyEditing = useMemo(() => Object.values(editingById).some(Boolean), [editingById]);
-  const canDrag = !isCreateOpen && !isAnyEditing && !pendingReorderCategoryId;
+  const selectedCount = selectedCategoryIds.size;
+  const selectedCategoryId = selectedCount === 1 ? Array.from(selectedCategoryIds)[0] : null;
+  const hasSelection = selectedCount > 0;
+  const visibleCategoryIds = useMemo(() => orderedCategories.map((category) => category.id), [orderedCategories]);
+  const allVisibleSelected =
+    visibleCategoryIds.length > 0 && visibleCategoryIds.every((id) => selectedCategoryIds.has(id));
+  const selectionDisabled = isCreateOpen || isAnyEditing || Boolean(pendingReorderCategoryId) || isBulkPending;
+  const bulkActionsDisabled = isCreateOpen || isAnyEditing || isBulkPending || selectedCount === 0;
+  const editActionDisabled = selectionDisabled || selectedCount !== 1;
+  const canDrag = !isCreateOpen && !isAnyEditing && !pendingReorderCategoryId && !hasSelection;
+  const showBulkToolbar = hasSelection && !isCreateOpen && !isAnyEditing;
 
-  const setEditingStateForCategory = (categoryId: string, isEditing: boolean) => {
+  const clearBulkSelection = useCallback(() => {
+    setSelectedCategoryIds(new Set());
+    setBulkDeleteConfirmOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (isCreateOpen || isAnyEditing) {
+      clearBulkSelection();
+    }
+  }, [clearBulkSelection, isCreateOpen, isAnyEditing]);
+
+  useEffect(() => {
+    if (!bulkDeleteConfirmOpen) {
+      return;
+    }
+
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    bulkDeleteCancelButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      event.preventDefault();
+      setBulkDeleteConfirmOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
+    };
+  }, [bulkDeleteConfirmOpen]);
+
+  const setEditingStateForCategory = useCallback((categoryId: string, isEditing: boolean) => {
+    if (isEditing) {
+      clearBulkSelection();
+      setBulkFeedback(null);
+      setBulkDetailsOpen(false);
+    }
+
     setEditingById((prev) => {
       if (!isEditing && !prev[categoryId]) {
         return prev;
@@ -72,7 +146,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
 
       return { ...prev, [categoryId]: true };
     });
-  };
+  }, [clearBulkSelection]);
 
   const clearDragState = () => {
     setDraggingCategoryId(null);
@@ -147,7 +221,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
   };
 
   const handleMobileStepReorder = (categoryId: string, direction: "up" | "down") => {
-    if (pendingReorderCategoryId) {
+    if (!canDrag) {
       return;
     }
 
@@ -172,6 +246,91 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
     persistCategoryOrder(nextOrder, previousOrder, categoryId);
   };
 
+  const handleToggleCategory = (categoryId: string) => {
+    if (selectionDisabled) {
+      return;
+    }
+
+    setBulkFeedback(null);
+    setBulkDetailsOpen(false);
+    setSelectedCategoryIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleAllCategories = () => {
+    if (selectionDisabled || visibleCategoryIds.length === 0) {
+      return;
+    }
+
+    setBulkFeedback(null);
+    setBulkDetailsOpen(false);
+    setSelectedCategoryIds((previous) => {
+      if (visibleCategoryIds.every((id) => previous.has(id))) {
+        return new Set();
+      }
+      return new Set(visibleCategoryIds);
+    });
+  };
+
+  const showBulkResult = (result: BulkCategoriesActionResult) => {
+    const hasIssue = result.failed > 0 || result.skipped > 0;
+    const tone = result.failed > 0 && result.changed === 0 ? "error" : hasIssue ? "warning" : "success";
+
+    setBulkFeedback(result);
+    setBulkDetailsOpen(false);
+    enqueueToast({
+      tone,
+      title: hasIssue ? "Ação concluída com observações" : "Ação concluída",
+      text: result.message,
+    });
+  };
+
+  const runBulkAction = (action: "activate" | "deactivate" | "delete") => {
+    if (bulkActionsDisabled || selectionDisabled) {
+      return;
+    }
+
+    const ids = Array.from(selectedCategoryIds);
+    startBulkTransition(() => {
+      void (async () => {
+        const result =
+          action === "delete"
+            ? await bulkDeleteCategoriesAction(ids)
+            : await bulkSetCategoriesActiveAction(ids, action === "activate");
+
+        setSelectedCategoryIds(new Set());
+        setBulkDeleteConfirmOpen(false);
+        showBulkResult(result);
+        router.refresh();
+      })();
+    });
+  };
+
+  const openBulkDeleteModal = () => {
+    if (bulkActionsDisabled || selectionDisabled) {
+      return;
+    }
+
+    setBulkDeleteConfirmOpen(true);
+  };
+
+  const openSelectedCategoryEditor = () => {
+    if (editActionDisabled || !selectedCategoryId) {
+      return;
+    }
+
+    setBulkFeedback(null);
+    setBulkDetailsOpen(false);
+    setCategoryEditRequest({ id: selectedCategoryId, token: Date.now() });
+  };
+
   return (
     <>
       <PageHeader
@@ -184,7 +343,12 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
         actions={
           <button
             type="button"
-            onClick={() => setIsCreateOpen((open) => !open)}
+            onClick={() => {
+              clearBulkSelection();
+              setBulkFeedback(null);
+              setBulkDetailsOpen(false);
+              setIsCreateOpen((open) => !open);
+            }}
             data-testid="open-create-category"
             className="cx-btn-secondary px-3 py-2"
           >
@@ -211,18 +375,119 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
           ) : null}
 
           <section className="cx-panel p-4 sm:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-sm font-semibold text-zinc-900">Categorias cadastradas</h2>
-              <p className="text-xs text-zinc-500">
-                {orderedCategories.length} {orderedCategories.length === 1 ? "categoria" : "categorias"}
-              </p>
+              <div className="flex items-center justify-between gap-3 sm:justify-end">
+                <div className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 shadow-sm">
+                  <SelectionCheckbox
+                    checked={allVisibleSelected}
+                    indeterminate={selectedCount > 0 && !allVisibleSelected}
+                    onChange={handleToggleAllCategories}
+                    disabled={selectionDisabled || orderedCategories.length === 0}
+                    label="Selecionar todos"
+                    testId="category-select-all"
+                  />
+                  Selecionar todos
+                </div>
+                <p className="shrink-0 text-xs text-zinc-500">
+                  {selectedCount > 0 ? `${selectedCount}/` : ""}
+                  {orderedCategories.length} {orderedCategories.length === 1 ? "categoria" : "categorias"}
+                </p>
+              </div>
             </div>
 
             {orderedCategories.length > 1 ? (
-              <p className="mt-1 text-xs text-zinc-500">
-                No desktop, arraste pela alça lateral. No celular, use o bloco de
-                &quot;Reordenar&quot; em cada item.
-              </p>
+              <>
+                <p className="mt-1 hidden text-xs text-zinc-500 sm:block">
+                  Arraste pela alça lateral para reorganizar as categorias.
+                </p>
+                <p className="mt-1 text-xs text-zinc-500 sm:hidden">
+                  Use as setas no topo de cada card para reorganizar as categorias.
+                </p>
+              </>
+            ) : null}
+
+            {showBulkToolbar ? (
+              <div
+                data-testid="category-bulk-toolbar"
+                className="sticky top-28 z-20 mt-3 rounded-xl border border-zinc-200 bg-white/95 px-3 py-2.5 shadow-sm backdrop-blur md:top-20"
+              >
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm font-medium text-zinc-800">
+                    {selectedCount} {selectedCount === 1 ? "categoria selecionada" : "categorias selecionadas"}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={openSelectedCategoryEditor}
+                    disabled={editActionDisabled}
+                    title={selectedCount > 1 ? "Selecione apenas uma categoria para editar." : undefined}
+                    data-testid="category-bulk-edit"
+                    className="cx-btn-secondary w-full justify-center px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => runBulkAction("activate")}
+                    disabled={bulkActionsDisabled}
+                    data-testid="category-bulk-activate"
+                    className="cx-btn-secondary w-full justify-center px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                  >
+                    Ativar selecionadas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => runBulkAction("deactivate")}
+                    disabled={bulkActionsDisabled}
+                    data-testid="category-bulk-deactivate"
+                    className="cx-btn-secondary w-full justify-center px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                  >
+                    Desativar selecionadas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openBulkDeleteModal}
+                    disabled={bulkActionsDisabled}
+                    data-testid="category-bulk-delete"
+                    className="col-span-2 w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-1 sm:w-auto"
+                  >
+                    Excluir selecionadas
+                  </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {bulkFeedback ? (
+              <div
+                className={`mt-3 rounded-xl border px-3 py-2 text-sm ${
+                  bulkFeedback.failed > 0 || bulkFeedback.skipped > 0
+                    ? "border-amber-200 bg-amber-50 text-amber-900"
+                    : "border-emerald-200 bg-emerald-50 text-emerald-900"
+                }`}
+                role={bulkFeedback.failed > 0 ? "alert" : "status"}
+              >
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <span>{bulkFeedback.message}</span>
+                  {bulkFeedback.reasons.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setBulkDetailsOpen((open) => !open)}
+                      className="w-fit rounded-lg border border-current/20 bg-white/60 px-2.5 py-1 text-xs font-semibold"
+                    >
+                      {bulkDetailsOpen ? "Ocultar detalhes" : "Ver detalhes"}
+                    </button>
+                  ) : null}
+                </div>
+                {bulkDetailsOpen && bulkFeedback.reasons.length > 0 ? (
+                  <ul className="mt-2 list-disc space-y-1 pl-4 text-xs">
+                    {bulkFeedback.reasons.map((reason) => (
+                      <li key={reason}>{reason}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
             ) : null}
 
             {orderedCategories.length === 0 ? (
@@ -235,6 +500,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
                 {orderedCategories.map((cat, index) => (
                   <div
                     key={cat.id}
+                    data-testid={`category-row-wrapper-${cat.id}`}
                     onDragOver={(event) => handleDragOver(event, cat.id)}
                     onDrop={(event) => handleDrop(event, cat.id)}
                     className={`group flex items-start gap-2 rounded-2xl px-1 py-1 transition ${
@@ -283,12 +549,16 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
                       <CategoryRow
                         category={cat}
                         onEditingChange={setEditingStateForCategory}
+                        isSelected={selectedCategoryIds.has(cat.id)}
+                        selectionDisabled={selectionDisabled}
+                        onToggleSelected={() => handleToggleCategory(cat.id)}
                         isFirst={index === 0}
                         isLast={index === orderedCategories.length - 1}
                         onMoveUp={() => handleMobileStepReorder(cat.id, "up")}
                         onMoveDown={() => handleMobileStepReorder(cat.id, "down")}
                         isMoveBusy={pendingReorderCategoryId === cat.id}
                         hasMoveIssue={reorderIssueCategoryId === cat.id}
+                        editRequestToken={categoryEditRequest?.id === cat.id ? categoryEditRequest.token : 0}
                       />
                     </div>
                   </div>
@@ -298,6 +568,47 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
           </section>
         </div>
       </div>
+
+      {bulkDeleteConfirmOpen ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto overscroll-contain p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="bulk-delete-categories-dialog-title"
+        >
+          <div className="absolute inset-0 bg-zinc-950/35" onClick={() => setBulkDeleteConfirmOpen(false)} />
+
+          <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-[0_24px_80px_-28px_rgba(24,24,27,0.85)] sm:p-6">
+            <h2 id="bulk-delete-categories-dialog-title" className="text-base font-semibold text-zinc-900">
+              Excluir categorias selecionadas?
+            </h2>
+            <p className="mt-2 text-sm text-zinc-600">
+              Você selecionou {selectedCount} {selectedCount === 1 ? "categoria" : "categorias"}. Categorias com
+              produtos ativos vinculados serão preservadas e aparecerão no resumo da ação.
+            </p>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                ref={bulkDeleteCancelButtonRef}
+                type="button"
+                onClick={() => setBulkDeleteConfirmOpen(false)}
+                className="cx-btn-secondary px-3 py-2"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => runBulkAction("delete")}
+                disabled={bulkActionsDisabled}
+                data-testid="category-bulk-delete-confirm"
+                className="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isBulkPending ? "Excluindo..." : "Confirmar exclusão"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

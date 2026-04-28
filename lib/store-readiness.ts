@@ -37,20 +37,35 @@ export async function calculateStoreReadiness(
   let activeAvailableProducts = 0;
 
   if (activeCategoryIds.length > 0) {
-    const { count: readyProductCount, error: productsError } = await supabase
-      .from("products")
-      .select("id", { count: "exact", head: true })
+    const { data: associatedRows, error: associationError } = await supabase
+      .from("product_categories")
+      .select("product_id")
       .eq("store_id", input.storeId)
-      .in("category_id", activeCategoryIds)
-      .eq("is_active", true)
-      .eq("is_available", true)
-      .or("track_stock.eq.false,stock_quantity.gt.0");
+      .in("category_id", activeCategoryIds);
 
-    if (productsError) {
-      throw productsError;
+    if (associationError) {
+      throw associationError;
     }
 
-    activeAvailableProducts = readyProductCount ?? 0;
+    const productIds = Array.from(new Set((associatedRows ?? []).map((row) => row.product_id)));
+
+    if (productIds.length > 0) {
+      const { count: readyProductCount, error: productsError } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", input.storeId)
+        .in("id", productIds)
+        .is("archived_at", null)
+        .eq("is_active", true)
+        .eq("is_available", true)
+        .or("track_stock.eq.false,stock_quantity.gt.0");
+
+      if (productsError) {
+        throw productsError;
+      }
+
+      activeAvailableProducts = readyProductCount ?? 0;
+    }
   }
 
   const pendingItems: string[] = [];

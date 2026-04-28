@@ -69,6 +69,8 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
   const [imagePreviewBroken, setImagePreviewBroken] = useState(false);
   const [imageUploadPending, setImageUploadPending] = useState(false);
   const [imageUploadFeedback, setImageUploadFeedback] = useState<ImageUploadFeedback | null>(null);
+  const [selectedPrimaryCategoryId, setSelectedPrimaryCategoryId] = useState("");
+  const [selectedAdditionalCategoryIds, setSelectedAdditionalCategoryIds] = useState<Set<string>>(() => new Set());
   const imageFileInputRef = useRef<HTMLInputElement | null>(null);
   const supabaseClientRef = useRef<ReturnType<typeof createBrowserSupabaseClient> | null>(null);
   const disabled = categories.length === 0;
@@ -299,6 +301,31 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
     setImageMode("url");
   }
 
+  function handlePrimaryCategoryChange(categoryId: string) {
+    setSelectedPrimaryCategoryId(categoryId);
+    setSelectedAdditionalCategoryIds((current) => {
+      if (!current.has(categoryId)) {
+        return current;
+      }
+
+      const next = new Set(current);
+      next.delete(categoryId);
+      return next;
+    });
+  }
+
+  function handleAdditionalCategoryChange(categoryId: string, checked: boolean) {
+    setSelectedAdditionalCategoryIds((current) => {
+      const next = new Set(current);
+      if (checked) {
+        next.add(categoryId);
+      } else {
+        next.delete(categoryId);
+      }
+      return next;
+    });
+  }
+
   return (
     <form action={formAction} data-testid="create-product-form" className="space-y-4">
       <input type="hidden" name="image_url" value={imageUrlValue.trim()} />
@@ -355,6 +382,8 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
             name="category_id"
             required
             disabled={disabled}
+            value={selectedPrimaryCategoryId}
+            onChange={(event) => handlePrimaryCategoryChange(event.target.value)}
             data-testid="product-category-select"
             className="cx-select mt-1 disabled:bg-zinc-100"
           >
@@ -365,6 +394,42 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="sm:col-span-2 rounded-xl border border-zinc-200 bg-zinc-50/90 p-4">
+          <p className="text-sm font-semibold text-zinc-900">Categorias adicionais</p>
+          <p className="mt-1 text-xs text-zinc-600">O produto aparecerá em todas as categorias selecionadas.</p>
+
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {categories.map((category) => {
+              const isPrimary = selectedPrimaryCategoryId === category.id;
+              const isChecked = isPrimary || selectedAdditionalCategoryIds.has(category.id);
+
+              return (
+                <label
+                  key={category.id}
+                  className={`flex min-h-10 items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+                    isPrimary
+                      ? "border-zinc-300 bg-white text-zinc-500"
+                      : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-300"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    name="additional_category_ids"
+                    value={category.id}
+                    disabled={disabled || isPrimary}
+                    checked={isChecked}
+                    onChange={(event) => handleAdditionalCategoryChange(category.id, event.target.checked)}
+                    data-testid={`product-additional-category-${category.id}`}
+                    className="rounded border-zinc-300 disabled:opacity-70"
+                  />
+                  <span className="min-w-0 flex-1 truncate">{category.name}</span>
+                  {isPrimary ? <span className="text-[11px] font-medium text-zinc-500">Principal</span> : null}
+                </label>
+              );
+            })}
+          </div>
         </div>
 
         <div className="sm:col-span-2 space-y-3 rounded-xl border border-zinc-200 bg-zinc-50/90 p-4">

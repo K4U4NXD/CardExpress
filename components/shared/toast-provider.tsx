@@ -6,6 +6,7 @@ import {
   type FlashMessageAction,
   type FlashMessageTone,
 } from "@/components/shared/flash-message-center";
+import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 type ToastPhase = "visible" | "leaving";
@@ -39,10 +40,10 @@ const TOAST_DEDUP_WINDOW_MS = 2200;
 const RECENT_FINGERPRINT_TTL_MS = 60000;
 
 const DEFAULT_DURATION_MS: Record<FlashMessageTone, number> = {
-  success: 6000,
+  success: 5000,
   info: 6000,
-  warning: 8000,
-  error: 10000,
+  warning: 9000,
+  error: 12000,
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -71,6 +72,7 @@ function buildToastFingerprint(toast: EnqueueToastInput) {
 }
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const dismissTimerByIdRef = useRef(new Map<string, number>());
@@ -79,6 +81,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const startedAtByIdRef = useRef(new Map<string, number>());
   const pausedIdsRef = useRef(new Set<string>());
   const recentFingerprintAtRef = useRef(new Map<string, number>());
+  const previousPathnameRef = useRef(pathname);
 
   const clearDismissTimer = useCallback((id: string) => {
     const timerId = dismissTimerByIdRef.current.get(id);
@@ -230,6 +233,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     pausedIdsRef.current.clear();
     setToasts([]);
   }, []);
+
+  useEffect(() => {
+    if (previousPathnameRef.current !== pathname) {
+      previousPathnameRef.current = pathname;
+      clearToasts();
+    }
+  }, [clearToasts, pathname]);
 
   useEffect(() => {
     const visibleToasts = toasts.slice(0, MAX_VISIBLE_TOASTS);

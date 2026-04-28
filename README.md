@@ -58,6 +58,9 @@ O projeto já possui uma base funcional sólida, com:
 - **atualização em tempo real** nas rotas operacionais e públicas principais.
 - imagem de produto por URL ou upload;
 - exclusão segura de produto com preservação de histórico;
+- produto com categoria principal e categorias adicionais;
+- exclusão de categoria liberada quando restam apenas produtos arquivados/históricos vinculados;
+- categorias e produtos usam seleção contextual para editar, ativar, pausar/disponibilizar e excluir;
 - confirmação refinada para exclusão de produto, no padrão do dashboard;
 - revisão de textos e acentuação nas páginas principais do painel e do acompanhamento público do pedido;
 - landing page comercial refinada, com hero, visão do produto, diferenciais, benefícios, CTA de demonstração e navegação responsiva;
@@ -160,6 +163,7 @@ Cenários validados localmente:
 
 - criar produto;
 - editar produto;
+- vincular produto a uma categoria principal e a categorias adicionais;
 - ativar e desativar;
 - controlar disponibilidade separadamente da ativação;
 - suporte a controle de estoque com `track_stock` e `stock_quantity`;
@@ -170,6 +174,7 @@ Cenários validados localmente:
 - reordenar no mobile com fluxo compacto por controles de ordenação;
 - exclusão física quando o produto não possui histórico;
 - exclusão lógica segura quando o produto já possui histórico de checkout/pedido, preservando integridade;
+- produto arquivado sai das associações operacionais de categoria para não bloquear exclusões futuras;
 - badges operacionais refinados;
 - exibição mais clara de estoque, disponibilidade e visibilidade pública;
 - formulário recolhido por padrão;
@@ -227,6 +232,9 @@ As páginas públicas da loja usam branding da própria loja quando disponível:
 - produtos sem estoque continuam visíveis no cardápio público, porém bloqueados para compra;
 - busca local por nome/descrição;
 - chips de categoria com opção `Todos`;
+- produtos vinculados a categorias adicionais aparecem em todas as categorias selecionadas;
+- a visualização `Todos` renderiza seções por categoria, então um produto em múltiplas categorias pode aparecer em cada seção correspondente;
+- o carrinho consolida itens pelo produto, mesmo quando o produto aparece em mais de uma categoria;
 - rolagem horizontal de categorias no mobile;
 - busca e filtros fixos no topo do cardápio;
 - carrinho por loja com `localStorage`;
@@ -760,6 +768,14 @@ Quando um produto nunca foi usado em checkout ou pedido, ele pode ser removido f
 
 Quando o produto já possui histórico, a ação de “Excluir” remove o item da operação atual, mas preserva seus vínculos históricos no banco. Nesse caso, a remoção é feita por arquivamento lógico, sem quebrar pedidos antigos nem métricas.
 
+### Produtos em múltiplas categorias
+
+Produtos mantêm uma categoria principal em `products.category_id` para compatibilidade inicial e também usam `product_categories` para associações adicionais. A categoria principal sempre entra nas associações do produto. A reordenação de produtos continua global nesta etapa.
+
+### Exclusão de categoria com histórico
+
+Categorias com produtos ativos ou não arquivados associados continuam bloqueadas. Categorias presas apenas por produtos arquivados/históricos podem ser excluídas: as associações operacionais são removidas e produtos arquivados podem ficar com `category_id = null`, sem alterar `order_items` ou `checkout_session_items`.
+
 ### Slug não editável nesta fase
 
 No estado atual do projeto:
@@ -852,6 +868,7 @@ O projeto utiliza Supabase como backend principal.
 * `store_settings`
 * `categories`
 * `products`
+* `product_categories`
 * `orders`
 * `order_items`
 * `checkout_sessions`
@@ -870,6 +887,40 @@ O projeto utiliza Supabase como backend principal.
 * `transition_order_to_terminal`
 * `get_recent_called_orders_for_store`
 * `cancel_checkout_session_by_token`
+
+### Múltiplas categorias por produto
+
+A migration `20260428120000_add_product_categories_and_allow_archived_product_category_unlink.sql` adiciona `product_categories`, faz backfill a partir de `products.category_id`, ajusta `products.category_id` para permitir `null` com `ON DELETE SET NULL` e atualiza as RPCs públicas para considerar todas as categorias associadas.
+
+Consultas manuais recomendadas após aplicar a migration:
+
+```sql
+-- Produtos ativos sem associação operacional em product_categories.
+select p.id, p.name, p.store_id
+from public.products p
+left join public.product_categories pc
+  on pc.product_id = p.id
+where p.archived_at is null
+  and pc.product_id is null;
+
+-- Associações com store_id inconsistente entre produto, categoria e vínculo.
+select pc.product_id, pc.category_id, pc.store_id, p.store_id as product_store_id, c.store_id as category_store_id
+from public.product_categories pc
+join public.products p on p.id = pc.product_id
+join public.categories c on c.id = pc.category_id
+where pc.store_id is distinct from p.store_id
+   or pc.store_id is distinct from c.store_id;
+
+-- Possíveis duplicações por produto na mesma categoria retornada pela RPC pública.
+select category_id, product_id, count(*) as occurrences
+from public.get_public_menu_by_slug('slug-da-loja')
+group by category_id, product_id
+having count(*) > 1;
+
+-- Base para conferir a aba "Todos": unique_products é a quantidade que a UI deve renderizar.
+select count(*) as category_rows, count(distinct product_id) as unique_products
+from public.get_public_menu_by_slug('slug-da-loja');
+```
 
 ### Storage para assets públicos da loja
 
@@ -917,8 +968,9 @@ No estado atual, os blocos críticos estão versionados com migrations específi
   * `20260420012418_storage_public_assets_store_logos.sql`
 * storage de imagens de produto em bucket público:
   * `20260421150000_storage_public_assets_product_images.sql`
+  * `20260428120000_add_product_categories_and_allow_archived_product_category_unlink.sql`
 
-Essas migrations cobrem o estado atual de produto com imagem por URL/upload, produto sem estoque visível e bloqueado no cardápio público, preservação de `is_available` quando o estoque zera por venda, exclusão segura por `archived_at`, modos operacionais com período manual registrado, painel público com últimos chamados e cancelamento/recusa com devolução de estoque.
+Essas migrations cobrem o estado atual de produto com imagem por URL/upload, produto sem estoque visível e bloqueado no cardápio público, preservação de `is_available` quando o estoque zera por venda, exclusão segura por `archived_at`, produto em múltiplas categorias, categorias históricas removíveis, modos operacionais com período manual registrado, painel público com últimos chamados e cancelamento/recusa com devolução de estoque.
 
 > Como parte do desenvolvimento, algumas alterações foram aplicadas manualmente no Supabase e depois versionadas no repositório. Sempre confirme se o histórico remoto e o local continuam coerentes.
 
@@ -1021,6 +1073,7 @@ Se a mudança envolver banco ou storage:
 * histórico e escopos de pedidos no dashboard;
 * cardápio público por `slug`;
 * busca local e filtro por categoria;
+* produto em múltiplas categorias, com categoria principal e adicionais;
 * carrinho público com persistência local;
 * mini carrinho fixo no cardápio;
 * checkout com `checkout_sessions`;
@@ -1042,6 +1095,7 @@ Se a mudança envolver banco ou storage:
 * reordenação de categorias e produtos com drag and drop no desktop e fluxo compacto no mobile.
 * imagem de produto por URL e upload;
 * exclusão segura de produto com preservação de histórico;
+* exclusão de categoria quando apenas produtos arquivados/históricos ainda estavam vinculados;
 * confirmação refinada para exclusão de produto no dashboard;
 * revisão textual e ortográfica nas páginas principais do painel e no acompanhamento público do pedido;
 * landing page comercial refinada e responsiva;

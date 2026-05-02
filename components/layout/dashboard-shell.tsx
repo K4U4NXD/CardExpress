@@ -158,7 +158,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                 onClick={() => setMenuOpen(true)}
                 aria-expanded={menuOpen}
                 aria-controls="dashboard-mobile-nav"
-                className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
+                className="min-h-10 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
               >
                 Menu
               </button>
@@ -195,7 +195,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                 <button
                   type="button"
                   onClick={() => setMenuOpen(false)}
-                  className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-700 transition hover:bg-zinc-50"
+                  className="min-h-9 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-700 transition hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
                 >
                   Fechar
                 </button>

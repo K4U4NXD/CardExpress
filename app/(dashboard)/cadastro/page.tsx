@@ -19,9 +19,9 @@ export default function CadastroPage() {
         backLabel="Ir à página inicial"
         compact
       />
-      <main className="mx-auto flex w-full max-w-lg flex-1 items-center px-4 py-2 sm:px-6 sm:py-3">
+      <main className="mx-auto flex w-full max-w-lg flex-1 items-center px-4 py-6 sm:px-6 sm:py-8">
         <div className="w-full">
-          <div className="mb-4 flex justify-center">
+          <div className="mb-5 flex justify-center">
             <Image
               src={BRANDING.logoPath}
               alt={BRANDING.productName}

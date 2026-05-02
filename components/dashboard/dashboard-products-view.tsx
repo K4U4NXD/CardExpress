@@ -538,9 +538,16 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
             ) : null}
 
             {orderedProducts.length === 0 ? (
-              <div className="mt-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4">
-                <p className="text-sm font-medium text-zinc-700">Nenhum produto cadastrado.</p>
-                <p className="mt-1 text-xs text-zinc-500">Crie um produto para iniciar a exibição no cardápio.</p>
+              <div className="mt-4 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/90 p-5 text-center sm:p-6">
+                <p className="text-sm font-semibold text-zinc-800">Nenhum produto cadastrado.</p>
+                <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-zinc-500">Crie um produto para iniciar a exibição no cardápio.</p>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateOpen(true)}
+                  className="cx-btn-secondary mt-4 px-3 py-2"
+                >
+                  Criar produto
+                </button>
               </div>
             ) : (
               <div className="mt-4 space-y-3">

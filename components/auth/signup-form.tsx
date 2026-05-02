@@ -116,7 +116,7 @@ export function SignupForm() {
           onChange={(event) => setValues((current) => ({ ...current, full_name: event.target.value }))}
           aria-invalid={Boolean(fieldErrors.full_name)}
           aria-describedby={fieldErrors.full_name ? "full_name-error" : undefined}
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+          className="cx-input mt-1"
         />
         {fieldErrors.full_name ? (
           <p id="full_name-error" className="mt-1 text-xs text-red-700">
@@ -141,7 +141,7 @@ export function SignupForm() {
           onChange={(event) => setValues((current) => ({ ...current, email: event.target.value }))}
           aria-invalid={Boolean(fieldErrors.email)}
           aria-describedby={fieldErrors.email ? "email-error" : undefined}
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+          className="cx-input mt-1"
         />
         {fieldErrors.email ? (
           <p id="email-error" className="mt-1 text-xs text-red-700">
@@ -164,7 +164,7 @@ export function SignupForm() {
           onChange={(event) => setPassword(event.target.value)}
           aria-invalid={Boolean(fieldErrors.password)}
           aria-describedby={composeDescribedBy("password-help", fieldErrors.password ? "password-error" : undefined)}
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+          className="cx-input mt-1"
         />
         <p id="password-help" className="mt-1 text-xs text-zinc-500">
           Use no mínimo 8 caracteres, com 1 letra maiúscula, 1 número e 1 caractere especial.
@@ -221,7 +221,7 @@ export function SignupForm() {
           onChange={(event) => setPasswordConfirmation(event.target.value)}
           aria-invalid={Boolean(fieldErrors.password_confirmation)}
           aria-describedby={fieldErrors.password_confirmation ? "password_confirmation-error" : undefined}
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+          className="cx-input mt-1"
         />
         {fieldErrors.password_confirmation ? (
           <p id="password_confirmation-error" className="mt-1 text-xs text-red-700">
@@ -242,7 +242,7 @@ export function SignupForm() {
           onChange={(event) => setValues((current) => ({ ...current, store_name: event.target.value }))}
           aria-invalid={Boolean(fieldErrors.store_name)}
           aria-describedby={fieldErrors.store_name ? "store_name-error" : undefined}
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+          className="cx-input mt-1"
         />
         {fieldErrors.store_name ? (
           <p id="store_name-error" className="mt-1 text-xs text-red-700">
@@ -267,7 +267,7 @@ export function SignupForm() {
           onChange={(event) => setValues((current) => ({ ...current, store_slug: event.target.value }))}
           aria-invalid={Boolean(fieldErrors.store_slug)}
           aria-describedby={composeDescribedBy("store_slug-help", fieldErrors.store_slug ? "store_slug-error" : undefined)}
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+          className="cx-input mt-1"
         />
         {fieldErrors.store_slug ? (
           <p id="store_slug-error" className="mt-1 text-xs text-red-700">
@@ -293,7 +293,7 @@ export function SignupForm() {
           onChange={(event) => setValues((current) => ({ ...current, phone: event.target.value }))}
           aria-invalid={Boolean(fieldErrors.phone)}
           aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+          className="cx-input mt-1"
         />
         {fieldErrors.phone ? (
           <p id="phone-error" className="mt-1 text-xs text-red-700">
@@ -302,19 +302,19 @@ export function SignupForm() {
         ) : null}
       </div>
       {showGlobalError ? (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
           {state.error}
         </p>
       ) : null}
       {state?.success ? (
-        <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900" role="status">
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900" role="status">
           {state.success}
         </p>
       ) : null}
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg bg-zinc-900 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60"
+        className="cx-btn-primary min-h-11 w-full px-4 py-2.5 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {pending ? "Criando conta…" : "Criar conta"}
       </button>

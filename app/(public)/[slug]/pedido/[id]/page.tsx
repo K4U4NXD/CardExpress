@@ -81,7 +81,7 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
       />
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
-        <div className="rounded-2xl border border-zinc-200 bg-white/96 p-6 shadow-[0_24px_46px_-34px_rgba(24,24,27,0.55)]">
+        <div className="rounded-2xl border border-zinc-200 bg-white/96 p-5 shadow-[0_24px_46px_-34px_rgba(24,24,27,0.55)] sm:p-6">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-lg font-semibold text-zinc-900">{formatOrderCode(order)}</span>
             <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>{statusLabel}</span>
@@ -117,22 +117,22 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
 
           <div className="mt-6 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Linha do tempo</p>
-            <p>
+            <p className="flex flex-col gap-0.5 rounded-lg bg-white px-3 py-2 sm:flex-row sm:justify-between">
               Recebido: <span className="text-zinc-900">{formatDateTime(order.placed_at)}</span>
             </p>
-            <p>
+            <p className="flex flex-col gap-0.5 rounded-lg bg-white px-3 py-2 sm:flex-row sm:justify-between">
               Aceito: <span className="text-zinc-900">{formatDateTime(order.accepted_at)}</span>
             </p>
-            <p>
+            <p className="flex flex-col gap-0.5 rounded-lg bg-white px-3 py-2 sm:flex-row sm:justify-between">
               Pronto para retirada: <span className="text-zinc-900">{formatDateTime(order.ready_at)}</span>
             </p>
-            <p>
+            <p className="flex flex-col gap-0.5 rounded-lg bg-white px-3 py-2 sm:flex-row sm:justify-between">
               Finalizado: <span className="text-zinc-900">{formatDateTime(order.finalized_at)}</span>
             </p>
-            <p>
+            <p className="flex flex-col gap-0.5 rounded-lg bg-white px-3 py-2 sm:flex-row sm:justify-between">
               Recusado: <span className="text-zinc-900">{formatDateTime(order.rejected_at)}</span>
             </p>
-            <p>
+            <p className="flex flex-col gap-0.5 rounded-lg bg-white px-3 py-2 sm:flex-row sm:justify-between">
               Cancelado: <span className="text-zinc-900">{formatDateTime(order.cancelled_at)}</span>
             </p>
           </div>

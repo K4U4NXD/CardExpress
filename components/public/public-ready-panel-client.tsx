@@ -126,7 +126,7 @@ export function PublicReadyPanelClient({
           <div className="flex flex-col items-end gap-2">
             <Link
               href={`/${slug}/painel`}
-              className="rounded-md border border-zinc-700/80 bg-zinc-900/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 transition hover:bg-zinc-800"
+              className="inline-flex min-h-8 items-center justify-center rounded-md border border-zinc-700/80 bg-zinc-900/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
             >
               Versão web
             </Link>
@@ -182,7 +182,7 @@ export function PublicReadyPanelClient({
                   ensurePublicAudioInteractionTracking();
                 }
               }}
-              className="rounded-md border border-zinc-700 bg-zinc-900/90 px-3 py-1.5 text-[11px] font-semibold text-zinc-300 transition hover:bg-zinc-800"
+              className="inline-flex min-h-9 items-center justify-center rounded-md border border-zinc-700 bg-zinc-900/90 px-3 py-1.5 text-[11px] font-semibold text-zinc-300 transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
               aria-pressed={soundEnabled}
             >
               {soundEnabled ? "Som: ligado" : "Som: desligado"}
@@ -208,11 +208,11 @@ export function PublicReadyPanelClient({
             <PublicPanelRealtimeSync slug={slug} className="truncate text-[11px] text-zinc-400" />
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
             {tvModeHref ? (
               <Link
                 href={tvModeHref}
-                className="rounded-md border border-zinc-700 bg-zinc-900/90 px-2 py-0.5 text-[10px] font-semibold text-zinc-300 transition hover:bg-zinc-800"
+                className="inline-flex min-h-8 items-center rounded-md border border-zinc-700 bg-zinc-900/90 px-2 py-0.5 text-[10px] font-semibold text-zinc-300 transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
               >
                 Abrir modo TV
               </Link>
@@ -228,7 +228,7 @@ export function PublicReadyPanelClient({
                   ensurePublicAudioInteractionTracking();
                 }
               }}
-              className="rounded-md border border-zinc-700 bg-zinc-900/90 px-2 py-0.5 text-[10px] font-semibold text-zinc-300 transition hover:bg-zinc-800"
+              className="inline-flex min-h-8 items-center rounded-md border border-zinc-700 bg-zinc-900/90 px-2 py-0.5 text-[10px] font-semibold text-zinc-300 transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
               aria-pressed={soundEnabled}
             >
               {soundEnabled ? "Som: ligado" : "Som: desligado"}

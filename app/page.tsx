@@ -173,7 +173,7 @@ export default function HomePage() {
                 </a>
                 <Link
                   href="/login"
-                  className="hidden min-h-12 items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-zinc-300 underline-offset-4 transition hover:text-white hover:underline sm:inline-flex sm:text-base"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-zinc-300 underline-offset-4 transition hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 sm:min-h-12 sm:py-3 sm:text-base"
                 >
                   Acessar painel
                 </Link>

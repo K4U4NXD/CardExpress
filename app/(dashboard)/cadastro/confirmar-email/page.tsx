@@ -43,7 +43,7 @@ export default async function CadastroConfirmarEmailPage({ searchParams }: Confi
         compact
       />
 
-      <main className="mx-auto flex w-full max-w-lg flex-1 items-center px-4 py-2 sm:px-6 sm:py-3">
+      <main className="mx-auto flex w-full max-w-lg flex-1 items-center px-4 py-6 sm:px-6 sm:py-8">
         <section className="w-full space-y-5 rounded-3xl border border-zinc-200/80 bg-gradient-to-b from-white to-zinc-50/90 p-5 shadow-[0_28px_60px_-42px_rgba(24,24,27,0.62)] sm:p-6">
           <div className="flex justify-center">
             <Image

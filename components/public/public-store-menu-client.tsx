@@ -278,15 +278,18 @@ export function PublicStoreMenuClient({
               <p className="text-xs text-zinc-500">{visibleProductsCount} resultado(s)</p>
             </div>
 
-            <p className="text-xs font-medium text-zinc-500">Filtre por categoria ou busque por produto.</p>
+            <label htmlFor="menu-search-input" className="text-xs font-medium text-zinc-500">
+              Filtre por categoria ou busque por produto.
+            </label>
             <div className="flex items-center gap-2">
               <input
+                id="menu-search-input"
                 type="search"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Buscar por nome ou descrição"
                 data-testid="menu-search-input"
-                className="cx-input"
+                className="cx-input min-h-11"
               />
               {searchQuery ? (
                 <button
@@ -353,7 +356,7 @@ export function PublicStoreMenuClient({
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                       {product.image_url ? (
-                        <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
+                        <div className="relative h-40 w-full flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50 sm:h-24 sm:w-24">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" />
                         </div>
@@ -361,9 +364,9 @@ export function PublicStoreMenuClient({
 
                       <div className="flex flex-1 flex-col justify-between gap-3">
                         <div>
-                          <div className="flex items-start justify-between gap-4">
-                            <h3 className="text-base font-medium text-zinc-900">{product.name}</h3>
-                            <div className="flex flex-col items-end gap-1">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                            <h3 className="break-words text-base font-medium text-zinc-900">{product.name}</h3>
+                            <div className="flex flex-wrap items-center gap-1 sm:flex-col sm:items-end">
                               <span className="text-sm font-semibold text-zinc-900">{formatBRL(product.price)}</span>
                               {isOutOfStock ? (
                                 <span
@@ -410,7 +413,7 @@ export function PublicStoreMenuClient({
                               type="button"
                               onClick={() => decreaseQuantity(product.id)}
                               data-testid={`menu-decrease-${product.id}`}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
                             >
                               -
                             </button>
@@ -420,7 +423,7 @@ export function PublicStoreMenuClient({
                               onClick={() => increaseQuantity(product.id)}
                               disabled={!canAddOrIncrease}
                               data-testid={`menu-increase-${product.id}`}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               +
                             </button>
@@ -477,7 +480,7 @@ export function PublicStoreMenuClient({
       )}
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200 bg-white/97 shadow-[0_-12px_30px_rgba(0,0,0,0.08)] backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="min-w-0">
             <p className="text-xs text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</p>
             <p className="text-sm font-semibold text-zinc-900">{formatBRL(totalAmount)}</p>
@@ -494,7 +497,7 @@ export function PublicStoreMenuClient({
             ) : null}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
             <button
               type="button"
               onClick={clearCart}
@@ -507,7 +510,7 @@ export function PublicStoreMenuClient({
             {isCheckoutDisabled ? (
               <span
                 aria-disabled
-                className="inline-flex cursor-not-allowed items-center rounded-md bg-zinc-300 px-3 py-2 text-xs font-semibold text-zinc-600 sm:px-4 sm:text-sm"
+                className="inline-flex min-h-10 cursor-not-allowed items-center justify-center rounded-xl bg-zinc-300 px-3 py-2 text-xs font-semibold text-zinc-600 sm:px-4 sm:text-sm"
               >
                 Ir para checkout
               </span>
@@ -515,7 +518,7 @@ export function PublicStoreMenuClient({
               <Link
                 href={`/${slug}/checkout`}
                 data-testid="menu-go-checkout"
-                className="cx-btn-primary px-3 py-2 text-xs sm:px-4 sm:text-sm"
+                className="cx-btn-primary min-h-10 px-3 py-2 text-xs sm:px-4 sm:text-sm"
               >
                 Ir para checkout
               </Link>

@@ -491,9 +491,16 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
             ) : null}
 
             {orderedCategories.length === 0 ? (
-              <div className="mt-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4">
-                <p className="text-sm font-medium text-zinc-700">Nenhuma categoria cadastrada.</p>
-                <p className="mt-1 text-xs text-zinc-500">Use o botão &quot;Nova categoria&quot; para iniciar a estrutura do cardápio.</p>
+              <div className="mt-4 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/90 p-5 text-center sm:p-6">
+                <p className="text-sm font-semibold text-zinc-800">Nenhuma categoria cadastrada.</p>
+                <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-zinc-500">Use o botão &quot;Nova categoria&quot; para iniciar a estrutura do cardápio.</p>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateOpen(true)}
+                  className="cx-btn-secondary mt-4 px-3 py-2"
+                >
+                  Criar categoria
+                </button>
               </div>
             ) : (
               <div className="mt-3 sm:mt-2 space-y-2 sm:space-y-0">

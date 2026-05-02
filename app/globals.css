@@ -28,6 +28,11 @@
     box-shadow: 0 16px 30px -18px rgb(24 24 27 / 0.95);
   }
 
+  .cx-btn-primary:disabled {
+    transform: none;
+    box-shadow: 0 10px 24px -16px rgb(24 24 27 / 0.55);
+  }
+
   .cx-btn-primary:focus-visible {
     @apply outline-none ring-2 ring-offset-2;
     --tw-ring-color: rgb(251 191 36 / 0.5);
@@ -43,6 +48,10 @@
   .cx-btn-secondary:hover {
     background-color: rgb(244 244 245);
     transform: translateY(-1px);
+  }
+
+  .cx-btn-secondary:disabled {
+    transform: none;
   }
 
   .cx-btn-secondary:focus-visible {
@@ -81,7 +90,7 @@
   .cx-input,
   .cx-textarea,
   .cx-select {
-    @apply w-full rounded-xl border bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition duration-200;
+    @apply w-full rounded-xl border bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition duration-200 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-500;
     border-color: rgb(var(--cx-border));
   }
 

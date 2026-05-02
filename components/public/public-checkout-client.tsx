@@ -869,13 +869,13 @@ export function PublicCheckoutClient({
           </p>
         )}
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <button
             type="button"
             onClick={handleSimulatePaymentApproved}
             disabled={simulationActionDisabled}
             data-testid="checkout-simulate-payment"
-            className="inline-flex items-center rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSimulatingPayment
               ? "Simulando pagamento..."
@@ -896,7 +896,7 @@ export function PublicCheckoutClient({
               onClick={() => void handleCancelCheckout()}
               disabled={isCancellingCheckout || isSimulatingPayment}
               data-testid="checkout-cancel-session"
-              className="cx-btn-secondary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+              className="cx-btn-secondary min-h-11 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isCancellingCheckout ? "Cancelando checkout..." : "Cancelar checkout"}
             </button>
@@ -904,7 +904,7 @@ export function PublicCheckoutClient({
 
           <Link
             href={`/${slug}`}
-            className="cx-btn-secondary inline-flex items-center px-4 py-2"
+            className="cx-btn-secondary inline-flex min-h-11 items-center px-4 py-2"
           >
             Retornar ao cardápio
           </Link>
@@ -968,7 +968,7 @@ export function PublicCheckoutClient({
                 key={item.product_id}
                 data-testid={`checkout-cart-item-${item.product_id}`}
                 data-problematic={hasBlockingIssue || hasUnavailableIssue ? "true" : "false"}
-                className={`flex items-start justify-between gap-3 rounded-xl border px-3 py-2 ${
+                className={`flex flex-col gap-3 rounded-xl border px-3 py-2 sm:flex-row sm:items-start sm:justify-between ${
                   hasBlockingIssue
                     ? "border-red-200 bg-red-50"
                     : hasUnavailableIssue
@@ -998,7 +998,7 @@ export function PublicCheckoutClient({
                       onClick={() => decreaseItemQuantity(item.product_id)}
                       disabled={isSubmitting}
                       data-testid={`checkout-item-decrease-${item.product_id}`}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-300 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-300 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label={`Diminuir quantidade de ${item.name}`}
                     >
                       -
@@ -1011,7 +1011,7 @@ export function PublicCheckoutClient({
                       onClick={() => increaseItemQuantity(item.product_id)}
                       disabled={isSubmitting || !canIncreaseCartItem(item.product_id)}
                       data-testid={`checkout-item-increase-${item.product_id}`}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-300 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-300 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 disabled:cursor-not-allowed disabled:opacity-40"
                       aria-label={`Aumentar quantidade de ${item.name}`}
                     >
                       +
@@ -1030,10 +1030,10 @@ export function PublicCheckoutClient({
                 <p
                   className={
                     hasBlockingIssue
-                      ? "text-sm font-semibold text-red-900"
+                      ? "text-sm font-semibold text-red-900 sm:text-right"
                       : hasUnavailableIssue
-                        ? "text-sm font-semibold text-zinc-800"
-                        : "text-sm font-semibold text-zinc-900"
+                        ? "text-sm font-semibold text-zinc-800 sm:text-right"
+                        : "text-sm font-semibold text-zinc-900 sm:text-right"
                   }
                 >
                   {formatBRL(item.unit_price * item.quantity)}
@@ -1134,7 +1134,7 @@ export function PublicCheckoutClient({
             type="submit"
             disabled={!canSubmit}
             data-testid="checkout-create-session"
-            className="cx-btn-primary w-full px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cx-btn-primary min-h-11 w-full px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Criando sessão..." : "Criar sessão de checkout"}
           </button>

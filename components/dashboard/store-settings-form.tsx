@@ -947,12 +947,12 @@ export function StoreSettingsForm({
         </div>
       </section>
 
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
         <button
           type="button"
           onClick={handleDiscardChanges}
           disabled={pending}
-          className="cx-btn-secondary px-4 py-2 disabled:opacity-60"
+          className="cx-btn-secondary min-h-11 px-4 py-2 disabled:opacity-60"
         >
           Descartar alterações
         </button>
@@ -960,7 +960,7 @@ export function StoreSettingsForm({
           type="submit"
           disabled={saveDisabled}
           data-testid="settings-save-button"
-          className="cx-btn-primary px-4 py-2 disabled:opacity-60"
+          className="cx-btn-primary min-h-11 px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? "Salvando..." : "Salvar configurações"}
         </button>

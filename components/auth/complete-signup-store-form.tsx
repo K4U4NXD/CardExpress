@@ -43,7 +43,7 @@ export function CompleteSignupStoreForm({ initialSlug = "" }: CompleteSignupStor
           onChange={(event) => setSlug(event.target.value)}
           aria-invalid={Boolean(state?.fieldErrors?.store_slug)}
           aria-describedby={state?.fieldErrors?.store_slug ? "store_slug-error" : "store_slug-help"}
-          className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-500"
+          className="cx-input mt-1"
         />
         <p id="store_slug-help" className="mt-1 text-xs text-zinc-500">
           Use apenas letras minúsculas, números e hífens, sem espaços.
@@ -56,7 +56,7 @@ export function CompleteSignupStoreForm({ initialSlug = "" }: CompleteSignupStor
       </div>
 
       {state?.error ? (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
           {state.error}
         </p>
       ) : null}

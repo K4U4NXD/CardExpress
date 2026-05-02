@@ -33,8 +33,8 @@ export default async function LoginPage({ searchParams }: Props) {
         backHref="/"
         backLabel="Ir à página inicial"
       />
-      <div className="mx-auto max-w-md px-6 py-8">
-        <div className="mb-4 flex justify-center">
+      <div className="mx-auto w-full max-w-md px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-5 flex justify-center">
           <Image
             src={BRANDING.logoPath}
             alt={BRANDING.productName}

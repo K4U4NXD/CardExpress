@@ -52,7 +52,7 @@ export function PageHeader({
             {backHref ? (
               <Link
                 href={backHref}
-                className={`inline-flex items-center gap-1 rounded-lg px-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 ${compact ? "mb-2 text-xs" : "mb-3 text-sm"}`}
+                className={`inline-flex items-center gap-1 rounded-lg px-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${compact ? "mb-2 text-xs" : "mb-3 text-sm"}`}
               >
                 <span aria-hidden>←</span>
                 <span>{backLabel}</span>
@@ -64,7 +64,7 @@ export function PageHeader({
             ) : null}
           </div>
 
-          {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+          {actions ? <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">{actions}</div> : null}
         </div>
 
         {bottomContent ? <div className={compact ? "mt-2.5" : "mt-3"}>{bottomContent}</div> : null}

@@ -52,6 +52,7 @@ function renderPendingBadge(count: number, active: boolean) {
 export function DashboardShell({ children, storeId, storeSlug }: DashboardShellProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [pendingNewOrdersCount, setPendingNewOrdersCount] = useState(0);
   const publicLinks = storeSlug
     ? [
@@ -62,6 +63,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
 
   useEffect(() => {
     setMenuOpen(false);
+    setPendingHref(null);
   }, [pathname]);
 
   useEffect(() => {
@@ -73,11 +75,11 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-[radial-gradient(120%_90%_at_16%_-8%,_#fff7df_0%,_#f8fafc_44%,_#f2f5f9_100%)]">
+      <div className="cx-dashboard-bg min-h-screen">
         {storeId ? <DashboardGlobalOrderAlerts storeId={storeId} onPendingCountChange={setPendingNewOrdersCount} /> : null}
         <DashboardQueryFlash />
 
-        <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-zinc-200/80 bg-white/92 px-3 py-5 shadow-[0_30px_60px_-50px_rgba(24,24,27,0.6)] backdrop-blur-xl md:flex">
+        <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-amber-100/80 bg-white/85 px-3 py-5 shadow-[0_30px_60px_-50px_rgba(24,24,27,0.6)] backdrop-blur-xl md:flex">
           <div className="rounded-2xl border border-zinc-200 bg-zinc-50/80 px-3 py-3">
             <Image
               src={BRANDING.logoPath}
@@ -93,19 +95,27 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
           <nav className="mt-5 flex flex-col gap-1.5" aria-label="Navegação do dashboard">
             {navItems.map((item) => {
               const active = isActivePath(pathname, item.href);
+              const pending = pendingHref === item.href && !active;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch
+                  onClick={() => setPendingHref(item.href)}
                   aria-current={active ? "page" : undefined}
+                  aria-busy={pending ? "true" : undefined}
                   className={`flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition duration-300 ${
                     active
                       ? "bg-zinc-900 text-white shadow-[0_12px_28px_-18px_rgba(24,24,27,0.9)]"
-                      : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
+                      : pending
+                        ? "bg-amber-50 text-zinc-900"
+                        : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
                   }`}
                 >
                   <span>{item.label}</span>
-                  {item.href === "/dashboard/pedidos" ? renderPendingBadge(pendingNewOrdersCount, active) : null}
+                  {pending ? (
+                    <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden />
+                  ) : item.href === "/dashboard/pedidos" ? renderPendingBadge(pendingNewOrdersCount, active) : null}
                 </Link>
               );
             })}
@@ -138,7 +148,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
         </aside>
 
         <div className="md:pl-60">
-          <header className="sticky top-0 z-30 border-b border-zinc-200/80 bg-white/90 backdrop-blur-xl md:hidden">
+          <header className="sticky top-0 z-30 border-b border-amber-100/80 bg-white/80 backdrop-blur-xl md:hidden">
             <div className="flex h-14 items-center justify-between px-4">
               <div className="inline-flex min-w-0 items-center gap-2">
                 <Image
@@ -204,17 +214,23 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
               <nav className="flex flex-col gap-1.5" aria-label="Navegação do dashboard">
                 {navItems.map((item) => {
                   const active = isActivePath(pathname, item.href);
+                  const pending = pendingHref === item.href && !active;
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
+                      prefetch
+                      onClick={() => setPendingHref(item.href)}
                       aria-current={active ? "page" : undefined}
+                      aria-busy={pending ? "true" : undefined}
                       className={`flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                        active ? "bg-zinc-900 text-white" : "text-zinc-700 hover:bg-zinc-100"
+                        active ? "bg-zinc-900 text-white" : pending ? "bg-amber-50 text-zinc-900" : "text-zinc-700 hover:bg-zinc-100"
                       }`}
                     >
                       <span>{item.label}</span>
-                      {item.href === "/dashboard/pedidos" ? renderPendingBadge(pendingNewOrdersCount, active) : null}
+                      {pending ? (
+                        <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden />
+                      ) : item.href === "/dashboard/pedidos" ? renderPendingBadge(pendingNewOrdersCount, active) : null}
                     </Link>
                   );
                 })}

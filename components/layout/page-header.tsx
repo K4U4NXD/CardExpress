@@ -38,15 +38,15 @@ export function PageHeader({
   maxWidthClassName = "max-w-4xl",
 }: PageHeaderProps) {
   const headerClassName = [
-    "border-b border-zinc-200/80 bg-white/92 shadow-[0_12px_28px_-26px_rgba(24,24,27,0.55)]",
-    sticky ? `sticky z-20 ${stickyTopClassName} backdrop-blur supports-[backdrop-filter]:bg-white/88` : "",
+    "border-b border-amber-100/70 bg-[#fffcf5] shadow-[0_12px_28px_-26px_rgba(24,24,27,0.55)]",
+    sticky ? `sticky z-20 ${stickyTopClassName}` : "",
   ]
     .filter(Boolean)
     .join(" ");
 
   return (
     <header className={headerClassName}>
-      <div className={`mx-auto ${maxWidthClassName} px-4 sm:px-6 ${compact ? "py-3.5" : "py-6"}`}>
+      <div className={`mx-auto ${maxWidthClassName} px-4 sm:px-6 ${compact ? "py-3 sm:py-3.5" : "py-5 sm:py-6"}`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             {backHref ? (
@@ -64,7 +64,11 @@ export function PageHeader({
             ) : null}
           </div>
 
-          {actions ? <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">{actions}</div> : null}
+          {actions ? (
+            <div className={`flex flex-wrap items-center gap-2 sm:w-auto sm:justify-end ${compact ? "w-auto" : "w-full"}`}>
+              {actions}
+            </div>
+          ) : null}
         </div>
 
         {bottomContent ? <div className={compact ? "mt-2.5" : "mt-3"}>{bottomContent}</div> : null}

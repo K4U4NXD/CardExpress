@@ -13,6 +13,7 @@ type LandingSectionItem = {
 
 type LandingStickyNavProps = {
   sections: readonly LandingSectionItem[];
+  isAuthenticated?: boolean;
 };
 
 function normalizeMostVisibleSection(sectionIds: string[], ratios: Record<string, number>) {
@@ -46,7 +47,7 @@ function normalizeMostVisibleSection(sectionIds: string[], ratios: Record<string
   return fallbackId;
 }
 
-export function LandingStickyNav({ sections }: LandingStickyNavProps) {
+export function LandingStickyNav({ sections, isAuthenticated = false }: LandingStickyNavProps) {
   const sectionIds = useMemo(() => sections.map((section) => section.id), [sections]);
   const [activeId, setActiveId] = useState(sectionIds[0] ?? "");
   const [showTopAction, setShowTopAction] = useState(false);
@@ -161,6 +162,8 @@ export function LandingStickyNav({ sections }: LandingStickyNavProps) {
 
   const activeClass = "border-zinc-900 bg-zinc-900 text-white";
   const idleClass = "border-zinc-200/80 bg-white/75 text-zinc-700 hover:border-zinc-300 hover:bg-white";
+  const accountHref = isAuthenticated ? "/dashboard" : "/login";
+  const accountLabel = isAuthenticated ? "Painel" : "Entrar";
 
   return (
     <>
@@ -215,17 +218,19 @@ export function LandingStickyNav({ sections }: LandingStickyNavProps) {
                   Topo
                 </button>
                 <Link
-                  href="/login"
+                  href={accountHref}
                   className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 transition duration-300 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
                 >
-                  Entrar
+                  {accountLabel}
                 </Link>
-                <Link
-                  href="/cadastro"
-                  className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg bg-zinc-900 px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition duration-300 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60"
-                >
-                  Criar conta
-                </Link>
+                {!isAuthenticated ? (
+                  <Link
+                    href="/cadastro"
+                    className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg bg-zinc-900 px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition duration-300 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60"
+                  >
+                    Criar conta
+                  </Link>
+                ) : null}
               </div>
             </div>
           </div>
@@ -251,17 +256,19 @@ export function LandingStickyNav({ sections }: LandingStickyNavProps) {
             </a>
             <div className="flex items-center gap-1.5">
               <Link
-                href="/login"
+                href={accountHref}
                 className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg border border-zinc-200 bg-white px-2 py-1 text-[11px] font-semibold text-zinc-700 transition duration-300 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
               >
-                Entrar
+                {accountLabel}
               </Link>
-              <Link
-                href="/cadastro"
-                className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg bg-zinc-900 px-2 py-1 text-[11px] font-semibold text-white shadow-sm transition duration-300 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60"
-              >
-                Criar conta
-              </Link>
+              {!isAuthenticated ? (
+                <Link
+                  href="/cadastro"
+                  className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg bg-zinc-900 px-2 py-1 text-[11px] font-semibold text-white shadow-sm transition duration-300 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60"
+                >
+                  Criar conta
+                </Link>
+              ) : null}
             </div>
           </div>
 

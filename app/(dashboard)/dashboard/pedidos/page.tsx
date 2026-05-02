@@ -90,7 +90,7 @@ function applyScopeOrdering<T extends OrderableQuery<T>>(query: T, scope: Orders
 }
 
 type PageProps = {
-  searchParams: Promise<{ escopo?: string }>;
+  searchParams: Promise<{ escopo?: string; pedido?: string }>;
 };
 
 type DashboardOrder = Order & {
@@ -101,6 +101,7 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const { supabase, store } = await getUserStore();
   const selectedScope = parseScopeFilter(params.escopo);
+  const focusedOrderId = typeof params.pedido === "string" && params.pedido.trim().length > 0 ? params.pedido : null;
   const selectedStatuses = statusesForScope(selectedScope);
 
   let orders: DashboardOrder[] = [];
@@ -186,9 +187,9 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
         }
       />
 
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <div className="cx-dashboard-page-frame cx-dashboard-page-frame-tall-header max-w-6xl">
         {itemsUnavailable ? (
-          <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+          <p className="mb-3 shrink-0 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
             Itens do pedido não estão acessíveis nesta consulta. Exibindo apenas os dados gerais.
           </p>
         ) : null}
@@ -198,7 +199,7 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
             Nenhuma loja vinculada à sua conta. Conclua o cadastro antes de gerenciar pedidos.
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="cx-dashboard-page-content">
             {loadError ? (
               <div className="rounded-2xl border border-red-200 bg-red-50 p-6 shadow-sm">
                 <h2 className="text-sm font-semibold text-red-900">Erro ao carregar pedidos</h2>
@@ -228,8 +229,8 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div className="cx-scroll-panel flex-1">
+                <div className="cx-scroll-panel-header flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <h2 className="text-sm font-semibold text-zinc-900">
                     {isOperationalView ? "Pedidos em andamento" : "Histórico de pedidos"}
                   </h2>
@@ -237,11 +238,14 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
                     {orders.length} pedido(s) em {selectedScopeLabel}. Exibindo até 50 registros.
                   </p>
                 </div>
-                <OrdersLiveList
-                  storeId={store.id}
-                  orders={orders}
-                  canPrunePending={selectedScope === "ativos" || selectedScope === "todos"}
-                />
+                <div className="cx-scroll-panel-body">
+                  <OrdersLiveList
+                    storeId={store.id}
+                    orders={orders}
+                    canPrunePending={selectedScope === "ativos" || selectedScope === "todos"}
+                    focusOrderId={focusedOrderId}
+                  />
+                </div>
               </div>
             )}
           </div>

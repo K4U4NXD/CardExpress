@@ -20,6 +20,7 @@ type OrdersLiveListProps = {
   storeId: string;
   orders: DashboardOrder[];
   canPrunePending?: boolean;
+  focusOrderId?: string | null;
 };
 
 type HighlightWindow = {
@@ -153,7 +154,7 @@ function writeAguardandoBaselineIds(storeId: string, ids: Iterable<string>) {
   }
 }
 
-export function OrdersLiveList({ storeId, orders, canPrunePending = false }: OrdersLiveListProps) {
+export function OrdersLiveList({ storeId, orders, canPrunePending = false, focusOrderId = null }: OrdersLiveListProps) {
   const [pendingIds, setPendingIds] = useState<string[]>([]);
   const [highlightWindows, setHighlightWindows] = useState<HighlightWindowsByOrderId>({});
   const [strongPulseNonceById, setStrongPulseNonceById] = useState<Record<string, number>>({});
@@ -255,6 +256,20 @@ export function OrdersLiveList({ storeId, orders, canPrunePending = false }: Ord
       clearJumpFocusTimer();
     };
   }, [aguardandoIds, clearJumpFocusTimer, focusOrderCard, storeId]);
+
+  useEffect(() => {
+    if (!focusOrderId) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      focusOrderCard(focusOrderId);
+    }, 140);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [focusOrderCard, focusOrderId]);
 
   useEffect(() => {
     if (!canPrunePending) {
@@ -403,7 +418,7 @@ export function OrdersLiveList({ storeId, orders, canPrunePending = false }: Ord
   }, [highlightWindows, nowMs]);
 
   return (
-    <div className="mt-4 space-y-3">
+    <div className="space-y-2.5">
       {orders.map((order) => (
         <OrderRow
           key={order.id}

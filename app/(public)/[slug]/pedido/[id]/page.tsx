@@ -70,6 +70,14 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
   const statusBadge = ORDER_STATUS_BADGE[order.status];
   const refundLabel = REFUND_STATUS_LABELS[order.refund_status];
   const isTerminalStatus = order.status === "finalizado" || order.status === "recusado" || order.status === "cancelado";
+  const timelineEvents = [
+    { label: "Recebido", value: order.placed_at },
+    { label: "Aceito", value: order.accepted_at },
+    { label: "Pronto para retirada", value: order.ready_at },
+    { label: "Finalizado", value: order.finalized_at },
+    { label: "Recusado", value: order.rejected_at },
+    { label: "Cancelado", value: order.cancelled_at },
+  ].filter((event) => Boolean(event.value));
 
   return (
     <>
@@ -115,26 +123,18 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
             {order.customer_name ? <p>Cliente: {order.customer_name}</p> : null}
           </div>
 
-          <div className="mt-6 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
+          <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50/90 p-3 text-sm text-zinc-700 sm:p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Linha do tempo</p>
-            <p className="flex flex-col gap-0.5 rounded-lg bg-white px-3 py-2 sm:flex-row sm:justify-between">
-              Recebido: <span className="text-zinc-900">{formatDateTime(order.placed_at)}</span>
-            </p>
-            <p className="flex flex-col gap-0.5 rounded-lg bg-white px-3 py-2 sm:flex-row sm:justify-between">
-              Aceito: <span className="text-zinc-900">{formatDateTime(order.accepted_at)}</span>
-            </p>
-            <p className="flex flex-col gap-0.5 rounded-lg bg-white px-3 py-2 sm:flex-row sm:justify-between">
-              Pronto para retirada: <span className="text-zinc-900">{formatDateTime(order.ready_at)}</span>
-            </p>
-            <p className="flex flex-col gap-0.5 rounded-lg bg-white px-3 py-2 sm:flex-row sm:justify-between">
-              Finalizado: <span className="text-zinc-900">{formatDateTime(order.finalized_at)}</span>
-            </p>
-            <p className="flex flex-col gap-0.5 rounded-lg bg-white px-3 py-2 sm:flex-row sm:justify-between">
-              Recusado: <span className="text-zinc-900">{formatDateTime(order.rejected_at)}</span>
-            </p>
-            <p className="flex flex-col gap-0.5 rounded-lg bg-white px-3 py-2 sm:flex-row sm:justify-between">
-              Cancelado: <span className="text-zinc-900">{formatDateTime(order.cancelled_at)}</span>
-            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {timelineEvents.map((event) => (
+                <span key={event.label} className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs text-zinc-700">
+                  <span className="font-semibold text-zinc-600">{event.label}:</span> {formatDateTime(event.value)}
+                </span>
+              ))}
+            </div>
+            {!isTerminalStatus ? (
+              <p className="mt-2 text-xs text-zinc-500">Aguardando próxima atualização do estabelecimento.</p>
+            ) : null}
           </div>
         </div>
       </div>

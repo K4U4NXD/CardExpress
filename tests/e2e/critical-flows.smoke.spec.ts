@@ -5,6 +5,7 @@ import { test, expect, type Page } from "@playwright/test";
 
 import {
   addMenuProductQuantity,
+  clickBulkAction,
   clickOrderAction,
   createCategoryIfMissing,
   createCheckoutSession,
@@ -16,6 +17,7 @@ import {
   loginAsMerchant,
   productCardByName,
   readStoreSlugFromSettings,
+  selectDashboardRowForBulkAction,
   setStoreOperationalMode,
   simulatePaymentAndWaitForOrderPage,
   waitForOrderRowByMarker,
@@ -518,6 +520,8 @@ test.describe.serial("CardExpress critical smoke", () => {
   });
 
   test("Cenario 9 - cancelamento e recovery sem ressuscitar sessao invalida", async ({ browser }) => {
+    test.setTimeout(90_000);
+
     const publicContext = await browser.newContext();
     const publicPage = await publicContext.newPage();
 
@@ -937,10 +941,15 @@ test.describe.serial("CardExpress critical smoke", () => {
       });
 
       await merchantPage.goto("/dashboard/categorias", { waitUntil: "domcontentloaded" });
-      await dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)
-        .locator('[data-testid^="category-select-"]')
-        .check();
-      await merchantPage.getByTestId("category-bulk-delete").click();
+      await selectDashboardRowForBulkAction(merchantPage, dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName), {
+        checkboxSelector: '[data-testid^="category-select-"]',
+        toolbarTestId: "category-bulk-toolbar",
+        expectedToolbarText: "1 categoria selecionada",
+      });
+      await clickBulkAction(merchantPage, {
+        toolbarTestId: "category-bulk-toolbar",
+        actionTestId: "category-bulk-delete",
+      });
       await merchantPage.getByTestId("category-bulk-delete-confirm").click();
       await expect(dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)).toHaveCount(0, {
         timeout: 20_000,

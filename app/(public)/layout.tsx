@@ -11,7 +11,7 @@ export default function PublicGroupLayout({
 }>) {
   return (
     <ToastProvider>
-      <div className="min-h-screen">{children}</div>
+      <div className="cx-public-bg min-h-screen">{children}</div>
     </ToastProvider>
   );
 }

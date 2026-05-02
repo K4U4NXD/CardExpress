@@ -51,6 +51,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
   const [bulkFeedback, setBulkFeedback] = useState<BulkCategoriesActionResult | null>(null);
   const [bulkDetailsOpen, setBulkDetailsOpen] = useState(false);
   const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [isBulkPending, startBulkTransition] = useTransition();
   const bulkDeleteCancelButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -100,6 +101,12 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
       clearBulkSelection();
     }
   }, [clearBulkSelection, isCreateOpen, isAnyEditing]);
+
+  useEffect(() => {
+    if (selectedCount === 0) {
+      setMobileActionsOpen(false);
+    }
+  }, [selectedCount]);
 
   useEffect(() => {
     if (!bulkDeleteConfirmOpen) {
@@ -357,14 +364,14 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
         }
       />
 
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <div className="cx-dashboard-page-frame max-w-6xl">
         <DashboardProductsRealtimeSync
           storeId={storeId}
-          className="mb-3"
+          className="mb-2 shrink-0"
           blockAutoRefresh={Boolean(draggingCategoryId) || Boolean(pendingReorderCategoryId)}
         />
 
-        <div className="space-y-4">
+        <div className="cx-dashboard-page-content">
           {isCreateOpen ? (
             <section className="cx-panel p-4 sm:p-6">
               <div className="mb-4 flex items-center justify-between gap-2">
@@ -374,11 +381,23 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
             </section>
           ) : null}
 
-          <section className="cx-panel p-4 sm:p-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-sm font-semibold text-zinc-900">Categorias cadastradas</h2>
-              <div className="flex items-center justify-between gap-3 sm:justify-end">
-                <div className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 shadow-sm">
+          <section className="cx-scroll-panel flex-1">
+            <div className="cx-scroll-panel-header flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-semibold text-zinc-900">Categorias cadastradas</h2>
+                {orderedCategories.length > 1 ? (
+                  <>
+                    <p className="mt-1 hidden text-xs text-zinc-500 sm:block">
+                      Arraste pela alça lateral para reorganizar as categorias.
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500 sm:hidden">
+                      Use as setas no topo de cada card para reorganizar as categorias.
+                    </p>
+                  </>
+                ) : null}
+              </div>
+              <div className="flex items-center justify-between gap-2 sm:gap-3 sm:justify-end">
+                <div className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-medium text-zinc-600 shadow-sm sm:px-2.5 sm:py-1.5">
                   <SelectionCheckbox
                     checked={allVisibleSelected}
                     indeterminate={selectedCount > 0 && !allVisibleSelected}
@@ -386,44 +405,53 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
                     disabled={selectionDisabled || orderedCategories.length === 0}
                     label="Selecionar todos"
                     testId="category-select-all"
+                    className="!h-9 !w-9"
                   />
                   Selecionar todos
                 </div>
-                <p className="shrink-0 text-xs text-zinc-500">
+                <p className="shrink-0 text-xs text-zinc-600">
                   {selectedCount > 0 ? `${selectedCount}/` : ""}
                   {orderedCategories.length} {orderedCategories.length === 1 ? "categoria" : "categorias"}
                 </p>
               </div>
             </div>
 
-            {orderedCategories.length > 1 ? (
-              <>
-                <p className="mt-1 hidden text-xs text-zinc-500 sm:block">
-                  Arraste pela alça lateral para reorganizar as categorias.
-                </p>
-                <p className="mt-1 text-xs text-zinc-500 sm:hidden">
-                  Use as setas no topo de cada card para reorganizar as categorias.
-                </p>
-              </>
-            ) : null}
-
             {showBulkToolbar ? (
               <div
                 data-testid="category-bulk-toolbar"
-                className="sticky top-28 z-20 mt-3 rounded-xl border border-zinc-200 bg-white/95 px-3 py-2.5 shadow-sm backdrop-blur md:top-20"
+                className="cx-scroll-panel-toolbar"
               >
-                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm font-medium text-zinc-800">
-                    {selectedCount} {selectedCount === 1 ? "categoria selecionada" : "categorias selecionadas"}
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-zinc-800">
+                      {selectedCount} {selectedCount === 1 ? "categoria selecionada" : "categorias selecionadas"}
+                    </p>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={clearBulkSelection}
+                        className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900"
+                      >
+                        Limpar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMobileActionsOpen((open) => !open)}
+                        className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900 md:hidden"
+                        aria-expanded={mobileActionsOpen}
+                      >
+                        {mobileActionsOpen ? "Ocultar" : "Ações"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className={`${mobileActionsOpen ? "grid" : "hidden"} grid-cols-2 gap-1.5 md:flex md:flex-wrap md:justify-end md:gap-2`}>
                   <button
                     type="button"
                     onClick={openSelectedCategoryEditor}
                     disabled={editActionDisabled}
                     title={selectedCount > 1 ? "Selecione apenas uma categoria para editar." : undefined}
                     data-testid="category-bulk-edit"
-                    className="cx-btn-secondary w-full justify-center px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    className="cx-btn-secondary min-h-9 w-full justify-center !px-2.5 !py-1.5 !text-xs disabled:cursor-not-allowed disabled:opacity-60 md:w-auto md:!px-3 md:!py-2 md:!text-sm"
                   >
                     Editar
                   </button>
@@ -432,7 +460,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
                     onClick={() => runBulkAction("activate")}
                     disabled={bulkActionsDisabled}
                     data-testid="category-bulk-activate"
-                    className="cx-btn-secondary w-full justify-center px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    className="cx-btn-secondary min-h-9 w-full justify-center !px-2.5 !py-1.5 !text-xs disabled:cursor-not-allowed disabled:opacity-60 md:w-auto md:!px-3 md:!py-2 md:!text-sm"
                   >
                     Ativar selecionadas
                   </button>
@@ -441,7 +469,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
                     onClick={() => runBulkAction("deactivate")}
                     disabled={bulkActionsDisabled}
                     data-testid="category-bulk-deactivate"
-                    className="cx-btn-secondary w-full justify-center px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    className="cx-btn-secondary min-h-9 w-full justify-center !px-2.5 !py-1.5 !text-xs disabled:cursor-not-allowed disabled:opacity-60 md:w-auto md:!px-3 md:!py-2 md:!text-sm"
                   >
                     Desativar selecionadas
                   </button>
@@ -450,7 +478,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
                     onClick={openBulkDeleteModal}
                     disabled={bulkActionsDisabled}
                     data-testid="category-bulk-delete"
-                    className="col-span-2 w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-1 sm:w-auto"
+                    className="min-h-9 w-full rounded-xl border border-red-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto md:px-3 md:py-2 md:text-sm"
                   >
                     Excluir selecionadas
                   </button>
@@ -461,7 +489,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
 
             {bulkFeedback ? (
               <div
-                className={`mt-3 rounded-xl border px-3 py-2 text-sm ${
+                className={`mx-4 mt-3 rounded-xl border px-3 py-2 text-sm sm:mx-5 ${
                   bulkFeedback.failed > 0 || bulkFeedback.skipped > 0
                     ? "border-amber-200 bg-amber-50 text-amber-900"
                     : "border-emerald-200 bg-emerald-50 text-emerald-900"
@@ -490,8 +518,9 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
               </div>
             ) : null}
 
+            <div className="cx-scroll-panel-body">
             {orderedCategories.length === 0 ? (
-              <div className="mt-4 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/90 p-5 text-center sm:p-6">
+              <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/90 p-5 text-center sm:p-6">
                 <p className="text-sm font-semibold text-zinc-800">Nenhuma categoria cadastrada.</p>
                 <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-zinc-500">Use o botão &quot;Nova categoria&quot; para iniciar a estrutura do cardápio.</p>
                 <button
@@ -503,7 +532,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
                 </button>
               </div>
             ) : (
-              <div className="mt-3 sm:mt-2 space-y-2 sm:space-y-0">
+              <div className="space-y-2 sm:space-y-0">
                 {orderedCategories.map((cat, index) => (
                   <div
                     key={cat.id}
@@ -572,6 +601,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
                 ))}
               </div>
             )}
+            </div>
           </section>
         </div>
       </div>

@@ -34,7 +34,7 @@ export default async function CadastroConfirmarEmailPage({ searchParams }: Confi
   const maskedEmail = email ? maskEmail(email) : null;
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="cx-auth-bg flex min-h-dvh flex-col">
       <PageHeader
         title="Confirme seu e-mail"
         description="Ative sua conta para concluir a criação da loja no CardExpress."

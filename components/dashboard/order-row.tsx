@@ -77,7 +77,7 @@ export function OrderRow({
   const items = order.order_items ?? [];
   const isOperationalOrder =
     order.status === "aguardando_aceite" || order.status === "em_preparo" || order.status === "pronto_para_retirada";
-  const defaultItemsExpanded = isOperationalOrder || items.length === 0;
+  const defaultItemsExpanded = items.length === 0 || (isOperationalOrder && items.length <= 3);
   const [itemsExpanded, setItemsExpanded] = useState(defaultItemsExpanded);
   const accentClassByStatus: Record<Order["status"], string> = {
     aguardando_aceite: "border-l-amber-400",
@@ -94,14 +94,14 @@ export function OrderRow({
         key: "accept",
         label: "Aceitar",
         action: acceptOrderAction,
-        className: "cx-btn-secondary px-3 py-2",
+        className: "cx-btn-secondary px-3 py-1.5",
       },
       {
         key: "reject",
         label: "Recusar",
         action: rejectOrderAction,
         className:
-          "rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50",
+          "rounded-xl border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50",
       },
     ],
     em_preparo: [
@@ -110,14 +110,14 @@ export function OrderRow({
         label: "Marcar pronto",
         action: markReadyAction,
         className:
-          "rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50",
+          "rounded-xl border border-emerald-200 bg-white px-3 py-1.5 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50",
       },
       {
         key: "cancel",
         label: "Cancelar pedido",
         action: cancelOrderAction,
         className:
-          "rounded-xl border border-orange-200 bg-white px-3 py-2 text-sm font-medium text-orange-800 transition hover:bg-orange-50",
+          "rounded-xl border border-orange-200 bg-white px-3 py-1.5 text-sm font-medium text-orange-800 transition hover:bg-orange-50",
       },
     ],
     pronto_para_retirada: [
@@ -126,7 +126,7 @@ export function OrderRow({
         label: "Finalizar",
         action: finalizeOrderAction,
         className:
-          "rounded-xl border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-sky-800 transition hover:bg-sky-50",
+          "rounded-xl border border-sky-200 bg-white px-3 py-1.5 text-sm font-medium text-sky-800 transition hover:bg-sky-50",
       },
     ],
     finalizado: [],
@@ -163,10 +163,10 @@ export function OrderRow({
       data-testid={`order-row-${order.id}`}
       onMouseEnter={handleAcknowledgeNew}
       onFocusCapture={handleAcknowledgeNew}
-      className={`relative rounded-2xl border border-zinc-200 border-l-4 ${accentClass} ${jumpFocusClass} bg-white p-4 shadow-[0_18px_36px_-30px_rgba(24,24,27,0.4)] transition sm:p-5`}
+      className={`relative rounded-2xl border border-zinc-200 border-l-4 ${accentClass} ${jumpFocusClass} bg-white/92 p-3 shadow-[0_18px_36px_-32px_rgba(24,24,27,0.42)] transition sm:p-4`}
     >
-      <div className="space-y-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="space-y-2.5">
+        <div className="flex flex-col gap-2.5 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center rounded-lg bg-zinc-900 px-2.5 py-1 text-sm font-semibold text-white">
@@ -181,23 +181,23 @@ export function OrderRow({
             </div>
 
             <div className="grid gap-2 sm:grid-cols-3">
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2">
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-2.5 py-1.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Cliente</p>
                 <p className="text-sm font-medium text-zinc-800">{order.customer_name?.trim() || "Não informado"}</p>
               </div>
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2">
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-2.5 py-1.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Telefone</p>
                 <p className="text-sm font-medium text-zinc-800">{formatCustomerPhone(order.customer_phone)}</p>
               </div>
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2">
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-2.5 py-1.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Total</p>
                 <p className="text-sm font-semibold text-zinc-900">{formatBRL(order.total_amount)}</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-2">
-            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-1.5 lg:max-w-[17rem]">
+            <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
               {actions.length === 0 ? (
                 <p className="px-1 text-xs text-zinc-500">Sem ações disponíveis para este status.</p>
               ) : (
@@ -216,7 +216,7 @@ export function OrderRow({
           </div>
         </div>
 
-        <section className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-3.5">
+        <section className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-2.5">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
               Itens do pedido {items.length > 0 ? `(${items.length})` : ""}
@@ -234,9 +234,9 @@ export function OrderRow({
 
           {itemsExpanded ? (
             items.length > 0 ? (
-              <ul className="mt-2 divide-y divide-zinc-200 text-sm text-zinc-800">
+              <ul className="mt-2 max-h-40 divide-y divide-zinc-200 overflow-y-auto pr-1 text-sm text-zinc-800">
                 {items.map((item, idx) => (
-                  <li key={`${item.name}-${idx}`} className="flex items-center justify-between gap-3 py-1.5">
+                  <li key={`${item.name}-${idx}`} className="flex items-center justify-between gap-3 py-1">
                     <span className="min-w-0 truncate">{item.name}</span>
                     <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-zinc-700">
                       {Math.max(1, Math.floor(item.quantity))}x
@@ -251,26 +251,26 @@ export function OrderRow({
         </section>
 
         {order.note ? (
-          <section className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+          <section className="max-h-24 overflow-y-auto rounded-xl border border-amber-200 bg-amber-50 p-2.5">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Observação</p>
             <p className="mt-1 text-sm text-amber-900">{order.note}</p>
           </section>
         ) : null}
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-3">
+        <section className="rounded-xl border border-zinc-200 bg-white p-2.5">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Linha do tempo</p>
-          <div className="mt-2 grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
             {timeline
               .filter((item) => item.always || item.value)
               .map((item) => (
-                <span key={item.label} className="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs text-zinc-700">
+                <span key={item.label} className="rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-700">
                   <span className="font-semibold text-zinc-600">{item.label}:</span> {formatDateTime(item.value)}
                 </span>
               ))}
           </div>
         </section>
 
-        <p className="text-[11px] text-zinc-500" title={order.id}>
+        <p className="truncate text-[11px] text-zinc-500" title={order.id}>
           ID completo: {order.id}
         </p>
       </div>

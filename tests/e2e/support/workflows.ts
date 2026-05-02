@@ -227,9 +227,26 @@ export async function createCategoryIfMissing(page: Page, categoryName: string) 
   }
 
   const createCategoryForm = page.getByTestId("create-category-form");
-  if (!(await createCategoryForm.isVisible())) {
-    await page.getByTestId("open-create-category").click();
+  const openCreateCategoryButton = page.getByTestId("open-create-category");
+  await expect(openCreateCategoryButton).toBeVisible();
+
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    if (await createCategoryForm.isVisible()) {
+      break;
+    }
+
+    await openCreateCategoryButton.click();
+
+    try {
+      await expect(createCategoryForm).toBeVisible({ timeout: 4_000 });
+      break;
+    } catch {
+      // O dashboard pode refrescar em tempo real logo apos a navegacao. Tentamos abrir novamente.
+    }
+
+    await expect(page).toHaveURL(/\/dashboard\/categorias(?:\?.*)?$/);
   }
+
   await expect(createCategoryForm).toBeVisible();
 
   await page.locator("#new-category-name").fill(categoryName);
@@ -577,4 +594,52 @@ export function dashboardProductRowByName(page: Page, productName: string) {
     .locator('[data-testid^="product-row-wrapper-"]')
     .filter({ hasText: productName })
     .first();
+}
+
+export async function selectDashboardRowForBulkAction(
+  page: Page,
+  row: Locator,
+  input: {
+    checkboxSelector: string;
+    toolbarTestId: string;
+    expectedToolbarText: string | RegExp;
+  },
+) {
+  const checkbox = row.locator(input.checkboxSelector);
+  const toolbar = page.getByTestId(input.toolbarTestId);
+
+  await expect(row).toBeVisible({ timeout: 15_000 });
+  await checkbox.scrollIntoViewIfNeeded();
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (!(await checkbox.isChecked())) {
+      await checkbox.click();
+    }
+
+    try {
+      await expect(toolbar).toContainText(input.expectedToolbarText, { timeout: 5_000 });
+      return;
+    } catch (error) {
+      if (attempt === 2) {
+        throw error;
+      }
+
+      await page.waitForTimeout(500);
+    }
+  }
+}
+
+export async function clickBulkAction(page: Page, input: { toolbarTestId: string; actionTestId: string }) {
+  const action = page.getByTestId(input.actionTestId);
+
+  if (!(await action.isVisible())) {
+    const toolbar = page.getByTestId(input.toolbarTestId);
+    const actionsToggle = toolbar.getByRole("button", { name: /^Ações$/i });
+
+    if (await actionsToggle.isVisible()) {
+      await actionsToggle.click();
+    }
+  }
+
+  await action.click();
 }

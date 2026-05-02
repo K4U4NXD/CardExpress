@@ -53,6 +53,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
   const [bulkFeedback, setBulkFeedback] = useState<BulkProductsActionResult | null>(null);
   const [bulkDetailsOpen, setBulkDetailsOpen] = useState(false);
   const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [isBulkPending, startBulkTransition] = useTransition();
   const bulkDeleteCancelButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -101,6 +102,12 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
       clearBulkSelection();
     }
   }, [clearBulkSelection, isCreateOpen, isAnyEditing]);
+
+  useEffect(() => {
+    if (selectedCount === 0) {
+      setMobileActionsOpen(false);
+    }
+  }, [selectedCount]);
 
   useEffect(() => {
     if (!bulkDeleteConfirmOpen) {
@@ -371,14 +378,14 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
         }
       />
 
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+      <div className="cx-dashboard-page-frame max-w-5xl">
         <DashboardProductsRealtimeSync
           storeId={storeId}
-          className="mb-3"
+          className="mb-2 shrink-0"
           blockAutoRefresh={Boolean(draggingProductId) || Boolean(pendingReorderProductId)}
         />
 
-        <div className="space-y-4">
+        <div className="cx-dashboard-page-content">
           {isCreateOpen ? (
             <section id="novo-produto" className="cx-panel p-4 sm:p-6">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -399,11 +406,26 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
             </section>
           ) : null}
 
-          <section className="cx-panel p-4 sm:p-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-sm font-semibold text-zinc-900">Produtos cadastrados</h2>
-              <div className="flex items-center justify-between gap-3 sm:justify-end">
-                <div className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 shadow-sm">
+          <section className="cx-scroll-panel flex-1">
+            <div className="cx-scroll-panel-header flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-semibold text-zinc-900">Produtos cadastrados</h2>
+                {orderedProducts.length > 1 ? (
+                  <>
+                    <p className="mt-1 hidden text-xs text-zinc-500 sm:block">
+                      Arraste pela alça lateral para reorganizar os produtos.
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500 sm:hidden">
+                      Use as setas no topo de cada card para reorganizar os produtos.
+                    </p>
+                  </>
+                ) : null}
+                {orderedProducts.length > 0 ? (
+                  <p className="mt-1 text-xs text-zinc-500">Ajuste dados e status sem sair desta lista.</p>
+                ) : null}
+              </div>
+              <div className="flex items-center justify-between gap-2 sm:gap-3 sm:justify-end">
+                <div className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-medium text-zinc-600 shadow-sm sm:px-2.5 sm:py-1.5">
                   <SelectionCheckbox
                     checked={allVisibleSelected}
                     indeterminate={selectedCount > 0 && !allVisibleSelected}
@@ -411,57 +433,71 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
                     disabled={selectionDisabled || orderedProducts.length === 0}
                     label="Selecionar todos"
                     testId="product-select-all"
+                    className="!h-9 !w-9"
                   />
                   Selecionar todos
                 </div>
-                <p className="shrink-0 text-xs text-zinc-500">
+                <p className="shrink-0 text-xs text-zinc-600">
                   {selectedCount > 0 ? `${selectedCount}/` : ""}
                   {orderedProducts.length} {orderedProducts.length === 1 ? "produto" : "produtos"}
                 </p>
               </div>
             </div>
 
-            {orderedProducts.length > 1 ? (
-              <>
-                <p className="mt-1 hidden text-xs text-zinc-500 sm:block">
-                  Arraste pela alça lateral para reorganizar os produtos.
-                </p>
-                <p className="mt-1 text-xs text-zinc-500 sm:hidden">
-                  Use as setas no topo de cada card para reorganizar os produtos.
-                </p>
-              </>
-            ) : null}
-
-            {orderedProducts.length > 0 ? (
-              <p className="mt-1 text-xs text-zinc-500">Ajuste dados e status sem sair desta lista.</p>
-            ) : null}
-
             {showBulkToolbar ? (
               <div
                 data-testid="product-bulk-toolbar"
-                className="sticky top-28 z-20 mt-3 rounded-xl border border-zinc-200 bg-white/95 px-3 py-2.5 shadow-sm backdrop-blur md:top-20"
+                className="cx-scroll-panel-toolbar"
               >
-                <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
-                  <p className="text-sm font-medium text-zinc-800">
-                    {selectedCount} {selectedCount === 1 ? "produto selecionado" : "produtos selecionados"}
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:justify-end">
+                <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-zinc-800">
+                      {selectedCount} {selectedCount === 1 ? "produto selecionado" : "produtos selecionados"}
+                    </p>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={clearBulkSelection}
+                        className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900"
+                      >
+                        Limpar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMobileActionsOpen((open) => !open)}
+                        className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900 lg:hidden"
+                        aria-expanded={mobileActionsOpen}
+                      >
+                        {mobileActionsOpen ? "Ocultar" : "Ações"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className={`${mobileActionsOpen ? "grid" : "hidden"} grid-cols-2 gap-1.5 lg:flex lg:flex-wrap lg:justify-end lg:gap-2`}>
                   <button
                     type="button"
                     onClick={openSelectedProductEditor}
                     disabled={editActionDisabled}
                     title={selectedCount > 1 ? "Selecione apenas um produto para editar." : undefined}
                     data-testid="product-bulk-edit"
-                    className="col-span-2 w-full justify-center px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60 lg:col-span-1 lg:w-auto cx-btn-secondary"
+                    className="cx-btn-secondary min-h-9 w-full justify-center !px-2.5 !py-1.5 !text-xs disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto lg:!px-3 lg:!py-2 lg:!text-sm"
                   >
                     Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openBulkDeleteModal}
+                    disabled={bulkActionsDisabled}
+                    data-testid="product-bulk-delete"
+                    className="min-h-9 w-full rounded-xl border border-red-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto lg:px-3 lg:py-2 lg:text-sm"
+                  >
+                    Excluir selecionados
                   </button>
                   <button
                     type="button"
                     onClick={() => runBulkAction("activate")}
                     disabled={bulkActionsDisabled}
                     data-testid="product-bulk-activate"
-                    className="cx-btn-secondary w-full justify-center px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
+                    className="cx-btn-secondary min-h-9 w-full justify-center !px-2.5 !py-1.5 !text-xs disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto lg:!px-3 lg:!py-2 lg:!text-sm"
                   >
                     Ativar selecionados
                   </button>
@@ -470,7 +506,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
                     onClick={() => runBulkAction("deactivate")}
                     disabled={bulkActionsDisabled}
                     data-testid="product-bulk-deactivate"
-                    className="cx-btn-secondary w-full justify-center px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
+                    className="cx-btn-secondary min-h-9 w-full justify-center !px-2.5 !py-1.5 !text-xs disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto lg:!px-3 lg:!py-2 lg:!text-sm"
                   >
                     Desativar selecionados
                   </button>
@@ -479,7 +515,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
                     onClick={() => runBulkAction("pause")}
                     disabled={bulkActionsDisabled}
                     data-testid="product-bulk-pause-sale"
-                    className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
+                    className="min-h-9 w-full rounded-xl border border-amber-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto lg:px-3 lg:py-2 lg:text-sm"
                   >
                     Pausar venda
                   </button>
@@ -488,18 +524,9 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
                     onClick={() => runBulkAction("enable")}
                     disabled={bulkActionsDisabled}
                     data-testid="product-bulk-enable-sale"
-                    className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
+                    className="min-h-9 w-full rounded-xl border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto lg:px-3 lg:py-2 lg:text-sm"
                   >
                     Disponibilizar venda
-                  </button>
-                  <button
-                    type="button"
-                    onClick={openBulkDeleteModal}
-                    disabled={bulkActionsDisabled}
-                    data-testid="product-bulk-delete"
-                    className="col-span-2 w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 lg:col-span-1 lg:w-auto"
-                  >
-                    Excluir selecionados
                   </button>
                   </div>
                 </div>
@@ -508,7 +535,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
 
             {bulkFeedback ? (
               <div
-                className={`mt-3 rounded-xl border px-3 py-2 text-sm ${
+                className={`mx-4 mt-3 rounded-xl border px-3 py-2 text-sm sm:mx-5 ${
                   bulkFeedback.failed > 0 || bulkFeedback.skipped > 0
                     ? "border-amber-200 bg-amber-50 text-amber-900"
                     : "border-emerald-200 bg-emerald-50 text-emerald-900"
@@ -537,8 +564,9 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
               </div>
             ) : null}
 
+            <div className="cx-scroll-panel-body">
             {orderedProducts.length === 0 ? (
-              <div className="mt-4 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/90 p-5 text-center sm:p-6">
+              <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/90 p-5 text-center sm:p-6">
                 <p className="text-sm font-semibold text-zinc-800">Nenhum produto cadastrado.</p>
                 <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-zinc-500">Crie um produto para iniciar a exibição no cardápio.</p>
                 <button
@@ -550,7 +578,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
                 </button>
               </div>
             ) : (
-              <div className="mt-4 space-y-3">
+              <div className="space-y-3">
                 {orderedProducts.map((product, index) => {
                   const associatedCategoryIds = new Set(
                     [product.category_id, ...(product.category_ids ?? [])].filter((id): id is string => Boolean(id))
@@ -644,6 +672,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
                 })}
               </div>
             )}
+            </div>
           </section>
         </div>
       </div>

@@ -489,7 +489,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
           {store ? <DashboardHomeRealtimeSync storeId={store.id} /> : null}
         </div>
 
-        <div className="space-y-3 sm:space-y-4 sm:rounded-2xl sm:border sm:border-zinc-200 sm:bg-white/90 sm:p-6 sm:shadow-[0_28px_54px_-40px_rgba(24,24,27,0.58)] sm:backdrop-blur-sm">
+        <div className="space-y-3 sm:space-y-4 sm:rounded-2xl sm:border sm:border-amber-100/80 sm:bg-white/80 sm:p-6 sm:shadow-[0_28px_54px_-40px_rgba(24,24,27,0.58)] sm:backdrop-blur-sm">
           {!store ? (
             <div className="space-y-2 text-left">
               <p className="font-medium text-zinc-800">Nenhuma loja encontrada</p>
@@ -531,9 +531,9 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                 </section>
               ) : null}
 
-              <div className="grid gap-3 sm:gap-4 xl:grid-cols-3">
-                <div className="space-y-3 sm:space-y-4 xl:col-span-2">
-                  <section className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm sm:rounded-2xl sm:p-5">
+              <div className="grid gap-3 sm:gap-4">
+                <div className="space-y-3 sm:space-y-4">
+                  <section className="cx-dashboard-card p-3 sm:p-5">
                     <h2 className="text-sm font-semibold text-zinc-900">Visão operacional</h2>
 
                     <div className="mt-3 space-y-3">
@@ -585,7 +585,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                     </div>
                   </section>
 
-                  <section className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm sm:rounded-2xl sm:p-5">
+                  <section className="cx-dashboard-card p-3 sm:p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Alertas de estoque</p>
@@ -649,7 +649,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                   <DashboardIndicatorsPanel periods={indicatorPeriods} topProductsLimit={TOP_PRODUCTS_LIMIT} />
                 </div>
 
-                <section className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm sm:rounded-2xl sm:p-5 xl:h-fit">
+                <section className="cx-dashboard-card p-3 sm:p-5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-sm font-semibold text-zinc-900">Últimos pedidos</h2>
                     <Link
@@ -663,10 +663,14 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                   {recentOrders.length === 0 ? (
                     <p className="mt-3 text-sm text-zinc-600">Nenhum pedido registrado até o momento.</p>
                   ) : (
-                    <ul className="mt-3 space-y-2">
+                    <ul className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
                       {recentOrders.map((order) => (
-                        <li key={order.id} className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
-                          <Link href="/dashboard/pedidos?escopo=todos" className="flex flex-col gap-2">
+                        <li key={order.id} className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition hover:border-zinc-300 hover:bg-white">
+                          <Link
+                            href={`/dashboard/pedidos?escopo=todos&pedido=${encodeURIComponent(order.id)}`}
+                            prefetch
+                            className="flex h-full flex-col gap-2"
+                          >
                             <div className="min-w-0">
                               <p className="text-sm font-semibold text-zinc-900">Pedido {formatOrderCode(order)}</p>
                               <p className="text-xs text-zinc-500">{formatDateTime(order.created_at)}</p>

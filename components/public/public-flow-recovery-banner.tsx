@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { ORDER_STATUS_LABELS } from "@/lib/orders/presenter";
 import {
   clearCheckoutRecovery,
   clearOrderRecovery,
@@ -37,6 +38,8 @@ type PublicOrderValidationRow = {
   status: OrderStatus;
   display_code: string | null;
 };
+
+const ORDER_STATUS_REFRESH_INTERVAL_MS = 20000;
 
 function buildOrderPath(slug: string, orderId: string, orderPublicToken: string) {
   return `/${slug}/pedido/${orderId}?token=${encodeURIComponent(orderPublicToken)}`;
@@ -96,22 +99,24 @@ export function PublicFlowRecoveryBanner({ slug, className }: PublicFlowRecovery
             continue;
           }
 
-          if (!data || isTerminalOrderStatus(data.status)) {
+          if (!data) {
             clearOrderRecovery(slug, savedOrder.orderId);
             continue;
           }
 
           const orderPath = buildOrderPath(slug, data.id, savedOrder.orderPublicToken);
 
-          saveOrderRecovery({
-            slug,
-            orderId: data.id,
-            orderPublicToken: savedOrder.orderPublicToken,
-            status: data.status,
-            displayCode: data.display_code,
-            orderUrl: orderPath,
-            clearCheckout: false,
-          });
+          if (!isTerminalOrderStatus(data.status)) {
+            saveOrderRecovery({
+              slug,
+              orderId: data.id,
+              orderPublicToken: savedOrder.orderPublicToken,
+              status: data.status,
+              displayCode: data.display_code,
+              orderUrl: orderPath,
+              clearCheckout: false,
+            });
+          }
 
           nextOrders.push({
             orderId: data.id,
@@ -157,8 +162,24 @@ export function PublicFlowRecoveryBanner({ slug, className }: PublicFlowRecovery
 
     void resolveRecovery();
 
+    const intervalId = window.setInterval(() => {
+      void resolveRecovery();
+    }, ORDER_STATUS_REFRESH_INTERVAL_MS);
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        void resolveRecovery();
+      }
+    };
+
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
     return () => {
       active = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, [pathname, slug]);
 
@@ -186,7 +207,7 @@ export function PublicFlowRecoveryBanner({ slug, className }: PublicFlowRecovery
                 >
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-sky-900">{order.displayCode ? `Senha ${order.displayCode}` : "Pedido em andamento"}</p>
-                    <p className="text-[11px] text-sky-800">Status: {order.status.replaceAll("_", " ")}</p>
+                    <p className="text-[11px] text-sky-800">Status: {ORDER_STATUS_LABELS[order.status]}</p>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">

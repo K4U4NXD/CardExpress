@@ -4,6 +4,7 @@ import { Sora, Space_Grotesk } from "next/font/google";
 import { Reveal } from "@/components/layout/reveal";
 import { LandingStickyNav } from "@/components/layout/landing-sticky-nav";
 import { LandingBenefitsSection } from "@/components/layout/landing-benefits-section";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Início",
@@ -132,10 +133,18 @@ const customerBenefits = [
 const navActionClass =
   "rounded-xl px-3 py-2 text-sm font-medium text-zinc-300 transition duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/30";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isAuthenticated = Boolean(user);
+  const primaryCtaHref = isAuthenticated ? "/dashboard" : "/cadastro";
+  const primaryCtaLabel = isAuthenticated ? "Acessar painel" : "Criar conta";
+
   return (
-    <main className={`${bodyFont.className} overflow-x-clip bg-[#f7f7f4] text-zinc-900`}>
-      <LandingStickyNav sections={landingSections} />
+    <main className={`${bodyFont.className} cx-page-bg overflow-x-clip text-zinc-900`}>
+      <LandingStickyNav sections={landingSections} isAuthenticated={isAuthenticated} />
 
       <section
         id="inicio"
@@ -162,8 +171,8 @@ export default function HomePage() {
               <p className="mt-2.5 max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base">{paymentNarrative.hero}</p>
 
               <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
-                <Link href="/cadastro" className="cx-btn-primary min-h-11 px-5 py-2.5 text-sm font-semibold sm:min-h-12 sm:px-6 sm:py-3 sm:text-base">
-                  Criar conta
+                <Link href={primaryCtaHref} prefetch className="cx-btn-primary min-h-11 px-5 py-2.5 text-sm font-semibold sm:min-h-12 sm:px-6 sm:py-3 sm:text-base">
+                  {primaryCtaLabel}
                 </Link>
                 <a
                   href="#produto"
@@ -171,13 +180,21 @@ export default function HomePage() {
                 >
                   Ver produto
                 </a>
-                <Link
-                  href="/login"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-zinc-300 underline-offset-4 transition hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 sm:min-h-12 sm:py-3 sm:text-base"
-                >
-                  Acessar painel
-                </Link>
+                {!isAuthenticated ? (
+                  <Link
+                    href="/login"
+                    prefetch
+                    className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-zinc-300 underline-offset-4 transition hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 sm:min-h-12 sm:py-3 sm:text-base"
+                  >
+                    Acessar painel
+                  </Link>
+                ) : null}
               </div>
+              {isAuthenticated ? (
+                <p className="mt-3 max-w-xl text-xs leading-5 text-zinc-400">
+                  Sua conta já está ativa neste navegador. Para criar uma nova conta, saia da conta atual primeiro.
+                </p>
+              ) : null}
 
               <div className="mt-6 flex flex-wrap gap-2">
                 {heroBadges.map((badge) => (
@@ -251,7 +268,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="produto" className="scroll-mt-52 bg-[#f7f7f4] py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
+      <section id="produto" className="scroll-mt-52 bg-transparent py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <Reveal>
             <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
@@ -298,7 +315,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="como-funciona" className="scroll-mt-52 bg-white py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
+      <section id="como-funciona" className="scroll-mt-52 bg-white/72 py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <Reveal>
             <div className="max-w-3xl">
@@ -351,7 +368,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="beneficios" className="scroll-mt-52 bg-[#f7f7f4] py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
+      <section id="beneficios" className="scroll-mt-52 bg-transparent py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <Reveal>
             <div className="mb-7 max-w-3xl">
@@ -373,7 +390,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="contato" className="scroll-mt-52 bg-white py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
+      <section id="contato" className="scroll-mt-52 bg-white/72 py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <Reveal>
             <div className="rounded-2xl border border-zinc-200 bg-zinc-950 p-5 text-white shadow-sm sm:p-8 lg:grid lg:grid-cols-[1fr_auto] lg:items-center lg:gap-8">
@@ -400,10 +417,11 @@ export default function HomePage() {
                   Solicitar demonstração
                 </a>
                 <Link
-                  href="/cadastro"
+                  href={primaryCtaHref}
+                  prefetch
                   className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
                 >
-                  Criar conta
+                  {primaryCtaLabel}
                 </Link>
               </div>
             </div>
@@ -433,12 +451,14 @@ export default function HomePage() {
             <a href="#contato" className={navActionClass}>
               Contato
             </a>
-            <Link href="/login" className={navActionClass}>
-              Login
+            <Link href={isAuthenticated ? "/dashboard" : "/login"} className={navActionClass}>
+              {isAuthenticated ? "Painel" : "Login"}
             </Link>
-            <Link href="/cadastro" className={navActionClass}>
-              Cadastro
-            </Link>
+            {!isAuthenticated ? (
+              <Link href={primaryCtaHref} className={navActionClass}>
+                Cadastro
+              </Link>
+            ) : null}
           </nav>
         </div>
 

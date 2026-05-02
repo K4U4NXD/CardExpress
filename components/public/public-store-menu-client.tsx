@@ -187,7 +187,7 @@ export function PublicStoreMenuClient({
   const isCheckoutDisabled = !acceptsOrders || !hasPurchasableItemsInCart;
 
   function addProduct(product: MenuProduct) {
-    if (!acceptsOrders || !product.isPurchasableNow) {
+    if (!hasHydratedCart || !acceptsOrders || !product.isPurchasableNow) {
       return;
     }
 
@@ -219,7 +219,7 @@ export function PublicStoreMenuClient({
 
   function increaseQuantity(productId: string) {
     const product = productById.get(productId);
-    if (!acceptsOrders || !product || !product.isPurchasableNow) {
+    if (!hasHydratedCart || !acceptsOrders || !product || !product.isPurchasableNow) {
       return;
     }
 
@@ -269,9 +269,9 @@ export function PublicStoreMenuClient({
   }
 
   return (
-    <div className="space-y-6 pb-28 sm:pb-24">
+    <div className="relative isolate space-y-6 pb-28 sm:pb-24">
       {hasProducts ? (
-        <section className="sticky top-[4.5rem] z-10 rounded-2xl border border-zinc-200 bg-white/95 p-3 shadow-[0_20px_38px_-30px_rgba(24,24,27,0.5)] backdrop-blur-sm">
+        <section className="cx-public-sticky-surface sticky top-[4.5rem] z-40 rounded-2xl p-3">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-semibold text-zinc-800">Explore o cardápio</p>
@@ -344,28 +344,28 @@ export function PublicStoreMenuClient({
                 const cartItem = cartItems.find((item) => item.product_id === product.id);
                 const quantity = cartItem?.quantity ?? 0;
                 const isOutOfStock = product.track_stock && (product.stock_quantity ?? 0) <= 0;
-                const canAddOrIncrease = acceptsOrders && product.isPurchasableNow;
+                const canAddOrIncrease = hasHydratedCart && acceptsOrders && product.isPurchasableNow;
 
                 return (
                   <article
                     key={product.id}
                     data-testid={`menu-product-${product.id}`}
-                    className={`rounded-2xl border bg-white p-4 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_42px_-32px_rgba(24,24,27,0.5)] ${
+                    className={`relative z-0 rounded-2xl border bg-white p-3 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_42px_-32px_rgba(24,24,27,0.5)] sm:p-4 ${
                       isOutOfStock ? "border-zinc-300 bg-zinc-50/80" : "border-zinc-200"
                     }`}
                   >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+                    <div className="flex gap-3 sm:gap-4">
                       {product.image_url ? (
-                        <div className="relative h-40 w-full flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50 sm:h-24 sm:w-24">
+                        <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:h-28 sm:w-28">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" />
                         </div>
                       ) : null}
 
-                      <div className="flex flex-1 flex-col justify-between gap-3">
+                      <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 sm:gap-3">
                         <div>
                           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                            <h3 className="break-words text-base font-medium text-zinc-900">{product.name}</h3>
+                            <h3 className="break-words text-sm font-semibold text-zinc-900 sm:text-base">{product.name}</h3>
                             <div className="flex flex-wrap items-center gap-1 sm:flex-col sm:items-end">
                               <span className="text-sm font-semibold text-zinc-900">{formatBRL(product.price)}</span>
                               {isOutOfStock ? (
@@ -385,7 +385,7 @@ export function PublicStoreMenuClient({
                             return (
                               <div className="mt-2">
                                 <p
-                                  className={`text-sm text-zinc-600 ${
+                                  className={`text-xs leading-5 text-zinc-600 sm:text-sm ${
                                     !isExpanded
                                       ? "overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]"
                                       : ""
@@ -434,7 +434,7 @@ export function PublicStoreMenuClient({
                             onClick={() => addProduct(product)}
                             disabled={!canAddOrIncrease}
                             data-testid={`menu-add-${product.id}`}
-                            className="cx-btn-primary w-fit px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="cx-btn-primary w-fit px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-60 sm:py-2 sm:text-sm"
                           >
                             Adicionar
                           </button>
@@ -479,7 +479,7 @@ export function PublicStoreMenuClient({
         </div>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200 bg-white/97 shadow-[0_-12px_30px_rgba(0,0,0,0.08)] backdrop-blur">
+      <div className="cx-public-bottom-surface fixed inset-x-0 bottom-0 z-30">
         <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="min-w-0">
             <p className="text-xs text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</p>

@@ -26,7 +26,7 @@ export default async function LoginPage({ searchParams }: Props) {
   const initialError = erro ? safeDecode(erro) : undefined;
 
   return (
-    <>
+    <div className="cx-auth-bg min-h-dvh">
       <PageHeader
         title="Login"
         description="Acesso ao painel do estabelecimento."
@@ -53,6 +53,6 @@ export default async function LoginPage({ searchParams }: Props) {
           </Link>
         </p>
       </div>
-    </>
+    </div>
   );
 }

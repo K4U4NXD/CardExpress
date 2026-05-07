@@ -44,6 +44,24 @@ export type PasswordCriteriaStatus = {
   hasSpecial: boolean;
 };
 
+export type PasswordRecoveryValidationResult = {
+  values: {
+    email: string;
+  };
+  fieldErrors: {
+    email?: string;
+  };
+  hasErrors: boolean;
+};
+
+export type ResetPasswordValidationResult = {
+  fieldErrors: {
+    password?: string;
+    password_confirmation?: string;
+  };
+  hasErrors: boolean;
+};
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function normalizeEmail(input: string): string {
@@ -128,6 +146,56 @@ export function validateSignupInput(input: SignupValidationInput): SignupValidat
 
   return {
     values,
+    fieldErrors,
+    hasErrors: Object.keys(fieldErrors).length > 0,
+  };
+}
+
+export function validatePasswordRecoveryInput(email: string): PasswordRecoveryValidationResult {
+  const values = {
+    email: normalizeEmail(email),
+  };
+  const fieldErrors: PasswordRecoveryValidationResult["fieldErrors"] = {};
+
+  if (!values.email) {
+    fieldErrors.email = "Informe seu e-mail.";
+  } else if (!EMAIL_REGEX.test(values.email)) {
+    fieldErrors.email = "Digite um e-mail válido.";
+  }
+
+  return {
+    values,
+    fieldErrors,
+    hasErrors: Object.keys(fieldErrors).length > 0,
+  };
+}
+
+export function validateResetPasswordInput(
+  password: string,
+  passwordConfirmation: string
+): ResetPasswordValidationResult {
+  const fieldErrors: ResetPasswordValidationResult["fieldErrors"] = {};
+  const passwordCriteria = evaluatePasswordCriteria(password);
+
+  if (!password) {
+    fieldErrors.password = "Informe uma nova senha.";
+  } else if (!passwordCriteria.hasMinLength) {
+    fieldErrors.password = "A senha deve ter no mínimo 8 caracteres.";
+  } else if (!passwordCriteria.hasUppercase) {
+    fieldErrors.password = "A senha deve incluir pelo menos 1 letra maiúscula.";
+  } else if (!passwordCriteria.hasNumber) {
+    fieldErrors.password = "A senha deve incluir pelo menos 1 número.";
+  } else if (!passwordCriteria.hasSpecial) {
+    fieldErrors.password = "A senha deve incluir pelo menos 1 caractere especial.";
+  }
+
+  if (!passwordConfirmation) {
+    fieldErrors.password_confirmation = "Confirme sua nova senha.";
+  } else if (passwordConfirmation !== password) {
+    fieldErrors.password_confirmation = "A confirmação de senha não confere.";
+  }
+
+  return {
     fieldErrors,
     hasErrors: Object.keys(fieldErrors).length > 0,
   };

@@ -1,18 +1,21 @@
 "use client";
 
 import { loginAction, type AuthFormState } from "@/app/actions/auth";
+import Link from "next/link";
 import { useActionState } from "react";
 
 type LoginFormProps = {
   nextPath?: string;
   initialError?: string;
+  initialSuccess?: string;
 };
 
 const initial: AuthFormState = {};
 
-export function LoginForm({ nextPath, initialError }: LoginFormProps) {
+export function LoginForm({ nextPath, initialError, initialSuccess }: LoginFormProps) {
   const [state, formAction, pending] = useActionState(loginAction, initial);
   const displayError = state?.error ?? initialError;
+  const displaySuccess = displayError ? undefined : state?.success ?? initialSuccess;
 
   return (
     <form
@@ -34,9 +37,17 @@ export function LoginForm({ nextPath, initialError }: LoginFormProps) {
         />
       </div>
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-zinc-800">
-          Senha
-        </label>
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor="password" className="block text-sm font-medium text-zinc-800">
+            Senha
+          </label>
+          <Link
+            href="/recuperar-senha"
+            className="text-xs font-medium text-zinc-600 underline underline-offset-2 transition hover:text-zinc-900"
+          >
+            Esqueci minha senha
+          </Link>
+        </div>
         <input
           id="password"
           name="password"
@@ -49,6 +60,11 @@ export function LoginForm({ nextPath, initialError }: LoginFormProps) {
       {displayError ? (
         <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
           {displayError}
+        </p>
+      ) : null}
+      {displaySuccess ? (
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900" role="status">
+          {displaySuccess}
         </p>
       ) : null}
       <button

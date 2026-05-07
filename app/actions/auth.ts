@@ -4,6 +4,8 @@ import { ensureAccountProvisioned } from "@/lib/auth/onboarding";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   normalizeStoreSlug,
+  validatePasswordRecoveryInput,
+  validateResetPasswordInput,
   validateSignupInput,
   validateStoreSlug,
   type SignupValidationFieldErrors,
@@ -32,6 +34,25 @@ export type CompleteSignupStoreState = {
   };
 };
 
+export type PasswordRecoveryFormState = {
+  error?: string;
+  success?: string;
+  values?: {
+    email: string;
+  };
+  fieldErrors?: {
+    email?: string;
+  };
+};
+
+export type ResetPasswordFormState = {
+  error?: string;
+  fieldErrors?: {
+    password?: string;
+    password_confirmation?: string;
+  };
+};
+
 const EMPTY_SIGNUP_VALUES: AuthFormValues = {
   full_name: "",
   email: "",
@@ -39,6 +60,9 @@ const EMPTY_SIGNUP_VALUES: AuthFormValues = {
   store_slug: "",
   phone: "",
 };
+
+const PASSWORD_RECOVERY_SUCCESS_MESSAGE =
+  "Se este e-mail estiver cadastrado, enviaremos um link para redefinir sua senha.";
 
 function buildSignupState(input: {
   error?: string;
@@ -168,6 +192,79 @@ export async function loginAction(
   }
 
   redirect(next);
+}
+
+export async function requestPasswordRecoveryAction(
+  _prev: PasswordRecoveryFormState | null,
+  formData: FormData
+): Promise<PasswordRecoveryFormState> {
+  const validation = validatePasswordRecoveryInput(String(formData.get("email") ?? ""));
+
+  if (validation.hasErrors) {
+    return {
+      values: validation.values,
+      fieldErrors: validation.fieldErrors,
+    };
+  }
+
+  try {
+    const supabase = await createServerSupabaseClient();
+    const appOrigin = await resolveAppOrigin();
+    const redirectTo = buildAbsoluteUrlFromOrigin("/auth/confirm?next=/redefinir-senha", appOrigin);
+
+    await supabase.auth.resetPasswordForEmail(validation.values.email, {
+      redirectTo,
+    });
+  } catch {
+    return {
+      values: validation.values,
+      success: PASSWORD_RECOVERY_SUCCESS_MESSAGE,
+    };
+  }
+
+  return {
+    values: validation.values,
+    success: PASSWORD_RECOVERY_SUCCESS_MESSAGE,
+  };
+}
+
+export async function resetPasswordAction(
+  _prev: ResetPasswordFormState | null,
+  formData: FormData
+): Promise<ResetPasswordFormState> {
+  const password = String(formData.get("password") ?? "");
+  const passwordConfirmation = String(formData.get("password_confirmation") ?? "");
+  const validation = validateResetPasswordInput(password, passwordConfirmation);
+
+  if (validation.hasErrors) {
+    return {
+      fieldErrors: validation.fieldErrors,
+    };
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      error: "Link inválido ou expirado. Solicite uma nova recuperação de senha.",
+    };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return {
+      error: mapAuthError(error.message),
+    };
+  }
+
+  await supabase.auth.signOut();
+  redirect(
+    `/login?sucesso=${encodeURIComponent("Senha redefinida com sucesso. Faça login com sua nova senha.")}`
+  );
 }
 
 /**

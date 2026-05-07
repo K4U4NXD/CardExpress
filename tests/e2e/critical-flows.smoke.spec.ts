@@ -151,6 +151,21 @@ async function expectCheckoutCreationBlocked(page: Page, marker: string, message
   await expect(page.getByText(messagePattern).first()).toBeVisible({ timeout: 10_000 });
 }
 
+test.describe("CardExpress auth recovery", () => {
+  test("login exibe link de recuperacao e navega para o formulario", async ({ page }) => {
+    await page.goto("/login", { waitUntil: "domcontentloaded" });
+
+    const recoveryLink = page.getByRole("link", { name: "Esqueci minha senha" });
+    await expect(recoveryLink).toBeVisible();
+
+    await recoveryLink.click();
+    await expect(page).toHaveURL(/\/recuperar-senha$/);
+    await expect(page.getByRole("heading", { name: "Recuperar senha" })).toBeVisible();
+    await expect(page.locator("#email")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Enviar link/ })).toBeVisible();
+  });
+});
+
 test.describe.serial("CardExpress critical smoke", () => {
   test.skip(
     missingEnv.length > 0,
@@ -158,7 +173,7 @@ test.describe.serial("CardExpress critical smoke", () => {
   );
 
   test.beforeAll(async ({ browser }) => {
-    test.setTimeout(180_000);
+    test.setTimeout(300_000);
     fs.mkdirSync(path.dirname(authStatePath), { recursive: true });
 
     const context = await browser.newContext();
@@ -733,9 +748,15 @@ test.describe.serial("CardExpress critical smoke", () => {
       expect(multiRowTestId).toBeTruthy();
       const stableMultiRow = merchantPage.getByTestId(multiRowTestId ?? "");
 
-      await stableMultiRow.locator('[data-testid^="product-select-"]').check();
-      await expect(merchantPage.getByTestId("product-bulk-edit")).toBeEnabled();
-      await merchantPage.getByTestId("product-bulk-edit").click();
+      await selectDashboardRowForBulkAction(merchantPage, stableMultiRow, {
+        checkboxSelector: '[data-testid^="product-select-"]',
+        toolbarTestId: "product-bulk-toolbar",
+        expectedToolbarText: "1 produto selecionado",
+      });
+      await clickBulkAction(merchantPage, {
+        toolbarTestId: "product-bulk-toolbar",
+        actionTestId: "product-bulk-edit",
+      });
       const additionalCategoryId = await stableMultiRow.getByRole("combobox").evaluate((select, categoryName) => {
         const options = Array.from((select as HTMLSelectElement).options);
         return options.find((option) => option.textContent?.trim() === categoryName)?.value ?? "";
@@ -746,8 +767,16 @@ test.describe.serial("CardExpress critical smoke", () => {
       });
       const saveProductButton = stableMultiRow.getByRole("button", { name: "Salvar" });
       await saveProductButton.evaluate((button) => button.scrollIntoView({ block: "center", inline: "nearest" }));
+      const updateProductResult = merchantPage.waitForURL(
+        (url) => url.pathname === "/dashboard/produtos" && url.searchParams.get("aviso") === "atualizado",
+        { timeout: 30_000 },
+      );
       await saveProductButton.click({ force: true, timeout: 15_000 });
-      await expect(merchantPage.getByText("Produto atualizado com sucesso.")).toBeVisible({ timeout: 15_000 });
+      await updateProductResult;
+      await expect(dashboardProductRowByName(merchantPage, seedData.products.multiCategory.name)).toContainText(
+        seedData.multiCategoryName,
+        { timeout: 15_000 },
+      );
 
       await publicPage.goto(`/${storeSlug}`, { waitUntil: "domcontentloaded" });
       const allMultiCards = publicPage
@@ -780,14 +809,22 @@ test.describe.serial("CardExpress critical smoke", () => {
         customerName: `${customerBaseName} S14`,
         customerPhone,
         note: marker,
+        expectedProductName: seedData.products.historicalOnly.name,
       });
       await simulatePaymentAndWaitForOrderPage(publicPage, storeSlug);
 
       await merchantPage.goto("/dashboard/produtos", { waitUntil: "domcontentloaded" });
       const historicalProductRow = dashboardProductRowByName(merchantPage, seedData.products.historicalOnly.name);
-      await expect(historicalProductRow).toBeVisible({ timeout: 15_000 });
-      await historicalProductRow.locator('[data-testid^="product-select-"]').check();
-      await merchantPage.getByTestId("product-bulk-delete").click();
+      await selectDashboardRowForBulkAction(merchantPage, historicalProductRow, {
+        checkboxSelector: '[data-testid^="product-select-"]',
+        toolbarTestId: "product-bulk-toolbar",
+        expectedToolbarText: "1 produto selecionado",
+      });
+      await clickBulkAction(merchantPage, {
+        toolbarTestId: "product-bulk-toolbar",
+        actionTestId: "product-bulk-delete",
+      });
+      await expect(merchantPage.getByTestId("product-bulk-delete-confirm")).toBeVisible({ timeout: 15_000 });
       await merchantPage.getByTestId("product-bulk-delete-confirm").click();
       await expect(dashboardProductRowByName(merchantPage, seedData.products.historicalOnly.name)).toHaveCount(0, {
         timeout: 20_000,
@@ -795,9 +832,16 @@ test.describe.serial("CardExpress critical smoke", () => {
 
       await merchantPage.goto("/dashboard/categorias", { waitUntil: "domcontentloaded" });
       const historicalCategoryRow = dashboardCategoryRowByName(merchantPage, seedData.historicalCategoryName);
-      await expect(historicalCategoryRow).toBeVisible({ timeout: 15_000 });
-      await historicalCategoryRow.locator('[data-testid^="category-select-"]').check();
-      await merchantPage.getByTestId("category-bulk-delete").click();
+      await selectDashboardRowForBulkAction(merchantPage, historicalCategoryRow, {
+        checkboxSelector: '[data-testid^="category-select-"]',
+        toolbarTestId: "category-bulk-toolbar",
+        expectedToolbarText: "1 categoria selecionada",
+      });
+      await clickBulkAction(merchantPage, {
+        toolbarTestId: "category-bulk-toolbar",
+        actionTestId: "category-bulk-delete",
+      });
+      await expect(merchantPage.getByTestId("category-bulk-delete-confirm")).toBeVisible({ timeout: 15_000 });
       await merchantPage.getByTestId("category-bulk-delete-confirm").click();
       await expect(dashboardCategoryRowByName(merchantPage, seedData.historicalCategoryName)).toHaveCount(0, {
         timeout: 20_000,

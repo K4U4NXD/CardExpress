@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 type Props = {
-  searchParams: Promise<{ next?: string; erro?: string }>;
+  searchParams: Promise<{ next?: string; erro?: string; sucesso?: string }>;
 };
 
 function safeDecode(value: string): string {
@@ -22,8 +22,9 @@ function safeDecode(value: string): string {
 }
 
 export default async function LoginPage({ searchParams }: Props) {
-  const { next, erro } = await searchParams;
+  const { next, erro, sucesso } = await searchParams;
   const initialError = erro ? safeDecode(erro) : undefined;
+  const initialSuccess = sucesso ? safeDecode(sucesso) : undefined;
 
   return (
     <div className="cx-auth-bg min-h-dvh">
@@ -45,7 +46,7 @@ export default async function LoginPage({ searchParams }: Props) {
           />
         </div>
 
-        <LoginForm nextPath={next} initialError={initialError} />
+        <LoginForm nextPath={next} initialError={initialError} initialSuccess={initialSuccess} />
         <p className="mt-6 text-center text-sm text-zinc-600">
           Não tem conta?{" "}
           <Link href="/cadastro" className="font-medium text-zinc-900 underline underline-offset-2">

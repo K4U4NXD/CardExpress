@@ -16,6 +16,7 @@ export type CheckoutInput = {
   customerName: string;
   customerPhone: string;
   note?: string;
+  expectedProductName?: string;
   expectSessionCreated?: boolean;
 };
 
@@ -27,6 +28,124 @@ export type StoreOperationalModeOptions = {
 };
 
 const SETTINGS_SAVE_TIMEOUT_MS = 30_000;
+
+type DashboardFormActionResultOptions = {
+  formTestId: string;
+  successPath: string;
+  successNotice: string;
+  timeoutMs: number;
+  timeoutMessage: string;
+};
+
+type CheckoutCreationResult =
+  | { type: "success" }
+  | { type: "error"; message: string | null }
+  | { type: "timeout" };
+
+async function waitForDashboardFormActionResult(page: Page, options: DashboardFormActionResultOptions) {
+  const form = page.getByTestId(options.formTestId);
+  const formAlert = form.locator('[role="alert"]').first();
+
+  const result = await Promise.race([
+    page
+      .waitForURL(
+        (url) => url.pathname === options.successPath && url.searchParams.get("aviso") === options.successNotice,
+        { timeout: options.timeoutMs },
+      )
+      .then(() => ({ type: "success" as const })),
+    formAlert
+      .waitFor({ state: "visible", timeout: options.timeoutMs })
+      .then(async () => ({ type: "error" as const, message: (await formAlert.textContent())?.trim() || null })),
+  ]).catch(async (error) => {
+    const feedbackTexts = await page
+      .locator('[role="alert"], [role="status"]')
+      .evaluateAll((elements) =>
+        elements
+          .map((element) => element.textContent?.replace(/\s+/g, " ").trim() ?? "")
+          .filter(Boolean)
+          .slice(0, 6),
+      )
+      .catch(() => []);
+
+    throw new Error(
+      [
+        options.timeoutMessage,
+        `URL atual: ${page.url()}`,
+        `Feedback visivel: ${feedbackTexts.length > 0 ? JSON.stringify(feedbackTexts) : "nenhum"}`,
+        `Erro original: ${error instanceof Error ? error.message : String(error)}`,
+      ].join("\n"),
+    );
+  });
+
+  if (result.type === "error") {
+    throw new Error(result.message ?? options.timeoutMessage);
+  }
+}
+
+async function collectVisibleTexts(page: Page, selector: string, limit = 8) {
+  return await page
+    .locator(selector)
+    .evaluateAll(
+      (elements, maxItems) =>
+        elements
+          .filter((element) => {
+            const style = window.getComputedStyle(element);
+            const rect = element.getBoundingClientRect();
+            return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+          })
+          .map((element) => element.textContent?.replace(/\s+/g, " ").trim() ?? "")
+          .filter(Boolean)
+          .slice(0, maxItems),
+      limit,
+    )
+    .catch(() => []);
+}
+
+async function collectCheckoutDiagnostics(page: Page) {
+  const createSessionButton = page.getByTestId("checkout-create-session");
+  const buttonText = await createSessionButton.textContent().catch(() => null);
+  const buttonEnabled = await createSessionButton.isEnabled().catch(() => null);
+  const headingTexts = await collectVisibleTexts(page, "h1, h2, h3", 8);
+  const formFeedbackTexts = await collectVisibleTexts(page, 'form [role="alert"]', 4);
+  const feedbackTexts = await collectVisibleTexts(page, '[role="alert"], [role="status"]', 8);
+  const cartItemTexts = await collectVisibleTexts(page, '[data-testid^="checkout-cart-item-"]', 6);
+  const customerName = await page.getByTestId("checkout-customer-name").inputValue().catch(() => null);
+  const customerPhone = await page.getByTestId("checkout-customer-phone").inputValue().catch(() => null);
+
+  return [
+    `URL atual: ${page.url()}`,
+    `Botao criar checkout: ${buttonText?.replace(/\s+/g, " ").trim() ?? "nao encontrado"}; habilitado=${String(
+      buttonEnabled,
+    )}`,
+    `Nome preenchido: ${customerName ?? "nao encontrado"}`,
+    `Telefone preenchido: ${customerPhone ?? "nao encontrado"}`,
+    `Headings visiveis: ${headingTexts.length > 0 ? JSON.stringify(headingTexts) : "nenhum"}`,
+    `Feedback do formulario: ${formFeedbackTexts.length > 0 ? JSON.stringify(formFeedbackTexts) : "nenhum"}`,
+    `Feedback global visivel: ${feedbackTexts.length > 0 ? JSON.stringify(feedbackTexts) : "nenhum"}`,
+    `Itens do checkout: ${cartItemTexts.length > 0 ? JSON.stringify(cartItemTexts) : "nenhum"}`,
+  ].join("\n");
+}
+
+async function waitForCheckoutCreationResult(page: Page, timeoutMs: number): Promise<CheckoutCreationResult> {
+  const successHeading = page.getByRole("heading", { name: /checkout criada/i });
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    if (await successHeading.isVisible().catch(() => false)) {
+      return { type: "success" };
+    }
+
+    const alertTexts = await collectVisibleTexts(page, 'form [role="alert"]', 4);
+    const errorText = alertTexts.find(Boolean);
+    if (errorText) {
+      return { type: "error", message: errorText };
+    }
+
+    await page.waitForTimeout(250);
+  }
+
+  return { type: "timeout" };
+}
 
 async function collectSettingsSaveDiagnostics(page: Page) {
   const saveButton = page.getByTestId("settings-save-button");
@@ -251,7 +370,15 @@ export async function createCategoryIfMissing(page: Page, categoryName: string) 
 
   await page.locator("#new-category-name").fill(categoryName);
   await expect(page.locator("#new-category-name")).toHaveValue(categoryName);
+  const createResult = waitForDashboardFormActionResult(page, {
+    formTestId: "create-category-form",
+    successPath: "/dashboard/categorias",
+    successNotice: "criada",
+    timeoutMs: 30_000,
+    timeoutMessage: `Categoria '${categoryName}' nao concluiu a action de criacao.`,
+  });
   await page.getByTestId("submit-create-category").click();
+  await createResult;
 
   await expect.poll(
     async () => {
@@ -372,7 +499,15 @@ export async function createProductIfMissing(page: Page, categoryName: string, p
   }
 
   await page.getByTestId("product-stock-input").fill(String(product.stock));
+  const createResult = waitForDashboardFormActionResult(page, {
+    formTestId: "create-product-form",
+    successPath: "/dashboard/produtos",
+    successNotice: "criado",
+    timeoutMs: 60_000,
+    timeoutMessage: `Produto '${product.name}' nao concluiu a action de criacao.`,
+  });
   await page.getByTestId("submit-create-product").click();
+  await createResult;
 
   await expect.poll(
     async () => {
@@ -406,12 +541,15 @@ export async function addMenuProductQuantity(page: Page, productName: string, qu
   const increaseButton = card.locator('[data-testid^="menu-increase-"]');
 
   if (await addButton.isVisible()) {
+    await expect(addButton).toBeEnabled({ timeout: 10_000 });
     await addButton.click();
   } else {
+    await expect(increaseButton).toBeEnabled({ timeout: 10_000 });
     await increaseButton.click();
   }
 
   for (let index = 1; index < quantity; index += 1) {
+    await expect(increaseButton).toBeEnabled({ timeout: 10_000 });
     await increaseButton.click();
   }
 }
@@ -422,11 +560,27 @@ export async function goToPublicCheckout(page: Page, slug: string) {
 }
 
 export async function createCheckoutSession(page: Page, input: CheckoutInput) {
-  await page.getByTestId("checkout-customer-name").fill(input.customerName);
-  await page.getByTestId("checkout-customer-phone").fill(input.customerPhone);
+  await expect(page).toHaveURL(/\/checkout(?:\?.*)?$/);
+  await expect(page.getByRole("heading", { name: /^checkout\b/i })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole("heading", { name: "Resumo do pedido" })).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('[data-testid^="checkout-cart-item-"]').first()).toBeVisible({ timeout: 10_000 });
+
+  if (input.expectedProductName) {
+    await expect(page.getByText(input.expectedProductName, { exact: true })).toBeVisible({ timeout: 10_000 });
+  }
+
+  const customerNameInput = page.getByTestId("checkout-customer-name");
+  const customerPhoneInput = page.getByTestId("checkout-customer-phone");
+
+  await customerNameInput.fill(input.customerName);
+  await expect(customerNameInput).toHaveValue(input.customerName);
+  await customerPhoneInput.fill(input.customerPhone);
+  await expect(customerPhoneInput).toHaveValue(input.customerPhone);
 
   if (input.note) {
-    await page.getByTestId("checkout-notes").fill(input.note);
+    const notesInput = page.getByTestId("checkout-notes");
+    await notesInput.fill(input.note);
+    await expect(notesInput).toHaveValue(input.note);
   }
 
   const createSessionButton = page.getByTestId("checkout-create-session");
@@ -437,10 +591,46 @@ export async function createCheckoutSession(page: Page, input: CheckoutInput) {
     return;
   }
 
-  await expect(createSessionButton).toBeEnabled({ timeout: 10_000 });
-  await createSessionButton.click();
+  let statementTimeoutRetryUsed = false;
 
-  await expect(page.getByRole("heading", { name: /checkout criada/i })).toBeVisible({ timeout: 15_000 });
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    await expect(createSessionButton).toBeVisible({ timeout: 10_000 });
+    await expect(createSessionButton).toBeEnabled({ timeout: 10_000 });
+    await createSessionButton.click();
+
+    const result = await waitForCheckoutCreationResult(page, 20_000);
+    if (result.type === "success") {
+      return;
+    }
+
+    const diagnostics = await collectCheckoutDiagnostics(page);
+    const message = result.type === "error" ? result.message : null;
+    const isStatementTimeout = /statement timeout/i.test(message ?? "");
+
+    if (isStatementTimeout && !statementTimeoutRetryUsed) {
+      statementTimeoutRetryUsed = true;
+      await page.waitForTimeout(1_000);
+      continue;
+    }
+
+    if (result.type === "error") {
+      throw new Error(
+        [
+          `Falha ao criar checkout: ${message ?? "erro visivel sem texto"}`,
+          `Tentativa: ${attempt}`,
+          diagnostics,
+        ].join("\n"),
+      );
+    }
+
+    throw new Error(
+      [
+        "Checkout nao chegou ao estado 'Checkout criada' e nenhuma mensagem de erro apareceu.",
+        `Tentativa: ${attempt}`,
+        diagnostics,
+      ].join("\n"),
+    );
+  }
 }
 
 export async function simulatePaymentAndWaitForOrderPage(page: Page, slug: string) {

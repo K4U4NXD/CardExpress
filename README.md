@@ -28,6 +28,7 @@ O projeto já possui uma base funcional sólida, com:
 
 - autenticação do comerciante com Supabase Auth;
 - confirmação de e-mail obrigatória para concluir a criação da conta;
+- recuperação e redefinição de senha do comerciante com Supabase Auth;
 - dashboard protegido;
 - gerenciamento de categorias;
 - gerenciamento de produtos;
@@ -95,6 +96,8 @@ Cenários validados localmente:
 
 - cadastro inicial do comerciante com Supabase Auth;
 - confirmação de e-mail obrigatória para concluir a criação da conta;
+- solicitação de recuperação de senha em `/recuperar-senha`;
+- redefinição de senha em `/redefinir-senha`;
 - tela dedicada de confirmação em `/cadastro/confirmar-email`;
 - callback interno em `/auth/confirm`;
 - criação de `profile`, `store` e `store_settings` apenas após a confirmação do e-mail;
@@ -450,6 +453,21 @@ No painel do Supabase:
 
 > O arquivo `.env.local` não deve ser commitado.
 
+### Configuração de URLs no Supabase Auth
+
+Em **Authentication** → **URL Configuration**, configure:
+
+* **Site URL**
+  * desenvolvimento: `http://localhost:3000`
+  * produção: URL real do projeto
+* **Redirect URLs permitidas**
+  * `http://localhost:3000/auth/confirm`
+  * `http://localhost:3000/redefinir-senha`
+  * equivalentes de produção para `/auth/confirm`
+  * equivalentes de produção para `/redefinir-senha`
+
+O fluxo de recuperação de senha usa mensagem neutra para não revelar se o e-mail está cadastrado.
+
 ---
 
 ## Como rodar o projeto localmente
@@ -615,6 +633,8 @@ cardexpress/
 * `/cadastro` → cadastro inicial do comerciante
 * `/cadastro/confirmar-email` → tela dedicada de confirmação de e-mail
 * `/login` → autenticação
+* `/recuperar-senha` → solicitação segura de link para redefinir senha
+* `/redefinir-senha` → definição da nova senha após link válido do Supabase Auth
 * `/dashboard/finalizar-cadastro` → finalização do cadastro quando necessário
 * `/dashboard` → visão geral da operação
 * `/dashboard/categorias` → gerenciamento de categorias
@@ -624,7 +644,7 @@ cardexpress/
 
 ### Infra/auth
 
-* `/auth/confirm` → callback interno de confirmação de e-mail
+* `/auth/confirm` → callback interno de confirmação de e-mail e recuperação de senha
 
 ### Área pública
 
@@ -649,7 +669,17 @@ cardexpress/
 7. se houver conflito de `slug`, o usuário finaliza o cadastro em `/dashboard/finalizar-cadastro`;
 8. após conclusão, o usuário acessa o dashboard.
 
-### 2. Fluxo do cardápio público
+### 2. Fluxo de recuperação de senha
+
+1. o comerciante acessa `/recuperar-senha` a partir do link "Esqueci minha senha" em `/login`;
+2. a aplicação solicita o link com `resetPasswordForEmail`;
+3. a mensagem exibida é neutra e não revela se o e-mail existe;
+4. o link do Supabase passa por `/auth/confirm?next=/redefinir-senha`;
+5. quando o tipo do link é `recovery`, o callback não executa criação de `profile`, `store` ou `store_settings`;
+6. o comerciante define a nova senha em `/redefinir-senha`;
+7. após sucesso, a sessão temporária é encerrada e o comerciante volta para `/login`.
+
+### 3. Fluxo do cardápio público
 
 1. o cliente acessa `/{slug}`;
 2. a aplicação busca dados públicos da loja;
@@ -659,7 +689,7 @@ cardexpress/
 6. segue para `/{slug}/checkout`;
 7. se preço, disponibilidade ou status da loja mudarem, a interface reconcilia o carrinho com o cardápio atual.
 
-### 3. Fluxo do checkout
+### 4. Fluxo do checkout
 
 1. o checkout lê o carrinho salvo da loja;
 2. coleta nome e telefone do cliente;
@@ -669,7 +699,7 @@ cardexpress/
 6. a interface exibe a sessão criada como aguardando pagamento;
 7. o checkout continua reagindo ao cardápio atual enquanto estiver aberto.
 
-### 4. Fluxo atual de pagamento (modo demo)
+### 5. Fluxo atual de pagamento (modo demo)
 
 Enquanto a integração com gateway real não foi implementada, o projeto usa um fluxo temporário de demonstração:
 
@@ -678,7 +708,7 @@ Enquanto a integração com gateway real não foi implementada, o projeto usa um
 3. a função `convert_paid_checkout_session_to_order(...)` converte a sessão em pedido real;
 4. o usuário é redirecionado para a página pública do pedido.
 
-### 5. Fluxo do pedido
+### 6. Fluxo do pedido
 
 1. o pedido entra em `orders` com status `aguardando_aceite`;
 2. aparece no painel administrativo da loja;

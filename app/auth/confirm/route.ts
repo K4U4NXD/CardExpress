@@ -41,6 +41,10 @@ function redirectToLoginWithError(request: NextRequest, message: string) {
   return redirectToPath(request, appendSearchParam("/login", "erro", message));
 }
 
+function redirectToPasswordRecoveryWithError(request: NextRequest, message: string) {
+  return redirectToPath(request, appendSearchParam("/recuperar-senha", "erro", message));
+}
+
 function mapConfirmExchangeError(message: string): string {
   const lower = message.toLowerCase();
 
@@ -61,6 +65,26 @@ function mapConfirmExchangeError(message: string): string {
   return "Não foi possível confirmar o e-mail agora. Tente novamente.";
 }
 
+function mapRecoveryExchangeError(message: string): string {
+  const lower = message.toLowerCase();
+
+  if (lower.includes("expired") || lower.includes("otp expired") || lower.includes("token has expired")) {
+    return "Este link de recuperação expirou. Solicite uma nova recuperação de senha.";
+  }
+
+  if (
+    lower.includes("invalid") ||
+    lower.includes("otp") ||
+    lower.includes("token") ||
+    lower.includes("code verifier") ||
+    lower.includes("auth code")
+  ) {
+    return "Link de recuperação inválido. Solicite uma nova recuperação de senha.";
+  }
+
+  return "Não foi possível validar a recuperação de senha agora. Tente novamente.";
+}
+
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
@@ -69,6 +93,7 @@ export async function GET(request: NextRequest) {
   const requestedNext = safeNextPath(url.searchParams.get("next") ?? "/dashboard");
   const dashboardDestination = requestedNext.startsWith("/dashboard") ? requestedNext : "/dashboard";
   const successDestination = appendSearchParam(dashboardDestination, "signup", "email-confirmed");
+  const isRecoveryFlow = otpType === "recovery" || requestedNext === "/redefinir-senha";
 
   const supabase = await createServerSupabaseClient();
 
@@ -76,10 +101,21 @@ export async function GET(request: NextRequest) {
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
     if (exchangeError) {
+      if (isRecoveryFlow) {
+        return redirectToPasswordRecoveryWithError(request, mapRecoveryExchangeError(exchangeError.message));
+      }
+
       return redirectToLoginWithError(request, mapConfirmExchangeError(exchangeError.message));
     }
   } else if (tokenHash) {
     if (!otpType) {
+      if (isRecoveryFlow) {
+        return redirectToPasswordRecoveryWithError(
+          request,
+          "Link de recuperação inválido. Solicite uma nova recuperação de senha."
+        );
+      }
+
       return redirectToLoginWithError(request, "Link de confirmação inválido. Solicite um novo cadastro.");
     }
 
@@ -89,6 +125,10 @@ export async function GET(request: NextRequest) {
     });
 
     if (verifyError) {
+      if (isRecoveryFlow) {
+        return redirectToPasswordRecoveryWithError(request, mapRecoveryExchangeError(verifyError.message));
+      }
+
       return redirectToLoginWithError(request, mapConfirmExchangeError(verifyError.message));
     }
   }
@@ -98,10 +138,21 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
+    if (isRecoveryFlow) {
+      return redirectToPasswordRecoveryWithError(
+        request,
+        "Link inválido ou expirado. Solicite uma nova recuperação de senha."
+      );
+    }
+
     return redirectToLoginWithError(
       request,
       "Nao foi possivel concluir a confirmação. Faça login para continuar."
     );
+  }
+
+  if (isRecoveryFlow) {
+    return redirectToPath(request, "/redefinir-senha");
   }
 
   const provisionResult = await ensureAccountProvisioned({ supabase, user });

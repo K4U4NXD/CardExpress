@@ -143,6 +143,19 @@ function mapSignupAuthError(message: string): Pick<AuthFormState, "error" | "fie
   return { error: mapAuthError(message) };
 }
 
+function mapResetPasswordAuthError(message: string): string {
+  const lower = message.trim().toLowerCase();
+
+  if (
+    lower.includes("new password should be different") ||
+    lower.includes("different from the old password")
+  ) {
+    return "A nova senha deve ser diferente da senha atual.";
+  }
+
+  return "Não foi possível concluir a solicitação agora. Tente novamente.";
+}
+
 async function resolveAppOrigin(): Promise<string> {
   const requestHeaders = await headers();
 
@@ -257,7 +270,7 @@ export async function resetPasswordAction(
 
   if (error) {
     return {
-      error: mapAuthError(error.message),
+      error: mapResetPasswordAuthError(error.message),
     };
   }
 

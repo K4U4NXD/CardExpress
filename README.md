@@ -29,6 +29,7 @@ O projeto já possui uma base funcional sólida, com:
 - autenticação do comerciante com Supabase Auth;
 - confirmação de e-mail obrigatória para concluir a criação da conta;
 - recuperação e redefinição de senha do comerciante com Supabase Auth;
+- campos de senha com alternância de visibilidade no login, cadastro e redefinição de senha;
 - dashboard protegido;
 - gerenciamento de categorias;
 - gerenciamento de produtos;
@@ -56,7 +57,7 @@ O projeto já possui uma base funcional sólida, com:
 - produto que zera estoque por venda continua visível no cardápio como indisponível;
 - `is_available` permanece como decisão manual do comerciante, sem pausa automática ao estoque chegar a zero;
 - redução de refresh desnecessário ao voltar foco para a aba;
-- **atualização em tempo real** nas rotas operacionais e públicas principais.
+- **atualização em tempo real** nas rotas operacionais e públicas principais;
 - imagem de produto por URL ou upload;
 - exclusão segura de produto com preservação de histórico;
 - produto com categoria principal e categorias adicionais;
@@ -69,13 +70,17 @@ O projeto já possui uma base funcional sólida, com:
 - modais de confirmação refinados para exclusão de categorias e produtos, sem alerta nativo do navegador;
 - bloqueio de rolagem do fundo enquanto modais de exclusão estão abertos;
 - alertas de produtos sem estoque e estoque baixo com scroll interno na Home do dashboard;
-- suíte E2E/smoke ampliada para cobrir modos operacionais, estoque zerado, dashboard e navegação mobile;
+- suíte E2E/smoke ampliada para cobrir modos operacionais, estoque zerado, dashboard, autenticação e navegação mobile;
 
 ### Validação recente do fluxo crítico
 
 Além da validação manual contínua, o projeto conta com uma suíte **E2E/smoke com Playwright** cobrindo o fluxo crítico do MVP.
 
+A suíte E2E/smoke foi validada com 16 testes passando.
+
 Cenários validados localmente:
+- recuperação de senha com navegação para o formulário;
+- alternância de visibilidade da senha no login;
 - fluxo público feliz;
 - reflexo operacional no dashboard e no painel público;
 - modos operacionais da loja: Loja offline, Aberta manualmente e Horário automático;
@@ -86,7 +91,9 @@ Cenários validados localmente:
 - cancelamento de checkout e recovery público sem ressuscitar sessão inválida;
 - filtros da dashboard sem reload da página e sem reset de scroll;
 - navegação básica mobile no dashboard;
-- visibilidade pública de produto sem estoque com bloqueio de compra.
+- visibilidade pública de produto sem estoque com bloqueio de compra;
+- produto em múltiplas categorias e categoria histórica removível;
+- ações em massa em categorias e produtos.
 
 ---
 
@@ -98,6 +105,9 @@ Cenários validados localmente:
 - confirmação de e-mail obrigatória para concluir a criação da conta;
 - solicitação de recuperação de senha em `/recuperar-senha`;
 - redefinição de senha em `/redefinir-senha`;
+- link “Esqueci minha senha” no login;
+- campos de senha com botão de mostrar/ocultar senha no login, cadastro e redefinição;
+- mensagens de erro de redefinição tratadas em português brasileiro;
 - tela dedicada de confirmação em `/cadastro/confirmar-email`;
 - callback interno em `/auth/confirm`;
 - criação de `profile`, `store` e `store_settings` apenas após a confirmação do e-mail;
@@ -573,6 +583,8 @@ cardexpress/
 │  │  ├─ cadastro/
 │  │  │  └─ confirmar-email/
 │  │  ├─ login/
+│  │  ├─ recuperar-senha/
+│  │  ├─ redefinir-senha/
 │  │  └─ dashboard/
 │  │     ├─ categorias/
 │  │     ├─ produtos/
@@ -594,6 +606,7 @@ cardexpress/
 │  └─ page.tsx
 ├─ components/
 │  ├─ auth/
+│  │  └─ password-input.tsx
 │  ├─ dashboard/
 │  ├─ layout/
 │  ├─ public/
@@ -1093,6 +1106,10 @@ Se a mudança envolver banco ou storage:
 
 * autenticação do comerciante;
 * onboarding com confirmação de e-mail;
+* recuperação e redefinição de senha com Supabase Auth;
+* campos de senha com botão de mostrar/ocultar no login, cadastro e redefinição;
+* mensagens de autenticação/redefinição tratadas em português brasileiro;
+* cobertura E2E para recuperação de senha e alternância de visibilidade da senha;
 * dashboard protegido;
 * CRUD de categorias;
 * CRUD de produtos;
@@ -1122,7 +1139,7 @@ Se a mudança envolver banco ou storage:
 * melhorias amplas de responsividade e UX no dashboard e na área pública;
 * produtos sem estoque visíveis no cardápio, porém bloqueados para compra;
 * produto que zera estoque por venda permanece visível no cardápio como indisponível;
-* reordenação de categorias e produtos com drag and drop no desktop e fluxo compacto no mobile.
+* reordenação de categorias e produtos com drag and drop no desktop e fluxo compacto no mobile;
 * imagem de produto por URL e upload;
 * exclusão segura de produto com preservação de histórico;
 * exclusão de categoria quando apenas produtos arquivados/históricos ainda estavam vinculados;
@@ -1130,7 +1147,7 @@ Se a mudança envolver banco ou storage:
 * revisão textual e ortográfica nas páginas principais do painel e no acompanhamento público do pedido;
 * landing page comercial refinada e responsiva;
 * navegação sticky da landing com branding CARDEXPRESS no mobile;
-* ampliação da suíte E2E/smoke para 13 cenários;
+* ampliação da suíte E2E/smoke para 16 testes;
 * modais refinados de exclusão em categorias e produtos;
 * scroll interno nos alertas de estoque da Home do dashboard;
 
@@ -1141,7 +1158,7 @@ Se a mudança envolver banco ou storage:
 * ajustes pontuais para implantação em ambiente real;
 * documentação acadêmica final;
 * relatórios e métricas mais avançadas;
-* evolução futura de autenticação do comerciante;
+* melhorias futuras de segurança da conta, como 2FA e eventual login por usuário;
 * expansão futura da frente SaaS comercial.
 
 ---

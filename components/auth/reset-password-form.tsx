@@ -1,6 +1,7 @@
 "use client";
 
 import { resetPasswordAction, type ResetPasswordFormState } from "@/app/actions/auth";
+import { PasswordInput } from "@/components/auth/password-input";
 import { evaluatePasswordCriteria } from "@/lib/auth/validation";
 import { useActionState, useMemo, useState } from "react";
 
@@ -46,10 +47,9 @@ export function ResetPasswordForm() {
         <label htmlFor="password" className="block text-sm font-medium text-zinc-800">
           Nova senha
         </label>
-        <input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="new-password"
           required
           minLength={8}
@@ -57,7 +57,10 @@ export function ResetPasswordForm() {
           onChange={(event) => setPassword(event.target.value)}
           aria-invalid={Boolean(fieldErrors.password)}
           aria-describedby={composeDescribedBy("password-help", fieldErrors.password ? "password-error" : undefined)}
-          className="cx-input mt-1"
+          data-testid="reset-password-input"
+          toggleTestId="reset-password-toggle"
+          className="cx-input"
+          containerClassName="mt-1"
         />
         <p id="password-help" className="mt-1 text-xs text-zinc-500">
           Use no mínimo 8 caracteres, com 1 letra maiúscula, 1 número e 1 caractere especial.
@@ -101,17 +104,19 @@ export function ResetPasswordForm() {
         <label htmlFor="password_confirmation" className="block text-sm font-medium text-zinc-800">
           Confirmar nova senha
         </label>
-        <input
+        <PasswordInput
           id="password_confirmation"
           name="password_confirmation"
-          type="password"
           autoComplete="new-password"
           required
           value={passwordConfirmation}
           onChange={(event) => setPasswordConfirmation(event.target.value)}
           aria-invalid={Boolean(fieldErrors.password_confirmation)}
           aria-describedby={fieldErrors.password_confirmation ? "password_confirmation-error" : undefined}
-          className="cx-input mt-1"
+          data-testid="reset-password-confirm-input"
+          toggleTestId="reset-password-confirm-toggle"
+          className="cx-input"
+          containerClassName="mt-1"
         />
         {fieldErrors.password_confirmation ? (
           <p id="password_confirmation-error" className="mt-1 text-xs text-red-700">

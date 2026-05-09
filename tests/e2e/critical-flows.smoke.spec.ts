@@ -158,6 +158,16 @@ test.describe("CardExpress auth recovery", () => {
     const recoveryLink = page.getByRole("link", { name: "Esqueci minha senha" });
     await expect(recoveryLink).toBeVisible();
 
+    const passwordInput = page.getByTestId("login-password-input");
+    await expect(passwordInput).toHaveAttribute("type", "password");
+    await passwordInput.fill("SenhaTeste123!");
+
+    await page.getByRole("button", { name: "Mostrar senha" }).click();
+    await expect(passwordInput).toHaveAttribute("type", "text");
+
+    await page.getByRole("button", { name: "Ocultar senha" }).click();
+    await expect(passwordInput).toHaveAttribute("type", "password");
+
     await recoveryLink.click();
     await expect(page).toHaveURL(/\/recuperar-senha$/);
     await expect(page.getByRole("heading", { name: "Recuperar senha" })).toBeVisible();

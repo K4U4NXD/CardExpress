@@ -1,6 +1,7 @@
 "use client";
 
 import { loginAction, type AuthFormState } from "@/app/actions/auth";
+import { PasswordInput } from "@/components/auth/password-input";
 import Link from "next/link";
 import { useActionState } from "react";
 
@@ -48,13 +49,15 @@ export function LoginForm({ nextPath, initialError, initialSuccess }: LoginFormP
             Esqueci minha senha
           </Link>
         </div>
-        <input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="current-password"
           required
-          className="cx-input mt-1"
+          data-testid="login-password-input"
+          toggleTestId="login-password-toggle"
+          className="cx-input"
+          containerClassName="mt-1"
         />
       </div>
       {displayError ? (

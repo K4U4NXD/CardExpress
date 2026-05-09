@@ -1336,7 +1336,7 @@ function mapCreateCheckoutSessionError(
   }
 
   return {
-    message: rawMessage,
+    message: "Não foi possível iniciar o checkout agora. Revise o carrinho e tente novamente.",
     shouldRefresh: false,
     problemProductIds: [],
   };
@@ -1740,7 +1740,7 @@ function mapCancelCheckoutError(rawMessage: string | null | undefined): CancelCh
 
   if (normalized.includes("could not find the function public.cancel_checkout_session_by_token") || normalized.includes("schema cache")) {
     return {
-      message: "A função de cancelamento ainda não está disponível no serviço de API. Tente novamente em alguns segundos.",
+      message: "O cancelamento está temporariamente indisponível. Tente novamente em alguns segundos.",
       blockSession: false,
       clearRecovery: false,
     };
@@ -1856,7 +1856,7 @@ function mapSimulateCheckoutError(rawMessage: string | null | undefined): Simula
   }
 
   return {
-    message: rawMessage,
+    message: "Não foi possível simular o pagamento agora. Tente novamente em instantes.",
     isBlockingOperational: false,
     isBlockingSession: false,
   };

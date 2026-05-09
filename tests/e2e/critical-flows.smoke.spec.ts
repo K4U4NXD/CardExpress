@@ -804,7 +804,9 @@ test.describe.serial("CardExpress critical smoke", () => {
       await publicPage.getByRole("button", { name: seedData.multiCategoryName }).click();
       const filteredMultiCard = productCardByName(publicPage, seedData.products.multiCategory.name);
       await expect(filteredMultiCard).toBeVisible({ timeout: 15_000 });
-      const filteredMultiIncreaseButton = filteredMultiCard.getByRole("button", { name: "+" });
+      const filteredMultiIncreaseButton = filteredMultiCard.getByRole("button", {
+        name: `Aumentar quantidade de ${seedData.products.multiCategory.name}`,
+      });
       await expect(filteredMultiIncreaseButton).toBeEnabled();
       await filteredMultiIncreaseButton.evaluate((button) => (button as HTMLButtonElement).click());
       await expect(publicPage.getByText(/^2 itens$/)).toBeVisible({ timeout: 10_000 });

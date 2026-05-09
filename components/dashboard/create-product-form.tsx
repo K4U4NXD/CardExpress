@@ -35,14 +35,6 @@ function normalizeImageUrlValue(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
-function safeSerializeDebug(value: unknown): string {
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
-}
-
 function toDebugErrorObject(error: unknown): Record<string, unknown> {
   if (!error || typeof error !== "object") {
     return { raw: String(error) };
@@ -179,10 +171,10 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
         mimeType: selectedImageFile.type,
         productId: null,
       });
-    } catch (error) {
+    } catch {
       setImageUploadFeedback({
         tone: "error",
-        text: error instanceof Error ? error.message : "Não foi possível montar o caminho do upload.",
+        text: "Não foi possível preparar o envio da imagem agora.",
       });
       return;
     }
@@ -245,10 +237,7 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
 
         setImageUploadFeedback({
           tone: "error",
-          text: `Falha no upload. ${uploadError.message}\n\nDEBUG:\n${safeSerializeDebug({
-            ...debugContext,
-            uploadError: debugError,
-          })}`,
+          text: "Não foi possível enviar a imagem agora. Tente novamente em instantes.",
         });
         return;
       }
@@ -263,7 +252,7 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
 
         setImageUploadFeedback({
           tone: "error",
-          text: `Upload concluído, mas a URL pública não foi gerada.\n\nDEBUG:\n${safeSerializeDebug(debugContext)}`,
+          text: "O upload foi concluído, mas não foi possível preparar a imagem pública. Tente enviar novamente.",
         });
         return;
       }
@@ -283,10 +272,10 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
         tone: "success",
         text: "Upload concluído. A imagem será salva ao adicionar o produto.",
       });
-    } catch (error) {
+    } catch {
       setImageUploadFeedback({
         tone: "error",
-        text: error instanceof Error ? error.message : "Não foi possível enviar a imagem agora.",
+        text: "Não foi possível enviar a imagem agora. Tente novamente em instantes.",
       });
     } finally {
       setImageUploadPending(false);

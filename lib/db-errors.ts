@@ -22,7 +22,7 @@ export function formatPostgrestError(err: PgError): string {
   }
 
   if (m.includes("Could not find") && m.includes("column")) {
-    return "Coluna ou tabela inesperada no banco. Confira o schema no Supabase.";
+    return "Não foi possível concluir a ação agora. Tente novamente em instantes.";
   }
   if (
     err.code === "42501" ||
@@ -30,8 +30,8 @@ export function formatPostgrestError(err: PgError): string {
     lower.includes("row-level security") ||
     lower.includes("rls")
   ) {
-    return "Operação bloqueada pelas regras de segurança (RLS) no Supabase.";
+    return "Você não tem permissão para concluir esta ação. Faça login novamente e tente outra vez.";
   }
 
-  return m || "Erro ao comunicar com o banco de dados.";
+  return "Não foi possível concluir a ação agora. Tente novamente.";
 }

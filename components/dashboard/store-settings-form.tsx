@@ -465,7 +465,7 @@ export function StoreSettingsForm({
         enqueueToast({
           tone: "error",
           title: "Falha ao enviar logo",
-          text: uploadError.message,
+          text: "Não foi possível enviar a logo agora. Tente novamente em instantes.",
         });
         return;
       }
@@ -505,11 +505,11 @@ export function StoreSettingsForm({
           text: "A nova logo foi aplicada e já está persistida para as páginas públicas.",
         });
       }
-    } catch (error) {
+    } catch {
       enqueueToast({
         tone: "error",
         title: "Falha ao enviar logo",
-        text: error instanceof Error ? error.message : "Não foi possível enviar a logo agora.",
+        text: "Não foi possível enviar a logo agora. Tente novamente em instantes.",
       });
     } finally {
       setLogoUploadPending(false);

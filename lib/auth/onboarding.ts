@@ -63,14 +63,14 @@ function mapPostgrestError(error: PostgrestLikeError): string {
     lower.includes("row-level security") ||
     lower.includes("rls")
   ) {
-    return "Operacao bloqueada pelas regras de seguranca. Faça login novamente e tente outra vez.";
+    return "Operação bloqueada por segurança. Faça login novamente e tente outra vez.";
   }
 
   if (isUniqueViolation(error)) {
-    return "Ja existe um registro com esse valor.";
+    return "Já existe um registro com esse valor.";
   }
 
-  return message || "Erro desconhecido ao falar com o banco de dados.";
+  return "Não foi possível concluir o cadastro agora. Tente novamente.";
 }
 
 function normalizePendingSignup(data: PendingSignupData): PendingSignupData {
@@ -136,7 +136,7 @@ async function ensureStoreSettings(
   if (error && !isUniqueViolation(error)) {
     return {
       ok: false,
-      message: `A loja foi criada, mas falhou ao registrar as configuracoes iniciais: ${mapPostgrestError(error)} Verifique a tabela public.store_settings e as politicas RLS.`,
+      message: `A loja foi criada, mas não foi possível registrar as configurações iniciais. ${mapPostgrestError(error)}`,
     };
   }
 
@@ -163,7 +163,7 @@ async function updateProfileName(supabase: SupabaseServerClient, userId: string,
   if (error) {
     return {
       ok: false as const,
-      message: `Nao foi possivel atualizar o perfil: ${mapPostgrestError(error)}`,
+      message: `Não foi possível atualizar o perfil. ${mapPostgrestError(error)}`,
     };
   }
 
@@ -206,7 +206,7 @@ export async function ensureAccountProvisioned(input: {
   if (currentStoreResult.errorMessage) {
     return {
       status: "error",
-      message: `Nao foi possivel verificar a loja atual: ${currentStoreResult.errorMessage}`,
+      message: `Não foi possível verificar a loja atual. ${currentStoreResult.errorMessage}`,
     };
   }
 
@@ -227,7 +227,7 @@ export async function ensureAccountProvisioned(input: {
   if (!pending) {
     return {
       status: "missing-pending-data",
-      message: "Nao encontramos os dados pendentes do cadastro. Faca um novo cadastro para concluir a criacao da loja.",
+      message: "Não encontramos os dados pendentes do cadastro. Faça um novo cadastro para concluir a criação da loja.",
     };
   }
 
@@ -268,7 +268,7 @@ export async function ensureAccountProvisioned(input: {
         if (ownerStoreResult.errorMessage) {
           return {
             status: "error",
-            message: `Nao foi possivel verificar a loja da conta apos conflito: ${ownerStoreResult.errorMessage}`,
+            message: `Não foi possível verificar a loja da conta após conflito. ${ownerStoreResult.errorMessage}`,
           };
         }
 
@@ -290,7 +290,7 @@ export async function ensureAccountProvisioned(input: {
       if (inferSlugConflict(storeInsertError)) {
         return {
           status: "needs-slug",
-          message: "Este slug (URL publica) ja esta em uso. Escolha outro para concluir o cadastro.",
+          message: "Este slug (URL pública) já está em uso. Escolha outro para concluir o cadastro.",
           suggestedSlug: desiredSlug,
         };
       }
@@ -298,7 +298,7 @@ export async function ensureAccountProvisioned(input: {
 
     return {
       status: "error",
-      message: `Nao foi possivel criar a loja: ${mapPostgrestError(storeInsertError)}`,
+      message: `Não foi possível criar a loja. ${mapPostgrestError(storeInsertError)}`,
     };
   }
 

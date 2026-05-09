@@ -413,6 +413,7 @@ export function PublicStoreMenuClient({
                               type="button"
                               onClick={() => decreaseQuantity(product.id)}
                               data-testid={`menu-decrease-${product.id}`}
+                              aria-label={`Diminuir quantidade de ${product.name}`}
                               className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
                             >
                               -
@@ -423,6 +424,7 @@ export function PublicStoreMenuClient({
                               onClick={() => increaseQuantity(product.id)}
                               disabled={!canAddOrIncrease}
                               data-testid={`menu-increase-${product.id}`}
+                              aria-label={`Aumentar quantidade de ${product.name}`}
                               className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               +

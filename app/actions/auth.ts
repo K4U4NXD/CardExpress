@@ -99,16 +99,16 @@ function mapAuthError(message: string): string {
     return "Confirme seu e-mail para ativar sua conta e concluir o cadastro da loja.";
   }
 
-  if (m.includes("Invalid login credentials")) {
+  if (lower.includes("invalid login credentials")) {
     return "E-mail ou senha inválidos.";
   }
   if (lower.includes("invalid email")) {
     return "E-mail inválido. Verifique o endereço digitado.";
   }
   if (lower.includes("password") && lower.includes("least")) {
-    return "A senha não atende aos requisitos mínimos do provedor de login.";
+    return "A senha não atende aos requisitos mínimos.";
   }
-  return m;
+  return "Não foi possível concluir a solicitação agora. Tente novamente.";
 }
 
 function mapSignupAuthError(message: string): Pick<AuthFormState, "error" | "fieldErrors"> {

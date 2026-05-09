@@ -382,6 +382,14 @@ As principais frentes restantes são:
 
 ---
 
+## Implantação e homologação
+
+Para publicar o CardExpress em um ambiente gratuito de homologação usando Vercel + Supabase, consulte:
+
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+
+---
+
 ## Stack do projeto
 
 ### Front-end

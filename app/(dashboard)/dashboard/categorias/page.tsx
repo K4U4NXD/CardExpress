@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   title: "Categorias",
 };
 
+/**
+ * Página server-side de categorias do dashboard.
+ * Carrega apenas categorias da loja autenticada; mutações ficam nas Server Actions.
+ */
 export default async function DashboardCategoriesPage() {
   const { supabase, store } = await getUserStore();
 

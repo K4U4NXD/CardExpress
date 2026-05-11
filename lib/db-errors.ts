@@ -4,7 +4,10 @@ type PgError = {
   details?: string;
 };
 
-/** Mensagem amigável para erros comuns do PostgREST em operações do dashboard. */
+/**
+ * Mensagem amigável para erros comuns do PostgREST em operações do dashboard.
+ * Normaliza detalhes técnicos sem vazar schema, policies ou nomes internos para o usuário final.
+ */
 export function formatPostgrestError(err: PgError): string {
   const m = (err.message ?? "").trim();
   const lower = m.toLowerCase();

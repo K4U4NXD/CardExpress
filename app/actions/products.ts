@@ -65,6 +65,10 @@ function normalizeBulkIds(ids: string[]) {
   return { requested, uniqueIds, invalidCount, duplicateCount };
 }
 
+/**
+ * Monta feedback consolidado para ações em massa.
+ * O resumo separa alterados, ignorados e falhas para não esconder resultados parciais.
+ */
 function buildBulkProductsMessage(input: {
   action: "activate" | "deactivate" | "pause" | "enable" | "delete";
   requested: number;
@@ -128,6 +132,9 @@ async function fetchProductsForBulk(
     .in("id", productIds);
 }
 
+/**
+ * Identifica quando a deleção física quebraria histórico de checkout/pedido.
+ */
 function isProductHistoryDeleteError(err: { code?: string; message?: string; details?: string }): boolean {
   if (err.code !== "23503") {
     return false;
@@ -137,6 +144,10 @@ function isProductHistoryDeleteError(err: { code?: string; message?: string; det
   return joined.includes("checkout_session_items_product_id_fkey") || joined.includes("order_items_product_id_fkey");
 }
 
+/**
+ * Arquiva um produto que já apareceu em pedido/checkout.
+ * Mantém o histórico íntegro, remove vínculos de categoria e impede novas vendas.
+ */
 async function archiveProductForHistory(
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
   storeId: string,
@@ -190,6 +201,10 @@ function normalizeProductImageUrl(rawImageUrl: string): { value: string | null; 
   return { value: normalized };
 }
 
+/**
+ * Define a relação entre controle de estoque e disponibilidade manual.
+ * Produto com estoque controlado fica vendavel por regra de estoque; sem estoque usa o toggle manual.
+ */
 function resolveStockAndAvailability(formData: FormData):
   | { ok: true; track_stock: boolean; stock_quantity: number; is_available: boolean }
   | { ok: false; message: string } {
@@ -264,6 +279,10 @@ async function assertCategoryAllowedForProduct(
   return { ok: false as const, message: "Escolha uma categoria ativa." };
 }
 
+/**
+ * Mantém a categoria principal dentro da lista de associações públicas.
+ * Isso permite produto em múltiplas categorias sem perder a categoria canônica do dashboard.
+ */
 function parseAdditionalCategoryIds(formData: FormData, primaryCategoryId: string) {
   const rawIds = formData
     .getAll("additional_category_ids")
@@ -312,6 +331,10 @@ async function assertCategoriesAllowedForProduct(
   return { ok: true as const, categoryIds: uniqueCategoryIds };
 }
 
+/**
+ * Substitui o conjunto de categorias adicionais do produto de forma simples e idempotente.
+ * A tabela de associação é usada pelo cardápio público para renderizar o item em várias seções.
+ */
 async function syncProductCategories(
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
   storeId: string,
@@ -714,6 +737,7 @@ export async function reorderProductsAction(orderedProductIds: string[]): Promis
   }
 
   const maxSortOrder = Math.max(...list.map((item) => item.sort_order), 0);
+  // Ordem temporária evita conflitos enquanto todos os produtos recebem a posição final.
   const tempBase = maxSortOrder + 1_000_000;
 
   for (const [index, id] of cleanIds.entries()) {
@@ -1030,6 +1054,7 @@ export async function bulkDeleteProductsAction(productIds: string[]): Promise<Bu
   let failed = 0;
 
   for (const productId of targetIds) {
+    // Cada produto é avaliado individualmente para excluir os sem histórico e arquivar os já referenciados.
     const [orderItemsHistoryResult, checkoutItemsHistoryResult] = await Promise.all([
       supabase
         .from("order_items")
@@ -1167,6 +1192,7 @@ export async function deleteProductAction(formData: FormData) {
   const hasHistory = (orderItemsHistoryCount ?? 0) > 0 || (checkoutItemsHistoryCount ?? 0) > 0;
 
   if (hasHistory) {
+    // Produtos com histórico permanecem no banco para preservar relatórios, pedidos e auditoria operacional.
     const { error: archiveError } = await archiveProductForHistory(supabase, store.id, productId);
     if (archiveError) {
       redirect(`${PATH}?erro=${encodeURIComponent(formatPostgrestError(archiveError))}`);

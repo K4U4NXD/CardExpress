@@ -35,6 +35,10 @@ type PublicOrderRow = {
   note: string | null;
 };
 
+/**
+ * Acompanhamento público do pedido.
+ * O token público é obrigatório para consultar dados do pedido sem autenticar o cliente.
+ */
 export default async function OrderStatusPage({ params, searchParams }: OrderStatusPageProps) {
   const [{ slug, id }, search] = await Promise.all([params, searchParams]);
   const token = String(search?.token ?? "").trim();

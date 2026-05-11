@@ -39,6 +39,11 @@ const runIdFromEnv = String(process.env.CARDEXPRESS_E2E_RUN_ID ?? "").trim();
 const runId = runIdFromEnv || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 const authStatePath = path.join(process.cwd(), "tests", "e2e", ".auth", "merchant.json");
 
+/**
+ * Suíte smoke dos fluxos críticos.
+ * Usa loja de teste dedicada e roda serialmente porque vários cenários compartilham estoque,
+ * modo operacional e dados criados no beforeAll.
+ */
 const seedData = {
   categoryName: `E2E Categoria ${runId}`,
   multiCategoryName: `E2E Categoria Extra ${runId}`,
@@ -190,6 +195,7 @@ test.describe.serial("CardExpress critical smoke", () => {
     const page = await context.newPage();
 
     try {
+      // Nunca aponte estes testes para loja real: eles alteram categorias, produtos, estoque e pedidos.
       await loginAsMerchant(page, merchantCredentials);
 
       storeSlug = await readStoreSlugFromSettings(page);

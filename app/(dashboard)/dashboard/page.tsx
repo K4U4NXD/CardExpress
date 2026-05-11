@@ -123,6 +123,10 @@ function formatWeekDescription(startIso: string, endIso: string) {
   return `Semana atual: ${formatDateShortInSaoPaulo(startIso)} a ${formatDateShortInSaoPaulo(endDisplay)}.`;
 }
 
+/**
+ * Busca métricas comerciais para um intervalo fechado-aberto.
+ * Usa pedidos finalizados porque somente eles representam venda concluída.
+ */
 async function loadIndicatorMetrics(
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
   storeId: string,
@@ -157,6 +161,9 @@ async function loadIndicatorMetrics(
   };
 }
 
+/**
+ * Traduz prontidão, modo manual e horário automático em um status único para o dashboard.
+ */
 function resolveOperationStatus({
   readinessOk,
   acceptsOrdersManual,
@@ -269,6 +276,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
   ];
 
   if (store) {
+    // A home agrega leituras independentes em paralelo para reduzir latência do primeiro render.
     const [
       settingsResult,
       readinessResult,
@@ -395,6 +403,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
     };
 
     if (autoScheduleEnabled && currentServiceRange) {
+      // Período operacional automático é calculado a partir do horário de São Paulo.
       const serviceMetrics = await loadIndicatorMetrics(supabase, store.id, {
         startIso: currentServiceRange.startIso,
         endIso: currentServiceRange.endIso,
@@ -410,6 +419,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
         metrics: serviceMetrics,
       };
     } else if (manualOperationalPeriod?.opened_at) {
+      // No modo manual, o período começa quando a loja é aberta e termina ao fechar/trocar de modo.
       const manualMetrics = await loadIndicatorMetrics(supabase, store.id, {
         startIso: manualOperationalPeriod.opened_at,
         endIso: manualOperationalPeriod.closed_at ?? nowIso,

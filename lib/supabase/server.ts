@@ -9,7 +9,7 @@ type CookieToSet = {
 
 /**
  * Cliente Supabase para Server Components, Route Handlers e Server Actions.
- * Sincroniza cookies da sessão com o mesmo padrão do browser.
+ * Usa anon key com cookies da sessão; RLS continua sendo a fronteira de segurança.
  */
 export async function createServerSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -34,7 +34,7 @@ export async function createServerSupabaseClient() {
             cookieStore.set(name, value, options);
           });
         } catch {
-          // Chamadas de Server Component não podem mutar cookies; middleware ou Route Handler farão refresh.
+          // Server Components não podem mutar cookies; middleware/Route Handler fazem o refresh quando necessário.
         }
       },
     },

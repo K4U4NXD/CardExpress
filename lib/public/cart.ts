@@ -4,6 +4,10 @@ export function getPublicCartStorageKey(slug: string) {
   return `cardexpress:cart:${slug}`;
 }
 
+/**
+ * Lê o carrinho público com validação defensiva.
+ * Dados de localStorage nunca são confiáveis e precisam ser normalizados antes do checkout.
+ */
 export function readPublicCartFromStorage(storageKey: string): PublicCartItem[] {
   if (typeof window === "undefined") {
     return [];

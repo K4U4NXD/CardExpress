@@ -19,6 +19,10 @@ function composeDescribedBy(...ids: Array<string | undefined>): string | undefin
   return validIds.length > 0 ? validIds.join(" ") : undefined;
 }
 
+/**
+ * Feedback visual de senha durante o cadastro.
+ * A validação definitiva continua em lib/auth/validation.ts e na Server Action.
+ */
 function resolvePasswordStrength(score: number): { label: string; barClassName: string } {
   if (score <= 1) {
     return { label: "muito fraca", barClassName: "bg-red-500" };
@@ -35,6 +39,10 @@ function resolvePasswordStrength(score: number): { label: string; barClassName: 
   return { label: "forte", barClassName: "bg-emerald-500" };
 }
 
+/**
+ * Formulário inicial de cadastro do comerciante.
+ * Dados da loja seguem para pending_signup e só viram loja após confirmação do e-mail.
+ */
 export function SignupForm() {
   const [state, formAction, pending] = useActionState(signupAction, initial);
   const [values, setValues] = useState(EMPTY_VALUES);

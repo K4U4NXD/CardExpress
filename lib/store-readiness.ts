@@ -17,6 +17,10 @@ export type StoreReadinessResult = {
   activeAvailableProducts: number;
 };
 
+/**
+ * Calcula se a loja pode aceitar pedidos.
+ * A prontidão exige dados básicos, slug válido, categoria ativa e produto comprável no cardápio público.
+ */
 export async function calculateStoreReadiness(
   supabase: ServerSupabaseClient,
   input: StoreReadinessInput
@@ -37,6 +41,7 @@ export async function calculateStoreReadiness(
   let activeAvailableProducts = 0;
 
   if (activeCategoryIds.length > 0) {
+    // Produtos em categorias múltiplas contam se estiverem associados a qualquer categoria ativa.
     const { data: associatedRows, error: associationError } = await supabase
       .from("product_categories")
       .select("product_id")

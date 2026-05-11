@@ -40,6 +40,10 @@ type PanelHistoryRenderItem = PanelHistoryItem & {
 
 const HISTORY_LIMIT = 5;
 
+/**
+ * Painel público de pedidos prontos.
+ * A mesma base atende web e modo TV; som depende de interação do usuário por restrição dos navegadores.
+ */
 export function PublicReadyPanelClient({
   slug,
   latestOrder,
@@ -55,6 +59,7 @@ export function PublicReadyPanelClient({
   const previousLatestRef = useRef<string | null>(null);
 
   const calledHistory = useMemo<PanelHistoryRenderItem[]>(() => {
+    // Dedupe por pedido+ready_at evita repetições quando a RPC retorna o mesmo chamado em leituras sucessivas.
     const seenKeys = new Set<string>();
 
     return [...recentCalledOrders]

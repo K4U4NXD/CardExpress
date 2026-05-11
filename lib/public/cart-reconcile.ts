@@ -41,6 +41,10 @@ function buildMenuCatalog(menuRows: PublicMenuRpcRow[]) {
   return catalog;
 }
 
+/**
+ * Reconcilia o carrinho salvo com o cardápio atual.
+ * Remove produtos que sumiram, atualiza nome/preço e informa se ainda há itens compráveis.
+ */
 export function reconcileCartWithMenu(
   items: PublicCartItem[],
   menuRows: PublicMenuRpcRow[],

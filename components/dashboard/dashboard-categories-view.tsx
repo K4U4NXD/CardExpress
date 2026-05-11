@@ -22,6 +22,9 @@ type DashboardCategoriesViewProps = {
   categories: Category[];
 };
 
+/**
+ * Reordena localmente para UI otimista; a Server Action valida a lista completa antes de persistir.
+ */
 function reorderById<T extends { id: string }>(items: T[], draggedId: string, targetId: string) {
   const fromIndex = items.findIndex((item) => item.id === draggedId);
   const toIndex = items.findIndex((item) => item.id === targetId);
@@ -36,6 +39,10 @@ function reorderById<T extends { id: string }>(items: T[], draggedId: string, ta
   return next;
 }
 
+/**
+ * Tela cliente de categorias: edição inline, ordenação e ações em massa.
+ * Categorias com produtos ativos são preservadas pelas Server Actions.
+ */
 export function DashboardCategoriesView({ storeId, categories }: DashboardCategoriesViewProps) {
   const router = useRouter();
   const { enqueueToast } = useToast();
@@ -304,6 +311,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
       return;
     }
 
+    // O resultado pode ser parcial: algumas categorias podem ser bloqueadas por vínculo com produtos.
     const ids = Array.from(selectedCategoryIds);
     startBulkTransition(() => {
       void (async () => {

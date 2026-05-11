@@ -42,6 +42,10 @@ type CheckoutCreationResult =
   | { type: "error"; message: string | null }
   | { type: "timeout" };
 
+/**
+ * Helpers compartilhados pelos smoke tests.
+ * Eles encapsulam navegação e diagnósticos para reduzir duplicação sem esconder falhas reais do fluxo.
+ */
 async function waitForDashboardFormActionResult(page: Page, options: DashboardFormActionResultOptions) {
   const form = page.getByTestId(options.formTestId);
   const formAlert = form.locator('[role="alert"]').first();
@@ -224,6 +228,9 @@ export async function readStoreSlugFromSettings(page: Page) {
   return slug;
 }
 
+/**
+ * Ajusta modo operacional pela UI, simulando exatamente o caminho usado pelo comerciante.
+ */
 export async function setStoreOperationalMode(
   page: Page,
   mode: StoreOperationalMode,
@@ -559,6 +566,9 @@ export async function goToPublicCheckout(page: Page, slug: string) {
   await expect(page).toHaveURL(new RegExp(`/${slug}/checkout(?:\\?.*)?$`));
 }
 
+/**
+ * Cria uma sessão de checkout pública e falha com diagnósticos visíveis quando o estado não estabiliza.
+ */
 export async function createCheckoutSession(page: Page, input: CheckoutInput) {
   await expect(page).toHaveURL(/\/checkout(?:\?.*)?$/);
   await expect(page.getByRole("heading", { name: /^checkout\b/i })).toBeVisible({ timeout: 10_000 });
@@ -633,6 +643,9 @@ export async function createCheckoutSession(page: Page, input: CheckoutInput) {
   }
 }
 
+/**
+ * Cenário demo: simula pagamento aprovado e aguarda a conversão em pedido público.
+ */
 export async function simulatePaymentAndWaitForOrderPage(page: Page, slug: string) {
   await page.getByTestId("checkout-simulate-payment").click();
   await expect(page).toHaveURL(new RegExp(`/${slug}/pedido/[^?]+\\?token=`), { timeout: 20_000 });

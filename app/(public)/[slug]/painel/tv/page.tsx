@@ -50,6 +50,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+/**
+ * Variante em tela cheia do painel público.
+ * Força render dinâmico para refletir chamadas recentes sem depender de cache estático.
+ */
 export default async function PublicReadyPanelTvPage({ params }: PageProps) {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;

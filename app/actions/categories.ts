@@ -59,6 +59,10 @@ function normalizeBulkIds(ids: string[]) {
   return { requested, uniqueIds, invalidCount, duplicateCount };
 }
 
+/**
+ * Resume ações em massa preservando informação sobre itens ignorados.
+ * Categorias podem ser preservadas quando ainda possuem produtos ativos vinculados.
+ */
 function buildBulkCategoriesMessage(input: {
   action: "activate" | "deactivate" | "delete";
   requested: number;
@@ -112,6 +116,10 @@ function isCategoryProductReferenceError(error: unknown) {
   return code === "23503" && joined.includes("products") && joined.includes("category");
 }
 
+/**
+ * Verifica bloqueios antes de excluir categorias.
+ * Considera vínculo direto em products.category_id e vínculos múltiplos em product_categories.
+ */
 async function findCategoriesWithActiveProducts(
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
   storeId: string,
@@ -172,6 +180,10 @@ async function findCategoriesWithActiveProducts(
   return { blockedIds, error: null };
 }
 
+/**
+ * Remove referências de produtos arquivados antes da exclusão da categoria.
+ * Produtos arquivados não aparecem no cardápio, mas ainda podem manter histórico de pedidos.
+ */
 async function unlinkArchivedProductsFromCategories(
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
   storeId: string,
@@ -423,6 +435,7 @@ export async function reorderCategoriesAction(orderedCategoryIds: string[]): Pro
   }
 
   const maxSortOrder = Math.max(...list.map((item) => item.sort_order), 0);
+  // Ordem temporária reduz risco de colisão em sort_order durante reordenação completa.
   const tempBase = maxSortOrder + 1_000_000;
 
   for (const [index, id] of cleanIds.entries()) {
@@ -622,6 +635,7 @@ export async function bulkDeleteCategoriesAction(categoryIds: string[]): Promise
       }
 
       if (deletableIds.length > 0) {
+        // Antes de deletar, soltamos categorias usadas apenas por produtos arquivados.
         const { error: unlinkError } = await unlinkArchivedProductsFromCategories(supabase, store.id, deletableIds);
         if (unlinkError) {
           failed = deletableIds.length;

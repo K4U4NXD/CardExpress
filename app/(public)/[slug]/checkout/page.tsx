@@ -10,6 +10,10 @@ type CheckoutPageProps = {
   params: Promise<{ slug: string }>;
 };
 
+/**
+ * Checkout público demo para retirada no balcão.
+ * A página monta o estado inicial; criação de sessão e simulação de pagamento ficam no client/RPC.
+ */
 export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const { slug } = await params;
   const supabase = await createServerSupabaseClient();

@@ -70,6 +70,10 @@ function resolveOperationalMode(values: {
   return values.autoAcceptOrdersBySchedule ? "schedule" : "manual";
 }
 
+/**
+ * Registra abertura/fechamento do período manual para indicadores operacionais.
+ * O modo automático usa janela de horário e, por isso, fecha qualquer período manual aberto.
+ */
 async function syncManualOperationalPeriod({
   supabase,
   storeId,
@@ -128,6 +132,9 @@ function mapUnknownError(error: unknown): string {
   return "Não foi possível concluir a ação. Tente novamente.";
 }
 
+/**
+ * Valida a URL pública retornada pelo Storage antes de persistir em stores.logo_url.
+ */
 function normalizeUploadedLogoUrl(rawLogoUrl: string): { value: string | null; error?: string } {
   const normalized = rawLogoUrl.trim();
 
@@ -147,6 +154,9 @@ function normalizeUploadedLogoUrl(rawLogoUrl: string): { value: string | null; e
   return { value: normalized };
 }
 
+/**
+ * Persiste uma logo já enviada ao Supabase Storage e revalida as telas que exibem a marca.
+ */
 export async function saveStoreUploadedLogoAction(rawLogoUrl: string): Promise<StoreLogoUploadActionResult> {
   const logoNormalization = normalizeUploadedLogoUrl(rawLogoUrl);
 
@@ -240,6 +250,7 @@ export async function saveStoreSettingsAction(
     };
   }
 
+  // Loja com pendências nunca deve aceitar novos pedidos, mesmo que a UI envie o toggle ligado.
   const nextAcceptsOrders = readiness.isReady ? validation.values.acceptsOrders : false;
   const nextAutoAcceptOrdersBySchedule = nextAcceptsOrders ? validation.values.autoAcceptOrdersBySchedule : false;
   const nextOperationalMode = resolveOperationalMode({

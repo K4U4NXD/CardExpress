@@ -18,6 +18,10 @@ const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   cancelado: [],
 };
 
+/**
+ * Guarda a máquina de estados operacional do pedido.
+ * Cancelamento/recusa usam RPC para centralizar efeitos colaterais como reversão de estoque.
+ */
 type MinimalOrder = {
   id: string;
   store_id: string;
@@ -33,6 +37,9 @@ function transitionError(current: OrderStatus, next: OrderStatus): string | null
   return null;
 }
 
+/**
+ * Carrega somente pedidos da loja autenticada para impedir transições cruzando tenants.
+ */
 async function loadOwnedOrder(storeId: string, orderId: string) {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
@@ -61,6 +68,10 @@ function redirectWithNotice(notice: string) {
   redirectWithMessage(`aviso=${encodeURIComponent(notice)}&flash=${buildFlashToken()}`);
 }
 
+/**
+ * Revalida as visões afetadas por uma mudança de status:
+ * dashboard, cardápio público, painel de retirada e acompanhamento público.
+ */
 function revalidateOrderPaths(storeSlug: string, orderId: string) {
   revalidatePath(PATH);
   revalidatePath("/dashboard");
@@ -69,6 +80,9 @@ function revalidateOrderPaths(storeSlug: string, orderId: string) {
   revalidatePath(`/${storeSlug}/pedido/${orderId}`);
 }
 
+/**
+ * Move pedido para estado terminal via RPC para manter regras de banco atômicas.
+ */
 async function transitionOrderToTerminal(orderId: string, targetStatus: "recusado" | "cancelado") {
   const { store } = await getUserStore();
   if (!store) {
@@ -97,6 +111,10 @@ async function transitionOrderToTerminal(orderId: string, targetStatus: "recusad
   redirectWithNotice(targetStatus);
 }
 
+/**
+ * Executa transições simples do fluxo operacional do balcão.
+ * Cada status recebe o timestamp correspondente para alimentar histórico e painéis.
+ */
 async function performTransition(
   orderId: string,
   targetStatus: OrderStatus,

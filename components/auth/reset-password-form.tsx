@@ -12,6 +12,9 @@ function composeDescribedBy(...ids: Array<string | undefined>): string | undefin
   return validIds.length > 0 ? validIds.join(" ") : undefined;
 }
 
+/**
+ * Indicador visual local; a regra definitiva de senha fica na Server Action.
+ */
 function resolvePasswordStrength(score: number): { label: string; barClassName: string } {
   if (score <= 1) {
     return { label: "muito fraca", barClassName: "bg-red-500" };
@@ -28,6 +31,9 @@ function resolvePasswordStrength(score: number): { label: string; barClassName: 
   return { label: "forte", barClassName: "bg-emerald-500" };
 }
 
+/**
+ * Troca de senha acessada por sessão de recovery validada em /auth/confirm.
+ */
 export function ResetPasswordForm() {
   const [state, formAction, pending] = useActionState(resetPasswordAction, initial);
   const [password, setPassword] = useState("");

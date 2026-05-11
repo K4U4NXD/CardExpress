@@ -91,6 +91,10 @@ function buildSignupState(input: {
   return nextState;
 }
 
+/**
+ * Converte mensagens técnicas do Supabase Auth em feedback seguro para UI.
+ * Evita expor detalhes internos do provedor e mantém as mensagens consistentes.
+ */
 function mapAuthError(message: string): string {
   const m = message.trim();
   const lower = m.toLowerCase();
@@ -111,6 +115,10 @@ function mapAuthError(message: string): string {
   return "Não foi possível concluir a solicitação agora. Tente novamente.";
 }
 
+/**
+ * Mapeia erros do cadastro para campos específicos quando possível.
+ * Isso permite destacar e-mail/senha sem perder uma mensagem geral para casos operacionais.
+ */
 function mapSignupAuthError(message: string): Pick<AuthFormState, "error" | "fieldErrors"> {
   const lower = message.trim().toLowerCase();
 
@@ -156,6 +164,10 @@ function mapResetPasswordAuthError(message: string): string {
   return "Não foi possível concluir a solicitação agora. Tente novamente.";
 }
 
+/**
+ * Resolve a origem usada nos links de e-mail.
+ * Em produção prioriza headers do proxy; localmente cai para variáveis de ambiente ou localhost.
+ */
 async function resolveAppOrigin(): Promise<string> {
   const requestHeaders = await headers();
 
@@ -198,6 +210,7 @@ export async function loginAction(
   } = await supabase.auth.getUser();
 
   if (!user?.email_confirmed_at) {
+    // Login sem e-mail confirmado não deve manter sessão ativa nem liberar onboarding da loja.
     await supabase.auth.signOut();
     return {
       error: "Confirme seu e-mail para ativar sua conta e concluir o cadastro da loja.",
@@ -229,6 +242,7 @@ export async function requestPasswordRecoveryAction(
       redirectTo,
     });
   } catch {
+    // Resposta neutra: não revela se o e-mail existe nem detalhes de falha do provedor.
     return {
       values: validation.values,
       success: PASSWORD_RECOVERY_SUCCESS_MESSAGE,
@@ -274,6 +288,7 @@ export async function resetPasswordAction(
     };
   }
 
+  // A sessão de recovery existe apenas para trocar a senha; depois disso o usuário entra pelo fluxo normal.
   await supabase.auth.signOut();
   redirect(
     `/login?sucesso=${encodeURIComponent("Senha redefinida com sucesso. Faça login com sua nova senha.")}`
@@ -281,8 +296,8 @@ export async function resetPasswordAction(
 }
 
 /**
- * Cadastro: Auth → atualização de profile (apenas full_name) → store (telefone da loja em stores.phone) → store_settings.
- * Com "Confirm email" ativo no Supabase, session pode vir null — a loja só é criada quando houver sessão.
+ * Inicia o cadastro salvando os dados da loja em user_metadata.pending_signup.
+ * A loja só é provisionada depois da confirmação de e-mail, quando há sessão autenticada.
  */
 export async function signupAction(
   _prev: AuthFormState | null,
@@ -351,6 +366,7 @@ export async function signupAction(
     }
 
     if (signData.session) {
+      // Mesmo que o Supabase retorne sessão no signup, aguardamos confirmação de e-mail para criar a loja.
       await supabase.auth.signOut();
     }
   } catch {
@@ -404,6 +420,7 @@ export async function completeSignupStoreAction(
       };
     }
 
+    // Usado quando o slug reservado no signup ficou indisponível antes da confirmação.
     const provisionResult = await ensureAccountProvisioned({
       supabase,
       user,

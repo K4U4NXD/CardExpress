@@ -46,6 +46,10 @@ type MenuSection = {
   products: MenuProduct[];
 };
 
+/**
+ * Interface pública do cardápio.
+ * Sincroniza carrinho local com o menu recebido do servidor e bloqueia compra de itens indisponíveis.
+ */
 export function PublicStoreMenuClient({
   slug,
   acceptsOrders,
@@ -110,6 +114,7 @@ export function PublicStoreMenuClient({
 
     const loaded = readPublicCartFromStorage(cartStorageKey);
 
+    // Reconciliação evita checkout com preço antigo, produto removido ou item que deixou de ser comprável.
     const reconciled = reconcileCartWithMenu(loaded, menuRows, acceptsOrders);
 
     setCartItems(reconciled.items);
@@ -536,6 +541,9 @@ export function PublicStoreMenuClient({
   );
 }
 
+/**
+ * Agrupa linhas da RPC pública por categoria, evitando duplicidade quando um produto aparece em várias seções.
+ */
 function groupMenuByCategory(rows: PublicMenuRpcRow[]): MenuSection[] {
   const sectionMap = new Map<string, MenuSection>();
 

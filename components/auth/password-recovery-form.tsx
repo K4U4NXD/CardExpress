@@ -8,6 +8,10 @@ import { useActionState, useEffect, useState } from "react";
 
 const initial: PasswordRecoveryFormState = {};
 
+/**
+ * Formulário de recuperação de senha.
+ * A mensagem de sucesso é neutra para não indicar se o e-mail existe.
+ */
 export function PasswordRecoveryForm() {
   const [state, formAction, pending] = useActionState(requestPasswordRecoveryAction, initial);
   const [email, setEmail] = useState("");

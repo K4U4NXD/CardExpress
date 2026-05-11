@@ -51,6 +51,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+/**
+ * Painel público de retirada.
+ * Exibe o último pedido chamado e um histórico curto para uso em balcão ou monitor compartilhado.
+ */
 export default async function PublicReadyPanelPage({ params }: PageProps) {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;

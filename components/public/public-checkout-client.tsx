@@ -57,6 +57,11 @@ type StockIssueItemMessages = Record<string, string>;
 
 const OPERATIONAL_RECHECK_INTERVAL_MS = 12000;
 
+/**
+ * Cliente do checkout público.
+ * Mantém o fluxo demo: cria sessão, simula pagamento aprovado e converte em pedido via RPC.
+ * Integração real com Mercado Pago deve substituir a etapa de simulação, preservando a validação final no banco.
+ */
 export function PublicCheckoutClient({
   slug,
   storeName,
@@ -426,6 +431,9 @@ export function PublicCheckoutClient({
     [updateCheckoutCart]
   );
 
+  /**
+   * Cria a sessão de checkout após revalidar loja, cardápio e estoque no momento do envio.
+   */
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
@@ -666,6 +674,10 @@ export function PublicCheckoutClient({
     };
   }, [recheckSimulationAvailability, simulationBlockedByOperationalState, success]);
 
+  /**
+   * Demo de pagamento aprovado.
+   * Em produção, o provedor de pagamento chamaria a conversão após confirmação confiável.
+   */
   async function handleSimulatePaymentApproved() {
     if (!success || isSimulatingPayment || simulationBlockedByOperationalState || simulationBlockedBySessionState) {
       return;
@@ -1154,6 +1166,9 @@ export function PublicCheckoutClient({
   );
 }
 
+/**
+ * Junta itens duplicados e normaliza quantidades antes de persistir o carrinho local.
+ */
 function normalizeCheckoutItems(items: PublicCheckoutCartItem[]) {
   const map = new Map<string, PublicCheckoutCartItem>();
 
@@ -1224,6 +1239,10 @@ function normalizeMessage(message: string) {
     .toLowerCase();
 }
 
+/**
+ * Converte erros da RPC de criação de checkout em mensagens acionáveis.
+ * Quando possível, também destaca produtos com conflito de estoque/disponibilidade.
+ */
 function mapCreateCheckoutSessionError(
   rawMessage: string | null | undefined,
   unavailableMessage: string,
@@ -1357,6 +1376,10 @@ function toInteger(value: number | string | null | undefined) {
   return null;
 }
 
+/**
+ * Diagnóstico local de estoque para antecipar conflitos antes da RPC.
+ * A decisão final continua no banco para evitar corrida entre clientes.
+ */
 function diagnoseStockIssue(cartItems: PublicCheckoutCartItem[], currentMenuRows: PublicMenuRpcRow[]): StockIssueDiagnosis {
   const menuByProductId = new Map<string, PublicMenuRpcRow>();
 
@@ -1788,6 +1811,9 @@ function mapCancelCheckoutError(rawMessage: string | null | undefined): CancelCh
   };
 }
 
+/**
+ * Mapeia erros da simulação de pagamento para separar bloqueios operacionais de sessão expirada/cancelada.
+ */
 function mapSimulateCheckoutError(rawMessage: string | null | undefined): SimulateCheckoutErrorFeedback {
   if (!rawMessage) {
     return {
@@ -1875,6 +1901,9 @@ function isSessionExpired(expiresAt: string | null) {
   return expiresAtMs <= Date.now();
 }
 
+/**
+ * Tenta cancelar a sessão com a assinatura atual da RPC e preserva compatibilidade com assinatura legada.
+ */
 async function executeCancelCheckoutRpc(
   supabase: ReturnType<typeof createBrowserSupabaseClient>,
   payload: { checkoutSessionId: string; publicToken: string }

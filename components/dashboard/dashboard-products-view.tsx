@@ -24,6 +24,9 @@ type DashboardProductsViewProps = {
   products: Product[];
 };
 
+/**
+ * Reordena localmente para UI otimista; a Server Action valida a lista completa antes de persistir.
+ */
 function reorderById<T extends { id: string }>(items: T[], draggedId: string, targetId: string) {
   const fromIndex = items.findIndex((item) => item.id === draggedId);
   const toIndex = items.findIndex((item) => item.id === targetId);
@@ -38,6 +41,10 @@ function reorderById<T extends { id: string }>(items: T[], draggedId: string, ta
   return next;
 }
 
+/**
+ * Tela cliente de produtos: edição inline, ordenação e ações em massa.
+ * Mantém seleção desativada durante criação/edição para evitar comandos conflitantes.
+ */
 export function DashboardProductsView({ storeId, categories, products }: DashboardProductsViewProps) {
   const router = useRouter();
   const { enqueueToast } = useToast();
@@ -306,6 +313,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
       return;
     }
 
+    // A action de produto decide excluir ou arquivar conforme histórico de checkout/pedido.
     const ids = Array.from(selectedProductIds);
     startBulkTransition(() => {
       void (async () => {

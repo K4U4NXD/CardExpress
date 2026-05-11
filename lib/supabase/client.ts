@@ -2,7 +2,8 @@ import { createBrowserClient } from "@supabase/ssr";
 
 /**
  * Cliente Supabase para Client Components (ex.: subscribe realtime, chamadas no browser).
- * Login/cadastro/logout usam Server Actions + `createServerSupabaseClient` para gravar cookies de sessão no servidor.
+ * Usa anon key pública; acesso a dados continua limitado por RLS e RPCs permitidas.
+ * Login/cadastro/logout usam Server Actions para gravar cookies de sessão no servidor.
  */
 export function createBrowserSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

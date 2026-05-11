@@ -61,6 +61,9 @@ function buildScheduleWindowLabel(openingTime?: string | null, closingTime?: str
   return `${opening} às ${closing}`;
 }
 
+/**
+ * Linha renderizável no cardápio público: produto válido e preço coerente.
+ */
 function hasRenderableMenuProduct(row: PublicMenuRpcRow) {
   if (!row.product_id || !row.product_name) {
     return false;
@@ -74,6 +77,10 @@ export function isPublicMenuRowVisible(row: PublicMenuRpcRow) {
   return hasRenderableMenuProduct(row);
 }
 
+/**
+ * Regras de compra no público.
+ * Produto pode continuar visível sem estoque, mas não pode ser incrementado ou enviado ao checkout.
+ */
 export function isPublicMenuRowPurchasableNow(row: PublicMenuRpcRow) {
   if (!hasRenderableMenuProduct(row)) {
     return false;
@@ -119,6 +126,10 @@ export function countPurchasablePublicMenuItems(menuRows: PublicMenuRpcRow[]) {
   return purchasableIds.size;
 }
 
+/**
+ * Consolida modo operacional, horário automático e disponibilidade do cardápio.
+ * O checkout só abre quando a loja aceita pedidos e existe ao menos um item comprável.
+ */
 export function getPublicStoreOperationalState({
   acceptsOrdersSetting,
   acceptsOrdersManual,

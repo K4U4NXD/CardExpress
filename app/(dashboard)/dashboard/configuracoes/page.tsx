@@ -18,6 +18,9 @@ const FALLBACK_READINESS: StoreReadinessResult = {
   activeAvailableProducts: 0,
 };
 
+/**
+ * Converte TIME do banco para o formato aceito por input[type=time].
+ */
 function normalizeTimeToInput(value: string | null | undefined): string {
   if (!value) {
     return "";
@@ -31,7 +34,10 @@ function normalizeTimeToInput(value: string | null | undefined): string {
   return `${match[1]}:${match[2]}`;
 }
 
-/** Dados do estabelecimento (1 conta = 1 estabelecimento nesta fase). */
+/**
+ * Dados do estabelecimento e configurações operacionais.
+ * Nesta fase o slug público é somente leitura: a URL pública depende dele.
+ */
 export default async function DashboardSettingsPage() {
   const { supabase, store } = await getUserStore();
   const requestHeaders = await headers();

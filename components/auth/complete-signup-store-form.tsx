@@ -9,6 +9,9 @@ type CompleteSignupStoreFormProps = {
   initialSlug?: string;
 };
 
+/**
+ * Etapa de recuperação do onboarding quando o slug pendente não pode ser usado.
+ */
 export function CompleteSignupStoreForm({ initialSlug = "" }: CompleteSignupStoreFormProps) {
   const [state, formAction, pending] = useActionState(completeSignupStoreAction, INITIAL_STATE);
   const [slug, setSlug] = useState(initialSlug);

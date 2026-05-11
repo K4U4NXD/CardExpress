@@ -56,6 +56,10 @@ function createHighlightWindow(now: number): HighlightWindow {
   };
 }
 
+/**
+ * Recupera janelas de destaque ainda válidas para novos pedidos.
+ * O destaque é local da aba e não altera estado do pedido no servidor.
+ */
 function readHighlightWindows(storeId: string, now: number): HighlightWindowsByOrderId {
   if (typeof window === "undefined") {
     return {};
@@ -154,6 +158,10 @@ function writeAguardandoBaselineIds(storeId: string, ids: Iterable<string>) {
   }
 }
 
+/**
+ * Lista viva de pedidos do dashboard.
+ * Combina dados do servidor com estado local para destacar entradas recentes e focar pedidos vindos de alertas.
+ */
 export function OrdersLiveList({ storeId, orders, canPrunePending = false, focusOrderId = null }: OrdersLiveListProps) {
   const [pendingIds, setPendingIds] = useState<string[]>([]);
   const [highlightWindows, setHighlightWindows] = useState<HighlightWindowsByOrderId>({});
@@ -299,6 +307,7 @@ export function OrdersLiveList({ storeId, orders, canPrunePending = false, focus
     }
 
     const previousAguardandoSet = previousAguardandoIdsRef.current;
+    // Compara a fila atual com a linha de base para destacar somente pedidos que chegaram depois da tela aberta.
     const additions = aguardandoIds.filter((orderId) => !previousAguardandoSet.has(orderId));
 
     previousAguardandoIdsRef.current = currentAguardandoSet;

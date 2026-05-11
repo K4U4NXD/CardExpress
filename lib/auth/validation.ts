@@ -73,6 +73,10 @@ function hasMinimumPhoneDigits(phone: string): boolean {
   return digitsOnly.length >= 8;
 }
 
+/**
+ * Centraliza os critérios de senha usados no cadastro e na redefinição.
+ * Mantém UI e Server Actions alinhadas na mesma regra de negócio.
+ */
 export function evaluatePasswordCriteria(password: string): PasswordCriteriaStatus {
   return {
     hasMinLength: password.length >= 8,
@@ -82,6 +86,10 @@ export function evaluatePasswordCriteria(password: string): PasswordCriteriaStat
   };
 }
 
+/**
+ * Normaliza e valida os dados mínimos para abrir uma conta de comerciante.
+ * Retorna valores já prontos para persistência segura no fluxo de signup.
+ */
 export function validateSignupInput(input: SignupValidationInput): SignupValidationResult {
   const values: SignupValidationValues = {
     full_name: input.full_name.trim(),
@@ -151,6 +159,10 @@ export function validateSignupInput(input: SignupValidationInput): SignupValidat
   };
 }
 
+/**
+ * Valida apenas formato de e-mail; a action de recovery responde de forma neutra
+ * para não permitir enumeração de contas existentes.
+ */
 export function validatePasswordRecoveryInput(email: string): PasswordRecoveryValidationResult {
   const values = {
     email: normalizeEmail(email),
@@ -170,6 +182,9 @@ export function validatePasswordRecoveryInput(email: string): PasswordRecoveryVa
   };
 }
 
+/**
+ * Aplica a mesma política de senha forte na redefinição e confirma a repetição.
+ */
 export function validateResetPasswordInput(
   password: string,
   passwordConfirmation: string

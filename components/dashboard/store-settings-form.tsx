@@ -67,6 +67,10 @@ const OPERATIONAL_MODE_OPTIONS: Array<{
   },
 ];
 
+/**
+ * Converte os dois campos persistidos em um único modo de UI.
+ * Isso evita combinações ambíguas entre loja offline, abertura manual e horário automático.
+ */
 function resolveOperationalMode(values: Pick<StoreSettingsFormValues, "accepts_orders" | "auto_accept_orders_by_schedule">): StoreOperationalMode {
   if (!values.accepts_orders) {
     return "offline";
@@ -406,6 +410,10 @@ export function StoreSettingsForm({
     }
   }
 
+  /**
+   * Envia logo para Storage público e persiste a URL no cadastro da loja.
+   * O bucket é público por design para permitir uso no cardápio e painel sem autenticação.
+   */
   async function handleLogoUpload() {
     if (!selectedLogoFile) {
       return;

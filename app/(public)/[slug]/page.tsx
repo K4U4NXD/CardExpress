@@ -41,6 +41,10 @@ export async function generateMetadata({ params }: PublicMenuPageProps): Promise
   };
 }
 
+/**
+ * Cardápio público identificado por slug.
+ * Usa RPCs públicas para retornar somente dados permitidos a visitantes.
+ */
 export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
   const { slug } = await params;
   const supabase = await createServerSupabaseClient();

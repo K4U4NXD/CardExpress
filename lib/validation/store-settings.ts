@@ -53,6 +53,10 @@ function normalizeTimeInput(rawValue: string): string | null {
   return `${match[1]}:${match[2]}`;
 }
 
+/**
+ * Valida configurações operacionais antes de persistir store/store_settings.
+ * Horário automático exige abertura e fechamento distintos; intervalos que cruzam meia-noite são aceitos.
+ */
 export function validateStoreSettingsInput(input: StoreSettingsValidationInput): {
   values: StoreSettingsValidatedInput;
   fieldErrors: StoreSettingsFieldErrors;

@@ -33,6 +33,10 @@ export function getRealtimeConnectionLabel(state: RealtimeConnectionState) {
   return "Atualização em tempo real indisponível no momento";
 }
 
+/**
+ * Hook compartilhado para telas que dependem de Supabase Realtime.
+ * Faz debounce de refresh, segura atualizações quando a aba está oculta e tenta reconectar com backoff.
+ */
 export function useRealtimeRefresh({
   subscribe,
   debounceMs,

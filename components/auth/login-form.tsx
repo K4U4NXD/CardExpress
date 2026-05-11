@@ -13,6 +13,10 @@ type LoginFormProps = {
 
 const initial: AuthFormState = {};
 
+/**
+ * Login do dashboard.
+ * Respeita o parâmetro next somente depois de sanitizado pela Server Action.
+ */
 export function LoginForm({ nextPath, initialError, initialSuccess }: LoginFormProps) {
   const [state, formAction, pending] = useActionState(loginAction, initial);
   const displayError = state?.error ?? initialError;

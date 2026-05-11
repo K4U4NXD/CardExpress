@@ -59,6 +59,10 @@ function statusesForScope(scope: OrdersScopeFilter): OrderStatus[] {
   return ACTIVE_STATUSES;
 }
 
+/**
+ * Define a ordenação por escopo sem duplicar a query principal.
+ * A fila operacional prioriza pedidos mais antigos; históricos mostram os mais recentes primeiro.
+ */
 type OrderableQuery<T> = {
   order: (column: string, options?: { ascending?: boolean; nullsFirst?: boolean }) => T;
 };
@@ -124,6 +128,7 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
     const withItemsResult = await withItemsQuery;
 
     if (withItemsResult.error) {
+      // Fallback defensivo: se a relação order_items estiver indisponível, a operação ainda lista pedidos.
       const fallbackQuery = applyScopeOrdering(
         supabase
         .from("orders")

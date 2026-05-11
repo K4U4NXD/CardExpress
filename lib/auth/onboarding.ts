@@ -82,6 +82,10 @@ function normalizePendingSignup(data: PendingSignupData): PendingSignupData {
   };
 }
 
+/**
+ * Recupera os dados de loja guardados no metadata durante o signup.
+ * Se algo essencial faltar, o onboarding pede conclusão manual em vez de inferir dados.
+ */
 export function extractPendingSignupData(user: User): PendingSignupData | null {
   const metadata = isRecord(user.user_metadata) ? user.user_metadata : {};
   const pendingRaw = metadata.pending_signup;
@@ -127,6 +131,10 @@ function inferOwnerConflict(error: PostgrestLikeError): boolean {
   return lower.includes("stores_owner_id_key") || lower.includes("(owner_id)") || lower.includes(" owner_id ");
 }
 
+/**
+ * Garante o registro 1:1 de configurações operacionais da loja.
+ * Violação única é tratada como sucesso para deixar o fluxo idempotente.
+ */
 async function ensureStoreSettings(
   supabase: SupabaseServerClient,
   storeId: string
@@ -147,6 +155,7 @@ async function clearPendingSignupData(supabase: SupabaseServerClient, user: User
   const metadata = isRecord(user.user_metadata) ? user.user_metadata : {};
   const nextData: Record<string, unknown> = { ...metadata };
 
+  // Depois da loja criada, pending_signup não deve continuar autorizando novas tentativas de provisionamento.
   delete nextData.pending_signup;
   nextData.onboarding_completed_at = new Date().toISOString();
 
@@ -184,6 +193,10 @@ async function getCurrentStoreByOwner(
   return { store };
 }
 
+/**
+ * Conclui o onboarding após confirmação de e-mail.
+ * Cria profile/loja/configurações apenas para usuário autenticado e respeita RLS/unique constraints.
+ */
 export async function ensureAccountProvisioned(input: {
   supabase: SupabaseServerClient;
   user: User;
@@ -211,6 +224,7 @@ export async function ensureAccountProvisioned(input: {
   }
 
   if (currentStoreResult.store) {
+    // Fluxo idempotente: confirmar o link mais de uma vez não cria outra loja.
     const settingsResult = await ensureStoreSettings(supabase, currentStoreResult.store.id);
     if (!settingsResult.ok) {
       return { status: "error", message: settingsResult.message };
@@ -263,6 +277,7 @@ export async function ensureAccountProvisioned(input: {
   if (storeInsertError) {
     if (isUniqueViolation(storeInsertError)) {
       if (inferOwnerConflict(storeInsertError)) {
+        // Corrida entre confirmações simultâneas: se a loja já existe para o dono, seguimos com ela.
         const ownerStoreResult = await getCurrentStoreByOwner(supabase, user.id);
 
         if (ownerStoreResult.errorMessage) {

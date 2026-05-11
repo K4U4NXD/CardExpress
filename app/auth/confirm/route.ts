@@ -26,6 +26,10 @@ function toEmailOtpType(raw: string | null): EmailOtpType | null {
   return raw as EmailOtpType;
 }
 
+/**
+ * Preserva apenas destinos internos esperados e adiciona mensagens via query string.
+ * A route centraliza signup e recovery porque ambos chegam pelo e-mail do Supabase.
+ */
 function appendSearchParam(path: string, key: string, value: string): string {
   const url = new URL(path, "http://localhost");
   url.searchParams.set(key, value);
@@ -45,6 +49,9 @@ function redirectToPasswordRecoveryWithError(request: NextRequest, message: stri
   return redirectToPath(request, appendSearchParam("/recuperar-senha", "erro", message));
 }
 
+/**
+ * Traduz falhas de troca/verificação do token de cadastro para uma mensagem acionável.
+ */
 function mapConfirmExchangeError(message: string): string {
   const lower = message.toLowerCase();
 
@@ -65,6 +72,9 @@ function mapConfirmExchangeError(message: string): string {
   return "Não foi possível confirmar o e-mail agora. Tente novamente.";
 }
 
+/**
+ * Traduz falhas do token de recovery sem misturar com o onboarding de loja.
+ */
 function mapRecoveryExchangeError(message: string): string {
   const lower = message.toLowerCase();
 
@@ -152,6 +162,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (isRecoveryFlow) {
+    // Recovery deve somente liberar a tela de nova senha; loja e profile não são provisionados aqui.
     return redirectToPath(request, "/redefinir-senha");
   }
 

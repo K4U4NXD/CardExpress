@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   title: "Produtos",
 };
 
+/**
+ * Página server-side de produtos do dashboard.
+ * Consolida categoria principal e categorias adicionais antes de entregar a lista ao componente cliente.
+ */
 export default async function DashboardProductsPage() {
   const { supabase, store } = await getUserStore();
 
@@ -38,6 +42,7 @@ export default async function DashboardProductsPage() {
 
     const productIds = products.map((product) => product.id);
     if (productIds.length > 0) {
+      // A tabela de associação permite exibir o mesmo produto em múltiplas seções do cardápio público.
       const { data: productCategoryRows } = await supabase
         .from("product_categories")
         .select("product_id, category_id")

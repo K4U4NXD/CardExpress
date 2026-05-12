@@ -29,12 +29,14 @@ export type StoreOperationalModeOptions = {
 
 const SETTINGS_SAVE_TIMEOUT_MS = 30_000;
 
-type DashboardFormActionResultOptions = {
+type DashboardCreateResultOptions = {
   formTestId: string;
-  successPath: string;
-  successNotice: string;
+  submitButtonTestId: string;
+  itemName: string;
+  listingPath: string;
   timeoutMs: number;
   timeoutMessage: string;
+  itemLocator?: (page: Page, itemName: string) => Locator;
 };
 
 type CheckoutCreationResult =
@@ -46,46 +48,6 @@ type CheckoutCreationResult =
  * Helpers compartilhados pelos smoke tests.
  * Eles encapsulam navegação e diagnósticos para reduzir duplicação sem esconder falhas reais do fluxo.
  */
-async function waitForDashboardFormActionResult(page: Page, options: DashboardFormActionResultOptions) {
-  const form = page.getByTestId(options.formTestId);
-  const formAlert = form.locator('[role="alert"]').first();
-
-  const result = await Promise.race([
-    page
-      .waitForURL(
-        (url) => url.pathname === options.successPath && url.searchParams.get("aviso") === options.successNotice,
-        { timeout: options.timeoutMs },
-      )
-      .then(() => ({ type: "success" as const })),
-    formAlert
-      .waitFor({ state: "visible", timeout: options.timeoutMs })
-      .then(async () => ({ type: "error" as const, message: (await formAlert.textContent())?.trim() || null })),
-  ]).catch(async (error) => {
-    const feedbackTexts = await page
-      .locator('[role="alert"], [role="status"]')
-      .evaluateAll((elements) =>
-        elements
-          .map((element) => element.textContent?.replace(/\s+/g, " ").trim() ?? "")
-          .filter(Boolean)
-          .slice(0, 6),
-      )
-      .catch(() => []);
-
-    throw new Error(
-      [
-        options.timeoutMessage,
-        `URL atual: ${page.url()}`,
-        `Feedback visivel: ${feedbackTexts.length > 0 ? JSON.stringify(feedbackTexts) : "nenhum"}`,
-        `Erro original: ${error instanceof Error ? error.message : String(error)}`,
-      ].join("\n"),
-    );
-  });
-
-  if (result.type === "error") {
-    throw new Error(result.message ?? options.timeoutMessage);
-  }
-}
-
 async function collectVisibleTexts(page: Page, selector: string, limit = 8) {
   return await page
     .locator(selector)
@@ -103,6 +65,110 @@ async function collectVisibleTexts(page: Page, selector: string, limit = 8) {
       limit,
     )
     .catch(() => []);
+}
+
+async function collectVisibleLocatorTexts(locator: Locator, limit = 8) {
+  return await locator
+    .evaluateAll(
+      (elements, maxItems) =>
+        elements
+          .filter((element) => {
+            const style = window.getComputedStyle(element);
+            const rect = element.getBoundingClientRect();
+            return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+          })
+          .map((element) => element.textContent?.replace(/\s+/g, " ").trim() ?? "")
+          .filter(Boolean)
+          .slice(0, maxItems),
+      limit,
+    )
+    .catch(() => []);
+}
+
+async function waitForDashboardCreateResult(page: Page, options: DashboardCreateResultOptions) {
+  const form = page.getByTestId(options.formTestId);
+  const submitButton = page.getByTestId(options.submitButtonTestId);
+  const itemLocator = options.itemLocator ?? ((currentPage, itemName) => currentPage.getByText(itemName, { exact: true }));
+  const visibleItem = () => itemLocator(page, options.itemName).first();
+  let itemWasFound = false;
+  let lastSubmitButtonText: string | null = null;
+  let formErrorMessage: string | null = null;
+
+  const isItemVisible = async () => {
+    const visible = await visibleItem().isVisible().catch(() => false);
+    itemWasFound ||= visible;
+    return visible;
+  };
+
+  try {
+    await expect
+      .poll(
+        async () => {
+          const formAlertText = (await collectVisibleLocatorTexts(form.locator('[role="alert"]'), 4))[0];
+
+          if (formAlertText) {
+            formErrorMessage = formAlertText;
+            throw new Error(formAlertText);
+          }
+
+          if (await isItemVisible()) {
+            return true;
+          }
+
+          lastSubmitButtonText =
+            (await submitButton.textContent({ timeout: 500 }).catch(() => null))?.replace(/\s+/g, " ").trim() ?? null;
+
+          if (!lastSubmitButtonText || !/salvando/i.test(lastSubmitButtonText)) {
+            await page.goto(options.listingPath, { waitUntil: "domcontentloaded", timeout: 10_000 }).catch(() => null);
+
+            const reloadedFormAlertText = (await collectVisibleLocatorTexts(form.locator('[role="alert"]'), 4))[0];
+            if (reloadedFormAlertText) {
+              formErrorMessage = reloadedFormAlertText;
+              throw new Error(reloadedFormAlertText);
+            }
+
+            if (await isItemVisible()) {
+              return true;
+            }
+          }
+
+          return false;
+        },
+        {
+          timeout: options.timeoutMs,
+          intervals: [500, 1000, 1500, 2500],
+          message: options.timeoutMessage,
+        },
+      )
+      .toBe(true);
+  } catch (error) {
+    const latestItemFound = itemWasFound || (await isItemVisible());
+
+    if (latestItemFound) {
+      return;
+    }
+
+    if (formErrorMessage) {
+      throw new Error(formErrorMessage);
+    }
+
+    const feedbackTexts = await collectVisibleTexts(page, '[role="alert"], [role="status"]', 8);
+    const currentSubmitButtonText =
+      (await submitButton.textContent({ timeout: 500 }).catch(() => null))?.replace(/\s+/g, " ").trim() ??
+      lastSubmitButtonText;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    throw new Error(
+      [
+        options.timeoutMessage,
+        `URL atual: ${page.url()}`,
+        `Feedback visivel: ${feedbackTexts.length > 0 ? JSON.stringify(feedbackTexts) : "nenhum"}`,
+        `Texto do botao submit: ${currentSubmitButtonText ?? "nao encontrado"}`,
+        `Item '${options.itemName}' encontrado: ${latestItemFound ? "sim" : "nao"}`,
+        `Erro original: ${errorMessage}`,
+      ].join("\n"),
+    );
+  }
 }
 
 async function collectCheckoutDiagnostics(page: Page) {
@@ -377,32 +443,16 @@ export async function createCategoryIfMissing(page: Page, categoryName: string) 
 
   await page.locator("#new-category-name").fill(categoryName);
   await expect(page.locator("#new-category-name")).toHaveValue(categoryName);
-  const createResult = waitForDashboardFormActionResult(page, {
-    formTestId: "create-category-form",
-    successPath: "/dashboard/categorias",
-    successNotice: "criada",
-    timeoutMs: 30_000,
-    timeoutMessage: `Categoria '${categoryName}' nao concluiu a action de criacao.`,
-  });
   await page.getByTestId("submit-create-category").click();
-  await createResult;
-
-  await expect.poll(
-    async () => {
-      const count = await page.getByText(categoryName, { exact: true }).count();
-      if (count > 0) {
-        return count;
-      }
-
-      await page.goto("/dashboard/categorias", { waitUntil: "domcontentloaded" });
-      return await page.getByText(categoryName, { exact: true }).count();
-    },
-    {
-      timeout: 30_000,
-      intervals: [1000, 1500, 2500],
-      message: `Categoria '${categoryName}' nao apareceu na listagem apos criacao.`,
-    },
-  ).toBeGreaterThan(0);
+  await waitForDashboardCreateResult(page, {
+    formTestId: "create-category-form",
+    submitButtonTestId: "submit-create-category",
+    itemName: categoryName,
+    listingPath: "/dashboard/categorias",
+    timeoutMs: 30_000,
+    timeoutMessage: `Categoria '${categoryName}' nao apareceu na listagem apos criacao.`,
+    itemLocator: dashboardCategoryRowByName,
+  });
 }
 
 export async function createProductIfMissing(page: Page, categoryName: string, product: ProductSeed) {
@@ -506,32 +556,16 @@ export async function createProductIfMissing(page: Page, categoryName: string, p
   }
 
   await page.getByTestId("product-stock-input").fill(String(product.stock));
-  const createResult = waitForDashboardFormActionResult(page, {
-    formTestId: "create-product-form",
-    successPath: "/dashboard/produtos",
-    successNotice: "criado",
-    timeoutMs: 60_000,
-    timeoutMessage: `Produto '${product.name}' nao concluiu a action de criacao.`,
-  });
   await page.getByTestId("submit-create-product").click();
-  await createResult;
-
-  await expect.poll(
-    async () => {
-      const count = await page.getByText(product.name, { exact: true }).count();
-      if (count > 0) {
-        return count;
-      }
-
-      await page.goto("/dashboard/produtos", { waitUntil: "domcontentloaded" });
-      return await page.getByText(product.name, { exact: true }).count();
-    },
-    {
-      timeout: 60_000,
-      intervals: [1000, 1500, 2500],
-      message: `Produto '${product.name}' nao apareceu na listagem apos criacao.`,
-    },
-  ).toBeGreaterThan(0);
+  await waitForDashboardCreateResult(page, {
+    formTestId: "create-product-form",
+    submitButtonTestId: "submit-create-product",
+    itemName: product.name,
+    listingPath: "/dashboard/produtos",
+    timeoutMs: 60_000,
+    timeoutMessage: `Produto '${product.name}' nao apareceu na listagem apos criacao.`,
+    itemLocator: dashboardProductRowByName,
+  });
 
   await expect(page.getByText(product.name, { exact: true })).toBeVisible({ timeout: 15_000 });
 }

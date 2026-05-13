@@ -50,7 +50,7 @@ export function SelectionCheckbox({
         aria-hidden
         className={`pointer-events-none flex h-6 w-6 items-center justify-center rounded-lg border transition ${
           checked || indeterminate
-            ? "border-amber-400 bg-amber-100 text-amber-800"
+            ? "border-[#9f1239]/60 bg-[#fff1f2] text-[#9f1239]"
             : "border-zinc-300 bg-white text-transparent"
         }`}
       >

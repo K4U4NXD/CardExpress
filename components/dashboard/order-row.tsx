@@ -11,6 +11,7 @@ import {
   formatOrderCode,
   formatCustomerPhone,
   formatDateTime,
+  ORDER_STATUS_ACCENT,
   ORDER_STATUS_BADGE,
   ORDER_STATUS_LABELS,
   REFUND_STATUS_LABELS,
@@ -58,7 +59,7 @@ function ActionButton({ label, className, dataTestId }: ActionButtonProps) {
       type="submit"
       disabled={pending}
       data-testid={dataTestId}
-      className={`${className} disabled:cursor-not-allowed disabled:opacity-40`}
+      className={`min-h-10 w-full ${className} disabled:cursor-not-allowed disabled:opacity-40`}
     >
       {pending ? "Processando..." : label}
     </button>
@@ -79,15 +80,6 @@ export function OrderRow({
     order.status === "aguardando_aceite" || order.status === "em_preparo" || order.status === "pronto_para_retirada";
   const defaultItemsExpanded = items.length === 0 || (isOperationalOrder && items.length <= 3);
   const [itemsExpanded, setItemsExpanded] = useState(defaultItemsExpanded);
-  const accentClassByStatus: Record<Order["status"], string> = {
-    aguardando_aceite: "border-l-amber-400",
-    em_preparo: "border-l-sky-400",
-    pronto_para_retirada: "border-l-emerald-400",
-    finalizado: "border-l-zinc-300",
-    recusado: "border-l-rose-300",
-    cancelado: "border-l-orange-300",
-  };
-
   const actionsByStatus: Record<Order["status"], OrderAction[]> = {
     aguardando_aceite: [
       {
@@ -110,7 +102,7 @@ export function OrderRow({
         label: "Marcar pronto",
         action: markReadyAction,
         className:
-          "rounded-xl border border-emerald-200 bg-white px-3 py-1.5 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50",
+          "rounded-xl border border-teal-200 bg-white px-3 py-1.5 text-sm font-medium text-teal-800 transition hover:bg-teal-50",
       },
       {
         key: "cancel",
@@ -126,7 +118,7 @@ export function OrderRow({
         label: "Finalizar",
         action: finalizeOrderAction,
         className:
-          "rounded-xl border border-sky-200 bg-white px-3 py-1.5 text-sm font-medium text-sky-800 transition hover:bg-sky-50",
+          "rounded-xl border border-teal-600 bg-teal-600 px-3 py-1.5 text-sm font-semibold text-white shadow-[0_12px_24px_-18px_rgba(13,148,136,0.85)] transition hover:bg-teal-700",
       },
     ],
     finalizado: [],
@@ -135,9 +127,9 @@ export function OrderRow({
   };
 
   const actions = actionsByStatus[order.status];
-  const accentClass = accentClassByStatus[order.status];
+  const accentClass = ORDER_STATUS_ACCENT[order.status];
 
-  const jumpFocusClass = isFocusedByJump ? "ring-2 ring-sky-300 ring-offset-1" : "";
+  const jumpFocusClass = isFocusedByJump ? "ring-2 ring-amber-300 ring-offset-1" : "";
 
   const handleAcknowledgeNew = () => {
     if (!isNewlyArrived) {
@@ -163,46 +155,47 @@ export function OrderRow({
       data-testid={`order-row-${order.id}`}
       onMouseEnter={handleAcknowledgeNew}
       onFocusCapture={handleAcknowledgeNew}
-      className={`relative rounded-2xl border border-zinc-200 border-l-4 ${accentClass} ${jumpFocusClass} bg-white/92 p-3 shadow-[0_18px_36px_-32px_rgba(24,24,27,0.42)] transition sm:p-4`}
+      className={`relative overflow-hidden rounded-2xl border border-[#eadfd2] border-l-4 ${accentClass} ${jumpFocusClass} bg-white/94 p-3 shadow-[0_18px_36px_-32px_rgba(24,24,27,0.42)] transition sm:p-4`}
     >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#9f1239]/70 via-[#c58a1a]/80 to-transparent" />
       <div className="space-y-2.5">
         <div className="flex flex-col gap-2.5 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-lg bg-zinc-900 px-2.5 py-1 text-sm font-semibold text-white">
+              <span className="inline-flex items-center rounded-lg bg-[#171717] px-2.5 py-1 text-sm font-semibold text-white">
                 {formatOrderCode(order)}
               </span>
               <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>{statusLabel}</span>
               {order.refund_status && order.refund_status !== "none" ? (
-                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-900">
                   Reembolso: {refundLabel}
                 </span>
               ) : null}
             </div>
 
             <div className="grid gap-2 sm:grid-cols-3">
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-2.5 py-1.5">
+              <div className="rounded-xl border border-[#eadfd2] bg-[#fffaf2] px-2.5 py-1.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Cliente</p>
                 <p className="text-sm font-medium text-zinc-800">{order.customer_name?.trim() || "Não informado"}</p>
               </div>
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-2.5 py-1.5">
+              <div className="rounded-xl border border-[#eadfd2] bg-[#fffaf2] px-2.5 py-1.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Telefone</p>
                 <p className="text-sm font-medium text-zinc-800">{formatCustomerPhone(order.customer_phone)}</p>
               </div>
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-2.5 py-1.5">
+              <div className="rounded-xl border border-[#eadfd2] bg-[#fffaf2] px-2.5 py-1.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Total</p>
-                <p className="text-sm font-semibold text-zinc-900">{formatBRL(order.total_amount)}</p>
+                <p className="text-sm font-semibold text-[#9f1239]">{formatBRL(order.total_amount)}</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-1.5 lg:max-w-[17rem]">
+          <div className="rounded-xl border border-[#eadfd2] bg-[#fff7ed]/80 p-1.5 lg:max-w-[17rem]">
             <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
               {actions.length === 0 ? (
                 <p className="px-1 text-xs text-zinc-500">Sem ações disponíveis para este status.</p>
               ) : (
                 actions.map((actionItem) => (
-                  <form key={actionItem.key} action={actionItem.action} className="inline">
+                  <form key={actionItem.key} action={actionItem.action} className="flex min-w-[8rem] flex-1 sm:inline sm:min-w-0 sm:flex-none">
                     <input type="hidden" name="order_id" value={order.id} />
                     <ActionButton
                       label={actionItem.label}
@@ -216,7 +209,7 @@ export function OrderRow({
           </div>
         </div>
 
-        <section className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-2.5">
+        <section className="rounded-xl border border-[#eadfd2] bg-[#fffaf2]/80 p-2.5">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
               Itens do pedido {items.length > 0 ? `(${items.length})` : ""}
@@ -257,7 +250,7 @@ export function OrderRow({
           </section>
         ) : null}
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-2.5">
+        <section className="rounded-xl border border-[#eadfd2] bg-white p-2.5">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Linha do tempo</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {timeline

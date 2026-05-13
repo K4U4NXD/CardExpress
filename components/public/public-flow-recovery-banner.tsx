@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { ORDER_STATUS_LABELS } from "@/lib/orders/presenter";
+import { ORDER_STATUS_BADGE, ORDER_STATUS_LABELS } from "@/lib/orders/presenter";
 import {
   clearCheckoutRecovery,
   clearOrderRecovery,
@@ -189,7 +189,7 @@ export function PublicFlowRecoveryBanner({ slug, className }: PublicFlowRecovery
 
   return (
     <section data-testid="public-flow-recovery-banner" className={className}>
-      <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-3 text-sm text-sky-900 sm:px-4">
+      <div className="rounded-xl border border-amber-200 bg-[#fff7e6] px-3 py-2.5 text-sm text-zinc-800 shadow-[0_18px_34px_-30px_rgba(154,106,18,0.52)] sm:px-4 sm:py-3">
         {resumableState.orders.length > 0 ? (
           <div data-testid="recovery-orders-block">
             <p className="font-medium">
@@ -198,19 +198,21 @@ export function PublicFlowRecoveryBanner({ slug, className }: PublicFlowRecovery
                 : `Você tem ${resumableState.orders.length} pedidos em andamento neste aparelho.`}
             </p>
 
-            <ul className="mt-2 space-y-2">
+            <ul className="mt-2 max-h-36 space-y-1.5 overflow-y-auto pr-1 sm:max-h-56 sm:space-y-2">
               {resumableState.orders.map((order) => (
                 <li
                   key={order.orderId}
                   data-testid={`recovery-order-${order.orderId}`}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-sky-200 bg-white px-2.5 py-2"
+                  className="flex flex-col gap-2 rounded-lg border border-[#eadfd2] bg-white px-2.5 py-2 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-sky-900">{order.displayCode ? `Senha ${order.displayCode}` : "Pedido em andamento"}</p>
-                    <p className="text-[11px] text-sky-800">Status: {ORDER_STATUS_LABELS[order.status]}</p>
+                    <p className="text-xs font-semibold text-[#9f1239]">{order.displayCode ? `Senha ${order.displayCode}` : "Pedido em andamento"}</p>
+                    <p className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${ORDER_STATUS_BADGE[order.status]}`}>
+                      {ORDER_STATUS_LABELS[order.status]}
+                    </p>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="grid grid-cols-[1fr_auto] gap-2 sm:flex sm:flex-wrap sm:items-center">
                     <Link href={order.href} data-testid={`recovery-order-link-${order.orderId}`} className="cx-btn-secondary px-2.5 py-1 text-xs">
                       Continuar acompanhamento
                     </Link>
@@ -234,7 +236,7 @@ export function PublicFlowRecoveryBanner({ slug, className }: PublicFlowRecovery
                           };
                         });
                       }}
-                      className="rounded-lg border border-sky-300 bg-white px-2.5 py-1 text-xs font-semibold text-sky-800 transition hover:bg-sky-100"
+                      className="rounded-lg border border-[#eadfd2] bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 transition hover:border-amber-300 hover:bg-[#fff7ed]"
                     >
                       Remover
                     </button>
@@ -248,10 +250,10 @@ export function PublicFlowRecoveryBanner({ slug, className }: PublicFlowRecovery
         {resumableState.checkoutHref ? (
           <div
             data-testid="recovery-checkout-block"
-            className={resumableState.orders.length > 0 ? "mt-3 border-t border-sky-200 pt-3" : ""}
+            className={resumableState.orders.length > 0 ? "mt-3 border-t border-amber-200 pt-3" : ""}
           >
             <p className="font-medium">Você tem um checkout em andamento neste aparelho.</p>
-            <p className="mt-1 text-xs text-sky-800">Retome a sessão para concluir o pedido.</p>
+            <p className="mt-1 text-xs text-zinc-600">Retome a sessão para concluir o pedido.</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Link href={resumableState.checkoutHref} data-testid="recovery-checkout-link" className="cx-btn-secondary px-3 py-1.5 text-xs">
                 Retomar checkout
@@ -275,7 +277,7 @@ export function PublicFlowRecoveryBanner({ slug, className }: PublicFlowRecovery
                     };
                   });
                 }}
-                className="rounded-lg border border-sky-300 bg-white px-3 py-1.5 text-xs font-semibold text-sky-800 transition hover:bg-sky-100"
+                className="rounded-lg border border-[#eadfd2] bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-amber-300 hover:bg-[#fff7ed]"
               >
                 Limpar sessão salva
               </button>

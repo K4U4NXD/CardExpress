@@ -38,7 +38,7 @@ export function PageHeader({
   maxWidthClassName = "max-w-4xl",
 }: PageHeaderProps) {
   const headerClassName = [
-    "border-b border-amber-100/70 bg-[#fffcf5] shadow-[0_12px_28px_-26px_rgba(24,24,27,0.55)]",
+    "border-b border-[#eadfd2] bg-[#fffaf2]/95 shadow-[0_12px_28px_-26px_rgba(24,24,27,0.55)] backdrop-blur-sm",
     sticky ? `sticky z-20 ${stickyTopClassName}` : "",
   ]
     .filter(Boolean)
@@ -46,19 +46,19 @@ export function PageHeader({
 
   return (
     <header className={headerClassName}>
-      <div className={`mx-auto ${maxWidthClassName} px-4 sm:px-6 ${compact ? "py-3 sm:py-3.5" : "py-5 sm:py-6"}`}>
+      <div className={`mx-auto ${maxWidthClassName} px-4 sm:px-6 ${compact ? "py-2.5 sm:py-3.5" : "py-4 sm:py-6"}`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             {backHref ? (
               <Link
                 href={backHref}
-                className={`inline-flex items-center gap-1 rounded-lg px-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${compact ? "mb-2 text-xs" : "mb-3 text-sm"}`}
+                className={`inline-flex items-center gap-1 rounded-lg px-1.5 text-zinc-500 transition hover:bg-[#fff7ed] hover:text-[#70102a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70 ${compact ? "mb-1.5 text-xs" : "mb-2.5 text-sm"}`}
               >
                 <span aria-hidden>←</span>
                 <span>{backLabel}</span>
               </Link>
             ) : null}
-            <h1 className={`${compact ? "text-lg" : "text-xl"} font-semibold tracking-tight text-zinc-900`}>{title}</h1>
+            <h1 className={`${compact ? "text-base sm:text-lg" : "text-lg sm:text-xl"} font-semibold tracking-tight text-zinc-900`}>{title}</h1>
             {description ? (
               <p className={`mt-1 ${compact ? "text-xs" : "text-sm"} text-zinc-600`}>{description}</p>
             ) : null}
@@ -71,7 +71,7 @@ export function PageHeader({
           ) : null}
         </div>
 
-        {bottomContent ? <div className={compact ? "mt-2.5" : "mt-3"}>{bottomContent}</div> : null}
+        {bottomContent ? <div className={compact ? "mt-2" : "mt-3"}>{bottomContent}</div> : null}
       </div>
     </header>
   );

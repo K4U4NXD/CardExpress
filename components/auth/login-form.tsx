@@ -25,7 +25,7 @@ export function LoginForm({ nextPath, initialError, initialSuccess }: LoginFormP
   return (
     <form
       action={formAction}
-      className="space-y-4 rounded-2xl border border-zinc-200 bg-white/96 p-5 shadow-[0_20px_40px_-32px_rgba(24,24,27,0.58)] sm:p-6"
+      className="cx-brand-panel space-y-4 p-4 sm:p-6"
     >
       {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
       <div>
@@ -70,7 +70,7 @@ export function LoginForm({ nextPath, initialError, initialSuccess }: LoginFormP
         </p>
       ) : null}
       {displaySuccess ? (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900" role="status">
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
           {displaySuccess}
         </p>
       ) : null}

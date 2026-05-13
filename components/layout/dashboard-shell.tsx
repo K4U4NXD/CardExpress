@@ -79,8 +79,8 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
         {storeId ? <DashboardGlobalOrderAlerts storeId={storeId} onPendingCountChange={setPendingNewOrdersCount} /> : null}
         <DashboardQueryFlash />
 
-        <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-amber-100/80 bg-white/85 px-3 py-5 shadow-[0_30px_60px_-50px_rgba(24,24,27,0.6)] backdrop-blur-xl md:flex">
-          <div className="rounded-2xl border border-zinc-200 bg-zinc-50/80 px-3 py-3">
+        <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-[#eadfd2] bg-white/88 px-3 py-5 shadow-[0_30px_60px_-50px_rgba(24,24,27,0.6)] backdrop-blur-xl md:flex">
+          <div className="cx-brand-panel bg-[#fffaf2] px-3 py-4">
             <Image
               src={BRANDING.logoPath}
               alt={BRANDING.productName}
@@ -89,7 +89,8 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
               className="h-auto w-auto max-w-[196px]"
               priority
             />
-            <p className="mt-1 text-sm font-semibold text-zinc-800">Painel do comerciante</p>
+            <p className="mt-2 text-sm font-semibold text-zinc-800">Painel do comerciante</p>
+            <p className="mt-1 text-[11px] leading-4 text-zinc-500">Pedidos no ritmo certo.</p>
           </div>
 
           <nav className="mt-5 flex flex-col gap-1.5" aria-label="Navegação do dashboard">
@@ -106,10 +107,10 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                   aria-busy={pending ? "true" : undefined}
                   className={`flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition duration-300 ${
                     active
-                      ? "bg-zinc-900 text-white shadow-[0_12px_28px_-18px_rgba(24,24,27,0.9)]"
+                      ? "bg-[#9f1239] text-white shadow-[0_12px_28px_-18px_rgba(112,16,42,0.9)]"
                       : pending
                         ? "bg-amber-50 text-zinc-900"
-                        : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
+                        : "text-zinc-700 hover:bg-[#fff7ed] hover:text-[#70102a]"
                   }`}
                 >
                   <span>{item.label}</span>
@@ -122,8 +123,8 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
           </nav>
 
           {publicLinks.length > 0 ? (
-            <div className="mt-4 border-t border-zinc-200/80 pt-4">
-              <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Acesso público</p>
+            <div className="mt-4 rounded-2xl border border-[#eadfd2] bg-[#fffaf2]/80 p-2.5">
+              <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-[#9f1239]">Acesso público</p>
               <div className="flex flex-col gap-1.5">
                 {publicLinks.map((item) => (
                   <Link
@@ -131,7 +132,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                     href={item.href}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 transition duration-300 hover:bg-zinc-100 hover:text-zinc-900"
+                    className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 transition duration-300 hover:bg-[#fff7ed] hover:text-[#70102a]"
                   >
                     <span>{item.label}</span>
                     <span className="text-xs font-semibold text-zinc-500" aria-hidden>Abrir</span>
@@ -141,14 +142,14 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
             </div>
           ) : null}
 
-          <div className="mt-auto border-t border-zinc-200/80 pt-4">
+          <div className="mt-auto border-t border-[#eadfd2]/80 pt-4">
             <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Sessão</p>
-            <LogoutButton compact className="w-full rounded-xl border border-red-200 bg-red-50/70 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200" />
+            <LogoutButton compact className="w-full rounded-xl border border-[#eadfd2] bg-white px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-[#fff7ed] hover:text-[#70102a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200" />
           </div>
         </aside>
 
         <div className="md:pl-60">
-          <header className="sticky top-0 z-30 border-b border-amber-100/80 bg-white/80 backdrop-blur-xl md:hidden">
+          <header className="sticky top-0 z-30 border-b border-[#eadfd2] bg-white/88 backdrop-blur-xl md:hidden">
             <div className="flex h-14 items-center justify-between px-4">
               <div className="inline-flex min-w-0 items-center gap-2">
                 <Image
@@ -168,7 +169,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                 onClick={() => setMenuOpen(true)}
                 aria-expanded={menuOpen}
                 aria-controls="dashboard-mobile-nav"
-                className="min-h-10 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
+                className="min-h-10 rounded-xl border border-[#eadfd2] bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-[#fff7ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
               >
                 Menu
               </button>
@@ -189,7 +190,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
 
             <aside
               id="dashboard-mobile-nav"
-              className="relative flex h-full w-72 max-w-[85vw] flex-col border-r border-zinc-200 bg-white/96 px-4 py-5 shadow-2xl backdrop-blur-xl"
+              className="relative flex h-full w-72 max-w-[85vw] flex-col border-r border-[#eadfd2] bg-white/96 px-4 py-5 shadow-2xl backdrop-blur-xl"
             >
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -205,7 +206,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                 <button
                   type="button"
                   onClick={() => setMenuOpen(false)}
-                  className="min-h-9 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-700 transition hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
+                  className="min-h-9 rounded-lg border border-[#eadfd2] bg-white px-3 py-1.5 text-sm text-zinc-700 transition hover:bg-[#fff7ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
                 >
                   Fechar
                 </button>
@@ -224,7 +225,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                       aria-current={active ? "page" : undefined}
                       aria-busy={pending ? "true" : undefined}
                       className={`flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                        active ? "bg-zinc-900 text-white" : pending ? "bg-amber-50 text-zinc-900" : "text-zinc-700 hover:bg-zinc-100"
+                      active ? "bg-[#9f1239] text-white" : pending ? "bg-amber-50 text-zinc-900" : "text-zinc-700 hover:bg-[#fff7ed]"
                       }`}
                     >
                       <span>{item.label}</span>
@@ -237,7 +238,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
               </nav>
 
               {publicLinks.length > 0 ? (
-                <div className="mt-4 border-t border-zinc-200/80 pt-4">
+                <div className="mt-4 border-t border-[#eadfd2]/80 pt-4">
                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Acesso público</p>
                   <div className="flex flex-col gap-1.5">
                     {publicLinks.map((item) => (
@@ -246,7 +247,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                         href={item.href}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100"
+                        className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-[#fff7ed]"
                       >
                         <span>{item.label}</span>
                         <span className="text-xs font-semibold text-zinc-500" aria-hidden>Abrir</span>
@@ -256,9 +257,9 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                 </div>
               ) : null}
 
-              <div className="mt-auto border-t border-zinc-200/80 pt-4">
+              <div className="mt-auto border-t border-[#eadfd2]/80 pt-4">
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Sessão</p>
-                <LogoutButton compact className="w-full rounded-xl border border-red-200 bg-red-50/70 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200" />
+                <LogoutButton compact className="w-full rounded-xl border border-[#eadfd2] bg-white px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-[#fff7ed] hover:text-[#70102a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200" />
               </div>
             </aside>
           </div>

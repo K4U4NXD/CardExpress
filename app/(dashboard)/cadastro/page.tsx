@@ -68,23 +68,49 @@ export default async function CadastroPage() {
         backLabel="Ir à página inicial"
         compact
       />
-      <main className="mx-auto flex w-full max-w-lg flex-1 items-center px-4 py-6 sm:px-6 sm:py-8">
-        <div className="w-full">
-          <div className="mb-5 flex justify-center">
+      <main className="mx-auto grid w-full max-w-5xl flex-1 gap-5 px-4 py-5 sm:px-6 sm:py-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+        <aside className="cx-brand-panel hidden bg-[#171717] p-6 text-white lg:block">
+          <Image
+            src={BRANDING.logoPath}
+            alt={BRANDING.productName}
+            width={236}
+            height={58}
+            priority
+            className="h-auto w-auto max-w-[236px] rounded-xl bg-white px-3 py-2"
+          />
+          <p className="mt-5 text-2xl font-semibold leading-tight">Comece com uma loja organizada desde o primeiro pedido.</p>
+          <div className="mt-5 space-y-2.5 text-sm text-zinc-300">
+            {["Cardápio público por link e QR Code", "Pedidos em painel operacional", "Status de retirada para o cliente"].map((item) => (
+              <p key={item} className="rounded-xl border border-amber-300/20 bg-white/5 px-3 py-2">
+                {item}
+              </p>
+            ))}
+          </div>
+        </aside>
+
+        <div className="mx-auto w-full max-w-lg">
+          <div className="mb-5 flex justify-center lg:hidden">
             <Image
               src={BRANDING.logoPath}
               alt={BRANDING.productName}
               width={236}
               height={58}
               priority
-              className="h-auto w-auto max-w-[236px]"
+              className="h-auto w-auto max-w-[236px] rounded-xl bg-white/92 px-4 py-3 shadow-[0_18px_38px_-30px_rgba(24,24,27,0.55)]"
             />
+          </div>
+          <div className="mb-4 grid grid-cols-3 gap-1.5 text-center text-[11px] font-medium text-zinc-600 lg:hidden">
+            {["Link público", "Pedidos", "Retirada"].map((item) => (
+              <span key={item} className="rounded-lg border border-[#eadfd2] bg-white/75 px-2 py-1.5">
+                {item}
+              </span>
+            ))}
           </div>
 
           <SignupForm />
           <p className="mt-6 text-center text-sm text-zinc-600">
             Já tem conta?{" "}
-            <Link href="/login" className="font-medium text-zinc-900 underline underline-offset-2">
+            <Link href="/login" className="font-medium text-[#9f1239] underline underline-offset-2">
               Entrar
             </Link>
           </p>

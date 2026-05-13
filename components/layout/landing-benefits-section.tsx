@@ -31,9 +31,9 @@ export function LandingBenefitsSection({
   return (
     <>
       <div className="md:hidden">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-2 shadow-[0_20px_60px_-52px_rgba(24,24,27,0.8)]">
+        <div className="rounded-2xl border border-[#eadfd2] bg-white p-2 shadow-[0_20px_60px_-52px_rgba(24,24,27,0.8)]">
           <div
-            className="grid grid-cols-2 gap-1 rounded-xl bg-zinc-100 p-1"
+            className="grid grid-cols-2 gap-1 rounded-xl bg-[#fff7ed] p-1"
             role="tablist"
             aria-label="Tipos de benefício"
           >
@@ -43,7 +43,7 @@ export function LandingBenefitsSection({
               aria-selected={activeTab === "merchant"}
               onClick={() => setActiveTab("merchant")}
               className={`rounded-lg px-3 py-2 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 ${
-                activeTab === "merchant" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-white"
+                activeTab === "merchant" ? "bg-[#9f1239] text-white" : "text-zinc-600 hover:bg-white"
               }`}
             >
               Para comerciante
@@ -54,7 +54,7 @@ export function LandingBenefitsSection({
               aria-selected={activeTab === "customer"}
               onClick={() => setActiveTab("customer")}
               className={`rounded-lg px-3 py-2 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 ${
-                activeTab === "customer" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-white"
+                activeTab === "customer" ? "bg-[#9f1239] text-white" : "text-zinc-600 hover:bg-white"
               }`}
             >
               Para cliente
@@ -63,7 +63,7 @@ export function LandingBenefitsSection({
 
           <div
             className={`mt-3 rounded-xl border p-3 transition duration-300 ${
-              isCustomerTab ? "border-zinc-800 bg-zinc-950" : "border-zinc-200 bg-zinc-50"
+              isCustomerTab ? "border-[#70102a] bg-[#171717]" : "border-[#eadfd2] bg-[#fffaf2]"
             }`}
           >
             <h3 className={`text-sm font-semibold ${isCustomerTab ? "text-zinc-100" : "text-zinc-900"}`}>
@@ -81,7 +81,7 @@ export function LandingBenefitsSection({
                   <div className="flex items-start gap-2.5">
                     <span
                       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
-                        isCustomerTab ? "bg-white text-zinc-950" : "bg-zinc-900 text-white"
+                        isCustomerTab ? "bg-[#c58a1a] text-white" : "bg-[#9f1239] text-white"
                       }`}
                     >
                       {index + 1}
@@ -103,18 +103,18 @@ export function LandingBenefitsSection({
       </div>
 
       <div className="hidden md:grid md:grid-cols-2 md:gap-5">
-        <article className="cx-lift rounded-2xl border border-zinc-200 bg-white p-5 shadow-[0_20px_60px_-52px_rgba(24,24,27,0.8)] sm:p-6 lg:p-7">
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Benefícios para o comerciante</p>
+        <article className="cx-lift rounded-2xl border border-[#eadfd2] bg-white p-5 shadow-[0_20px_60px_-52px_rgba(24,24,27,0.8)] sm:p-6 lg:p-7">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#9f1239]">Benefícios para o comerciante</p>
           <h3 className="mt-2 text-2xl font-semibold text-zinc-900 lg:text-3xl">{merchantTitle}</h3>
           <div className="mt-4 grid gap-2.5 md:grid-cols-2">
             {merchantBenefits.map((item, index) => (
               <article
                 key={item.title}
-                className={`rounded-xl border border-zinc-200 bg-zinc-50 p-3.5 transition duration-300 hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-white sm:p-4 ${
+                className={`rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-3.5 transition duration-300 hover:-translate-y-0.5 hover:border-amber-300 hover:bg-white sm:p-4 ${
                   index % 2 === 0 ? "md:translate-y-0" : "md:translate-y-1"
                 }`}
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#9f1239] text-xs font-semibold text-white">
                   {index + 1}
                 </span>
                 <p className="mt-3 text-sm font-semibold text-zinc-900">{item.title}</p>
@@ -124,7 +124,7 @@ export function LandingBenefitsSection({
           </div>
         </article>
 
-        <article className="cx-lift rounded-2xl border border-zinc-800 bg-zinc-950 p-5 text-white shadow-[0_20px_60px_-52px_rgba(24,24,27,0.9)] sm:p-6 lg:p-7">
+        <article className="cx-lift rounded-2xl border border-[#70102a] bg-[#171717] p-5 text-white shadow-[0_20px_60px_-52px_rgba(24,24,27,0.9)] sm:p-6 lg:p-7">
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Benefícios para o cliente</p>
           <h3 className="mt-2 text-2xl font-semibold text-zinc-100 lg:text-3xl">{customerTitle}</h3>
           <div className="mt-4 grid gap-2.5 md:grid-cols-2">
@@ -133,7 +133,7 @@ export function LandingBenefitsSection({
                 key={item.title}
                 className="rounded-xl border border-white/10 bg-white/5 p-3.5 transition duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08] sm:p-4"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-semibold text-zinc-950">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#c58a1a] text-xs font-semibold text-white">
                   {index + 1}
                 </span>
                 <p className="mt-3 text-sm font-semibold text-zinc-100">{item.title}</p>

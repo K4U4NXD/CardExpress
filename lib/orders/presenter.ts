@@ -10,12 +10,21 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 };
 
 export const ORDER_STATUS_BADGE: Record<OrderStatus, string> = {
-  aguardando_aceite: "bg-amber-100 text-amber-900",
-  em_preparo: "bg-sky-100 text-sky-900",
-  pronto_para_retirada: "bg-emerald-100 text-emerald-800",
-  finalizado: "bg-zinc-200 text-zinc-700",
-  recusado: "bg-rose-100 text-rose-800",
-  cancelado: "bg-orange-100 text-orange-800",
+  aguardando_aceite: "border border-amber-300 bg-amber-50 text-amber-900",
+  em_preparo: "border border-indigo-200 bg-indigo-50 text-indigo-800",
+  pronto_para_retirada: "border border-teal-300 bg-teal-50 text-teal-800",
+  finalizado: "border border-zinc-300 bg-zinc-100 text-zinc-700",
+  recusado: "border border-red-200 bg-red-50 text-red-800",
+  cancelado: "border border-orange-200 bg-orange-50 text-orange-800",
+};
+
+export const ORDER_STATUS_ACCENT: Record<OrderStatus, string> = {
+  aguardando_aceite: "border-l-amber-400",
+  em_preparo: "border-l-indigo-400",
+  pronto_para_retirada: "border-l-teal-400",
+  finalizado: "border-l-zinc-300",
+  recusado: "border-l-red-300",
+  cancelado: "border-l-orange-300",
 };
 
 export const REFUND_STATUS_LABELS: Record<RefundStatus, string> = {

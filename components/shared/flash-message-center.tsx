@@ -35,14 +35,16 @@ const STYLE_BY_TONE: Record<
     title: string;
     action: string;
     close: string;
+    accent: string;
   }
 > = {
   success: {
-    container: "border-emerald-200 bg-emerald-50/97 text-emerald-950 shadow-[0_24px_42px_-32px_rgba(5,150,105,0.52)]",
-    iconWrap: "border-emerald-300/70 bg-emerald-100 text-emerald-700",
-    title: "text-emerald-900",
-    action: "border-emerald-300/70 hover:bg-emerald-100",
-    close: "border-emerald-300/70 hover:bg-emerald-100",
+    container: "border-[#eadfd2] bg-white/97 text-zinc-900 shadow-[0_18px_34px_-28px_rgba(24,24,27,0.45)]",
+    iconWrap: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    title: "text-zinc-900",
+    action: "border-[#eadfd2] hover:border-emerald-200 hover:bg-emerald-50",
+    close: "border-[#eadfd2] hover:bg-[#fff7ed]",
+    accent: "border-l-emerald-500",
   },
   error: {
     container: "border-red-200 bg-red-50/97 text-red-950 shadow-[0_24px_42px_-32px_rgba(220,38,38,0.5)]",
@@ -50,6 +52,7 @@ const STYLE_BY_TONE: Record<
     title: "text-red-900",
     action: "border-red-300/70 hover:bg-red-100",
     close: "border-red-300/70 hover:bg-red-100",
+    accent: "border-l-red-500",
   },
   warning: {
     container: "border-amber-200 bg-amber-50/97 text-amber-950 shadow-[0_24px_42px_-32px_rgba(217,119,6,0.52)]",
@@ -57,13 +60,15 @@ const STYLE_BY_TONE: Record<
     title: "text-amber-900",
     action: "border-amber-300/70 hover:bg-amber-100",
     close: "border-amber-300/70 hover:bg-amber-100",
+    accent: "border-l-amber-500",
   },
   info: {
-    container: "border-sky-200 bg-sky-50/97 text-sky-950 shadow-[0_24px_42px_-32px_rgba(14,116,144,0.52)]",
-    iconWrap: "border-sky-300/70 bg-sky-100 text-sky-700",
-    title: "text-sky-900",
-    action: "border-sky-300/70 hover:bg-sky-100",
-    close: "border-sky-300/70 hover:bg-sky-100",
+    container: "border-[#eadfd2] bg-[#fffaf2]/97 text-zinc-900 shadow-[0_18px_34px_-28px_rgba(24,24,27,0.42)]",
+    iconWrap: "border-amber-200 bg-amber-50 text-amber-700",
+    title: "text-[#9f1239]",
+    action: "border-amber-200 hover:bg-amber-50",
+    close: "border-[#eadfd2] hover:bg-[#fff7ed]",
+    accent: "border-l-amber-500",
   },
 };
 
@@ -110,7 +115,7 @@ export function FlashMessageCenter({ messages, onDismiss, onPause, onResume }: F
   }
 
   return (
-    <div className="pointer-events-none fixed right-3 top-16 z-[120] flex w-[min(28rem,calc(100vw-1.5rem))] flex-col gap-2.5 sm:right-4 sm:top-4">
+    <div className="pointer-events-none fixed right-2 top-14 z-[120] flex w-[min(22rem,calc(100vw-1rem))] flex-col gap-1.5 sm:right-4 sm:top-4">
       {messages.map((message) => {
         const styles = STYLE_BY_TONE[message.tone];
         const isNewOrder = message.emphasis === "new-order";
@@ -128,19 +133,19 @@ export function FlashMessageCenter({ messages, onDismiss, onPause, onResume }: F
         return (
           <section
             key={message.id}
-            className={`pointer-events-auto rounded-2xl border px-3.5 py-3.5 backdrop-blur-sm transition-all duration-200 motion-reduce:transition-none motion-reduce:[animation:none] [@keyframes_toast-enter{0%{opacity:0;transform:translateY(-6px)_scale(.99)}100%{opacity:1;transform:translateY(0)_scale(1)}}] ${styles.container} ${emphasisClass} ${phaseClass}`}
+            className={`pointer-events-auto rounded-xl border border-l-4 px-3 py-2.5 backdrop-blur-sm transition-all duration-200 motion-reduce:transition-none motion-reduce:[animation:none] [@keyframes_toast-enter{0%{opacity:0;transform:translateY(-6px)_scale(.99)}100%{opacity:1;transform:translateY(0)_scale(1)}}] ${styles.container} ${styles.accent} ${emphasisClass} ${phaseClass}`}
             role={message.tone === "error" ? "alert" : "status"}
             onMouseEnter={() => onPause?.(message.id)}
             onMouseLeave={() => onResume?.(message.id)}
           >
-            <div className="flex items-start gap-3">
-              <span className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${styles.iconWrap}`}>
+            <div className="flex items-start gap-2.5">
+              <span className={`mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${styles.iconWrap}`}>
                 <ToneIcon tone={message.tone} />
               </span>
 
               <div className="min-w-0 flex-1">
                 {message.title ? (
-                  <p className={`flex items-center gap-2 text-[14px] font-semibold leading-5 ${styles.title}`}>
+                  <p className={`flex items-center gap-2 text-[13px] font-semibold leading-4 ${styles.title}`}>
                     {isNewOrder ? (
                       <span
                         className="inline-flex h-2.5 w-2.5 rounded-full bg-amber-500 [animation:new-order-dot_900ms_ease-in-out_infinite] [@keyframes_new-order-dot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.22);opacity:.65}}]"
@@ -150,14 +155,14 @@ export function FlashMessageCenter({ messages, onDismiss, onPause, onResume }: F
                     {message.title}
                   </p>
                 ) : null}
-                <p className="mt-0.5 text-[13px] leading-5 text-current/85">{message.text}</p>
+                <p className="mt-0.5 text-xs leading-4 text-current/85">{message.text}</p>
 
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   {message.action ? (
                     message.action.href && !message.action.onClick ? (
                       <Link
                         href={message.action.href}
-                        className={`inline-flex rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${actionClass}`}
+                        className={`inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${actionClass}`}
                       >
                         {message.action.label}
                       </Link>
@@ -168,7 +173,7 @@ export function FlashMessageCenter({ messages, onDismiss, onPause, onResume }: F
                           message.action?.onClick?.();
                           onDismiss(message.id);
                         }}
-                        className={`inline-flex rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${actionClass}`}
+                        className={`inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${actionClass}`}
                       >
                         {message.action.label}
                       </button>
@@ -178,7 +183,7 @@ export function FlashMessageCenter({ messages, onDismiss, onPause, onResume }: F
                   <button
                     type="button"
                     onClick={() => onDismiss(message.id)}
-                    className={`rounded-lg border bg-white/75 px-2.5 py-1.5 text-xs font-semibold transition ${styles.close}`}
+                    className={`rounded-lg border bg-white/75 px-2.5 py-1 text-xs font-semibold transition ${styles.close}`}
                     aria-label="Fechar aviso"
                   >
                     Fechar

@@ -537,7 +537,7 @@ export function StoreSettingsForm({
   return (
     <form
       action={formAction}
-      className="space-y-6 rounded-2xl border border-zinc-200 bg-white/96 p-4 shadow-[0_24px_44px_-34px_rgba(24,24,27,0.55)] sm:p-6"
+      className="space-y-6 rounded-2xl border border-[#eadfd2] bg-white/96 p-4 shadow-[0_24px_44px_-34px_rgba(24,24,27,0.55)] sm:p-6"
       onSubmit={() => {
         submitAttemptRef.current += 1;
         setHideServerFeedback(false);
@@ -587,8 +587,8 @@ export function StoreSettingsForm({
         </p>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,0.72fr)] lg:items-start">
+        <div className="sm:col-span-2 lg:col-span-1 lg:col-start-1">
           <label htmlFor="settings-store-name" className="block text-sm font-medium text-zinc-800">
             Nome da loja
           </label>
@@ -605,7 +605,7 @@ export function StoreSettingsForm({
           {nameError ? <p className="mt-1 text-xs text-red-700">{nameError}</p> : null}
         </div>
 
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2 lg:col-span-1 lg:col-start-1">
           <label htmlFor="settings-store-phone" className="block text-sm font-medium text-zinc-800">
             Telefone da loja
           </label>
@@ -623,7 +623,7 @@ export function StoreSettingsForm({
           {phoneError ? <p className="mt-1 text-xs text-red-700">{phoneError}</p> : null}
         </div>
 
-        <div className="sm:col-span-2 rounded-2xl border border-zinc-200 bg-zinc-50/90 p-4 sm:p-5">
+        <div className="sm:col-span-2 rounded-2xl border border-[#eadfd2] bg-[#fffaf2] p-4 sm:p-5 lg:col-span-1 lg:col-start-1">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-zinc-900">Logo da loja</p>
@@ -644,7 +644,7 @@ export function StoreSettingsForm({
             <div className="space-y-2">
               <div
                 data-testid="settings-logo-preview"
-                className="relative flex h-40 w-full max-w-[220px] items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm"
+                className="relative flex h-40 w-full max-w-[220px] items-center justify-center overflow-hidden rounded-2xl border border-amber-200 bg-white p-3 shadow-sm"
               >
                 {logoPreviewUrl && !logoPreviewBroken ? (
                   <Image
@@ -672,7 +672,7 @@ export function StoreSettingsForm({
                   onClick={() => setLogoUploadMode("url")}
                   data-testid="settings-logo-mode-url"
                   className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                    logoUploadMode === "url" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
+                    logoUploadMode === "url" ? "bg-[#9f1239] text-white" : "text-zinc-600 hover:bg-[#fff7ed]"
                   }`}
                 >
                   Link da imagem
@@ -682,7 +682,7 @@ export function StoreSettingsForm({
                   onClick={() => setLogoUploadMode("upload")}
                   data-testid="settings-logo-mode-upload"
                   className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                    logoUploadMode === "upload" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
+                    logoUploadMode === "upload" ? "bg-[#9f1239] text-white" : "text-zinc-600 hover:bg-[#fff7ed]"
                   }`}
                 >
                   Enviar arquivo
@@ -750,7 +750,7 @@ export function StoreSettingsForm({
           </div>
         </div>
 
-        <div>
+        <div className="sm:col-span-2 lg:col-span-1 lg:col-start-1">
           <label htmlFor="settings-store-slug" className="block text-sm font-medium text-zinc-800">
             Slug público (somente leitura)
           </label>
@@ -767,12 +767,13 @@ export function StoreSettingsForm({
           </p>
         </div>
 
-        <div className="sm:col-span-2 rounded-xl border border-zinc-200 bg-zinc-50/85 p-4">
-          <p className="text-sm font-medium text-zinc-800">QR Code do cardápio público</p>
+        <div className="sm:col-span-2 rounded-2xl border border-amber-200 bg-gradient-to-b from-[#fff7e6] via-white to-white p-4 shadow-[0_18px_38px_-34px_rgba(154,106,18,0.58)] lg:col-span-1 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:sticky lg:top-24">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#9f1239]">Material de balcão</p>
+          <p className="mt-1 text-sm font-semibold text-zinc-900">QR Code do cardápio público</p>
           <p className="mt-1 text-xs text-zinc-600">Use para compartilhar o link da loja em balcão, mesa ou embalagem.</p>
 
-          <div className="mt-3 grid gap-3 sm:grid-cols-[176px_1fr] sm:items-start">
-            <div className="w-full rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
+          <div className="mt-3 grid gap-3">
+            <div className="mx-auto w-full max-w-[220px] rounded-2xl border border-amber-200 bg-white p-4 shadow-sm">
               <QRCodeCanvas
                 id="settings-public-url-qr"
                 value={canonicalPublicUrl}
@@ -783,7 +784,7 @@ export function StoreSettingsForm({
               />
             </div>
 
-            <div className="space-y-3 rounded-xl border border-zinc-200 bg-white p-3">
+            <div className="space-y-3 rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-3">
               <p className="text-xs text-zinc-600">Este QR abre diretamente o cardápio público da loja.</p>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -805,7 +806,7 @@ export function StoreSettingsForm({
         </div>
       </div>
 
-      <section className="rounded-xl border border-zinc-200 bg-zinc-50/85 p-4">
+      <section className="rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-zinc-900">Prontidão operacional</p>
@@ -837,7 +838,7 @@ export function StoreSettingsForm({
         ) : null}
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-zinc-50/85 p-4">
+      <section className="rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-4">
         <div className="space-y-1">
           <p className="text-sm font-semibold text-zinc-900">Modo operacional da loja</p>
           <p className="text-xs text-zinc-600">
@@ -855,7 +856,7 @@ export function StoreSettingsForm({
               <label
                 key={option.value}
                 className={`rounded-xl border bg-white p-3 text-sm transition ${
-                  checked ? "border-zinc-900 ring-1 ring-zinc-900" : "border-zinc-200 hover:border-zinc-300"
+                  checked ? "border-[#9f1239] ring-1 ring-[#9f1239]" : "border-[#eadfd2] hover:border-amber-300"
                 } ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
               >
                 <span className="flex items-start gap-2">
@@ -968,7 +969,7 @@ export function StoreSettingsForm({
           type="submit"
           disabled={saveDisabled}
           data-testid="settings-save-button"
-          className="cx-btn-primary min-h-11 px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cx-btn-accent min-h-11 px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? "Salvando..." : "Salvar configurações"}
         </button>

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Sora, Space_Grotesk } from "next/font/google";
 import { Reveal } from "@/components/layout/reveal";
 import { LandingStickyNav } from "@/components/layout/landing-sticky-nav";
 import { LandingBenefitsSection } from "@/components/layout/landing-benefits-section";
+import { BRANDING } from "@/lib/branding";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -131,7 +133,47 @@ const customerBenefits = [
 ] as const;
 
 const navActionClass =
-  "rounded-xl px-3 py-2 text-sm font-medium text-zinc-300 transition duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/30";
+  "rounded-xl px-3 py-2 text-sm font-medium text-zinc-300 transition duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/30";
+
+type ProductFlowIconName = "menu" | "cart" | "panel" | "pickup";
+
+function ProductFlowIcon({ name }: { name: ProductFlowIconName }) {
+  if (name === "menu") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
+        <path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5z" />
+        <path d="M14 14h2.5M14 19h5M19 14v2.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (name === "cart") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
+        <path d="M4 5h2l2.1 10.2a2 2 0 0 0 2 1.6h6.8a2 2 0 0 0 1.9-1.4L20 8H7" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="10" cy="20" r="1.2" />
+        <circle cx="17" cy="20" r="1.2" />
+      </svg>
+    );
+  }
+
+  if (name === "panel") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
+        <path d="M4 5h16v13H4z" />
+        <path d="M8 15v-4M12 15V8M16 15v-6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
+      <path d="M6 9h12l-1 10H7L6 9Z" strokeLinejoin="round" />
+      <path d="M9 9a3 3 0 0 1 6 0" />
+      <path d="M9.2 14.2 11 16l3.8-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 export default async function HomePage() {
   const supabase = await createServerSupabaseClient();
@@ -148,21 +190,33 @@ export default async function HomePage() {
 
       <section
         id="inicio"
-        className="relative isolate scroll-mt-52 overflow-hidden bg-zinc-950 px-4 pt-32 text-white sm:scroll-mt-44 sm:px-6 sm:pt-36 md:scroll-mt-36 lg:pt-32"
+        className="relative isolate scroll-mt-52 overflow-hidden bg-[#171717] px-4 pt-32 text-white sm:scroll-mt-44 sm:px-6 sm:pt-36 md:scroll-mt-36 lg:pt-32"
       >
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(180deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:80px_80px]" />
-        <div className="absolute inset-x-0 bottom-0 -z-10 h-44 bg-gradient-to-t from-amber-500/12 to-transparent" />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(180deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[length:82px_82px]" />
+        <div className="absolute -left-24 top-16 -z-10 h-72 w-72 rounded-full bg-[#9f1239]/35 blur-3xl" />
+        <div className="absolute right-0 top-20 -z-10 h-80 w-80 rounded-full bg-[#c58a1a]/20 blur-3xl" />
+        <div className="absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-t from-[#9f1239]/55 via-[#9f1239]/18 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 -z-10 h-3 bg-gradient-to-r from-[#9f1239] via-[#c58a1a] to-[#70102a]" />
+        <div className="absolute inset-x-0 bottom-0 z-0 h-14 bg-[radial-gradient(120%_70%_at_50%_110%,#fffaf2_42%,transparent_43%)]" />
 
         <div className="mx-auto grid max-w-7xl gap-8 pb-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-12 lg:pb-14">
           <Reveal>
             <div className="max-w-3xl">
-              <p className="inline-flex rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-100">
-                CardExpress para pedidos de retirada
+              <Image
+                src={BRANDING.logoPath}
+                alt={BRANDING.productName}
+                width={268}
+                height={66}
+                priority
+                className="h-auto w-auto max-w-[220px] rounded-xl bg-white/95 px-3 py-2 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.85)] sm:max-w-[268px]"
+              />
+              <p className="mt-5 inline-flex rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-100">
+                Seu cardápio digital. Seus pedidos no ritmo certo.
               </p>
               <h1
                 className={`${displayFont.className} mt-4 text-[2.35rem] font-semibold leading-[1.04] text-white sm:text-[3.65rem] lg:text-[4.35rem] xl:text-[4.7rem]`}
               >
-                Organize pedidos, cardápio e retirada no balcão em um só lugar.
+                Cardápio, pedidos e retirada no compasso da sua operação.
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-200 sm:text-lg sm:leading-8">
                 O CardExpress ajuda lanchonetes, cafeterias e pontos de venda rápida a transformar o cardápio em um
@@ -176,7 +230,7 @@ export default async function HomePage() {
                 </Link>
                 <a
                   href="#produto"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 sm:min-h-12 sm:px-6 sm:py-3 sm:text-base"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-amber-300/30 bg-amber-300/10 px-5 py-2.5 text-sm font-semibold text-amber-50 transition hover:bg-amber-300/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/35 sm:min-h-12 sm:px-6 sm:py-3 sm:text-base"
                 >
                   Ver produto
                 </a>
@@ -200,7 +254,7 @@ export default async function HomePage() {
                 {heroBadges.map((badge) => (
                   <span
                     key={badge}
-                    className="rounded-full border border-white/15 bg-white/[0.07] px-3 py-1 text-xs font-medium text-zinc-200"
+                    className="rounded-full border border-amber-200/20 bg-white/[0.07] px-3 py-1 text-xs font-medium text-zinc-200"
                   >
                     {badge}
                   </span>
@@ -210,36 +264,37 @@ export default async function HomePage() {
           </Reveal>
 
           <Reveal delayMs={120}>
-            <div className="relative rounded-2xl border border-white/15 bg-white/[0.07] p-3 shadow-[0_34px_100px_-48px_rgba(0,0,0,0.95)] sm:p-4">
+            <div className="relative overflow-hidden rounded-2xl border border-amber-200/20 bg-white/[0.07] p-3 shadow-[0_34px_100px_-48px_rgba(0,0,0,0.95)] sm:p-4">
+              <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/70 to-transparent" />
               <div className="grid gap-3 lg:grid-cols-[1.05fr_0.95fr]">
-                <div className="rounded-xl border border-white/10 bg-white p-4 text-zinc-900">
+                <div className="rounded-xl border border-amber-100 bg-[#fffaf2] p-4 text-zinc-900">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Cardápio público</p>
                       <p className="mt-1 text-lg font-semibold">Café & Lanches Centro</p>
                     </div>
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">
                       Aberta
                     </span>
                   </div>
                   <div className="mt-4 space-y-2">
                     {["Combo artesanal", "Pão de queijo", "Suco natural"].map((item, index) => (
-                      <div key={item} className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
+                      <div key={item} className="flex items-center justify-between rounded-lg border border-[#eadfd2] bg-white px-3 py-2">
                         <div>
                           <p className="text-sm font-semibold text-zinc-900">{item}</p>
                           <p className="text-xs text-zinc-500">{index === 1 ? "Estoque baixo" : "Disponível agora"}</p>
                         </div>
-                        <span className="text-sm font-semibold text-zinc-900">R$ {index === 0 ? "24,90" : "8,00"}</span>
+                        <span className="text-sm font-semibold text-[#9f1239]">R$ {index === 0 ? "24,90" : "8,00"}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div className="grid gap-3">
-                  <div className="rounded-xl border border-white/10 bg-zinc-900 p-4">
+                  <div className="rounded-xl border border-amber-300/20 bg-zinc-900 p-4">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Dashboard</p>
-                      <span className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs text-emerald-200">Ao vivo</span>
+                      <span className="rounded-full bg-amber-300/15 px-2.5 py-1 text-xs text-amber-100">Ao vivo</span>
                     </div>
                     <div className="mt-4 grid grid-cols-3 gap-2">
                       <div className="rounded-lg bg-white/[0.07] p-2 text-center">
@@ -261,6 +316,19 @@ export default async function HomePage() {
                     <p className="text-xs font-semibold uppercase tracking-wide text-amber-100">Checkout</p>
                     <p className="mt-2 text-sm font-semibold text-white">{paymentNarrative.checkout}</p>
                   </div>
+
+                  <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Painel de retirada</p>
+                    <div className="mt-2 flex items-end justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] text-zinc-400">Chamando agora</p>
+                        <p className="text-3xl font-semibold leading-none text-amber-300">042</p>
+                      </div>
+                      <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-2.5 py-1 text-[11px] font-semibold text-amber-100">
+                        Retirada
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -273,7 +341,7 @@ export default async function HomePage() {
           <Reveal>
             <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Visão do produto</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#9f1239]">Visão do produto</p>
                 <h2 className={`${displayFont.className} mt-3 text-3xl font-semibold text-zinc-950 sm:text-4xl`}>
                   Um fluxo visual do pedido, sem espalhar a operação
                 </h2>
@@ -283,8 +351,8 @@ export default async function HomePage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-[0_22px_70px_-55px_rgba(24,24,27,0.75)] sm:p-4">
-                <div className="grid gap-3 md:grid-cols-4">
+              <div className="cx-brand-panel overflow-visible p-3 sm:p-4">
+                <div className="grid gap-3 md:grid-cols-4 md:gap-8 md:items-stretch">
                   {[
                     ["Cardápio", "Link público e QR Code"],
                     ["Checkout", "Fluxo estruturado em validação"],
@@ -293,13 +361,17 @@ export default async function HomePage() {
                   ].map(([title, description], index) => (
                     <div
                       key={title}
-                      className="relative rounded-xl border border-zinc-200 bg-zinc-50 p-4 transition duration-300 hover:border-zinc-300 hover:bg-white"
+                      className="relative min-h-[8.75rem] rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-4 transition duration-300 hover:border-amber-300 hover:bg-white md:h-full"
                     >
                       {index < 3 ? (
-                        <span className="absolute -right-3 top-1/2 hidden h-px w-6 bg-zinc-300 after:absolute after:-right-0.5 after:-top-[3px] after:h-2 after:w-2 after:rotate-45 after:border-r after:border-t after:border-zinc-300 md:block" />
+                        <span className="absolute left-[calc(100%+1rem)] top-1/2 z-10 hidden h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-amber-200 bg-white text-amber-700 shadow-sm md:flex">
+                          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-3.5 w-3.5" aria-hidden>
+                            <path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </span>
                       ) : null}
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-white text-xs font-semibold text-zinc-700">
-                        {index === 0 ? "QR" : index === 1 ? "OK" : index === 2 ? "PA" : "TV"}
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-900">
+                        <ProductFlowIcon name={index === 0 ? "menu" : index === 1 ? "cart" : index === 2 ? "panel" : "pickup"} />
                       </span>
                       <h3 className="mt-3 text-base font-semibold text-zinc-950">{title}</h3>
                       <p className="mt-2 text-sm leading-6 text-zinc-600">{description}</p>
@@ -315,11 +387,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="como-funciona" className="scroll-mt-52 bg-white/72 py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
+      <section id="como-funciona" className="relative scroll-mt-52 bg-white/72 py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c58a1a]/45 to-transparent" />
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <Reveal>
             <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Como funciona</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#9f1239]">Como funciona</p>
               <h2 className={`${displayFont.className} mt-3 text-3xl font-semibold text-zinc-950 sm:text-4xl`}>
                 Da configuração ao pedido pronto em poucos passos
               </h2>
@@ -329,8 +402,8 @@ export default async function HomePage() {
           <ol className="mt-8 grid gap-3 md:relative md:grid-cols-4 md:gap-6 md:border-t md:border-zinc-200 md:pt-7">
             {flowSteps.map((step, index) => (
               <Reveal key={step.title} delayMs={index * 70}>
-                <li className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 md:relative md:border-0 md:bg-transparent md:p-0 md:pr-5">
-                  <span className="mb-3 flex h-3 w-3 rounded-full bg-amber-400 ring-4 ring-amber-100 md:absolute md:-top-[34px] md:left-0 md:mb-0">
+                <li className="rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-4 md:relative md:border-0 md:bg-transparent md:p-0 md:pr-5">
+                  <span className="mb-3 flex h-3 w-3 rounded-full bg-[#c58a1a] ring-4 ring-amber-100 md:absolute md:-top-[34px] md:left-0 md:mb-0">
                     <span className="sr-only">Etapa {index + 1}</span>
                   </span>
                   <h3 className="text-base font-semibold text-zinc-950">{step.title}</h3>
@@ -342,7 +415,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="diferenciais" className="scroll-mt-52 bg-zinc-950 py-14 text-white sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
+      <section id="diferenciais" className="scroll-mt-52 bg-[#171717] py-14 text-white sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
         <div className="mx-auto grid max-w-7xl gap-9 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <Reveal>
             <div>
@@ -358,7 +431,7 @@ export default async function HomePage() {
             {differentiators.map((item, index) => (
               <Reveal key={item.title} delayMs={index * 70}>
                 <article className="h-full rounded-xl border border-white/10 bg-white/[0.06] p-4 transition duration-300 hover:border-white/20 hover:bg-white/[0.08] sm:p-5">
-                  <span className="block h-1 w-10 rounded-full bg-amber-300" />
+                  <span className="block h-1 w-10 rounded-full bg-[#c58a1a]" />
                   <h3 className="mt-4 text-lg font-semibold text-white">{item.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-zinc-400">{item.description}</p>
                 </article>
@@ -368,11 +441,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="beneficios" className="scroll-mt-52 bg-transparent py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
+      <section id="beneficios" className="relative scroll-mt-52 bg-transparent py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#9f1239]/25 to-transparent" />
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <Reveal>
             <div className="mb-7 max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Benefícios</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#9f1239]">Benefícios</p>
               <h2 className={`${displayFont.className} mt-3 text-3xl font-semibold text-zinc-950 sm:text-4xl`}>
                 Uma experiência melhor para a loja e para quem retira
               </h2>
@@ -393,7 +467,7 @@ export default async function HomePage() {
       <section id="contato" className="scroll-mt-52 bg-white/72 py-14 sm:scroll-mt-44 sm:py-16 md:scroll-mt-36">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <Reveal>
-            <div className="rounded-2xl border border-zinc-200 bg-zinc-950 p-5 text-white shadow-sm sm:p-8 lg:grid lg:grid-cols-[1fr_auto] lg:items-center lg:gap-8">
+            <div className="rounded-2xl border border-[#70102a]/40 bg-[#171717] p-5 text-white shadow-sm sm:p-8 lg:grid lg:grid-cols-[1fr_auto] lg:items-center lg:gap-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Demonstração e contato</p>
                 <h2 className={`${displayFont.className} mt-3 text-3xl font-semibold text-white sm:text-4xl`}>
@@ -429,10 +503,16 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-white/10 bg-zinc-950 text-zinc-200">
+      <footer className="border-t border-white/10 bg-[#171717] text-zinc-200">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-start lg:gap-12">
           <div className="max-w-md">
-            <p className={`${displayFont.className} text-xl font-semibold text-white`}>CardExpress</p>
+            <Image
+              src={BRANDING.logoPath}
+              alt={BRANDING.productName}
+              width={180}
+              height={44}
+              className="h-auto w-auto max-w-[180px] rounded-lg bg-white px-2 py-1"
+            />
             <p className="mt-2 text-sm text-zinc-400">
               Cardápio digital, checkout estruturado e painel de pedidos para retirada no balcão.
             </p>
@@ -462,7 +542,7 @@ export default async function HomePage() {
           </nav>
         </div>
 
-        <div className="border-t border-white/10 bg-zinc-950">
+        <div className="border-t border-white/10 bg-[#171717]">
           <div className="mx-auto max-w-7xl px-4 py-4 text-center text-xs text-zinc-500 sm:px-6">
             <p>© 2026 CardExpress. Todos os direitos reservados.</p>
           </div>

@@ -473,10 +473,10 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
         sticky
         compact
         stickyTopClassName="top-14 md:top-0"
-        maxWidthClassName="max-w-6xl"
+        maxWidthClassName="max-w-7xl"
       />
 
-      <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-8">
         {showSignupSuccess && store ? (
           <section className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:p-5">
             <p className="text-sm font-semibold text-emerald-900">
@@ -499,7 +499,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
           {store ? <DashboardHomeRealtimeSync storeId={store.id} /> : null}
         </div>
 
-        <div className="space-y-3 sm:space-y-4 sm:rounded-2xl sm:border sm:border-amber-100/80 sm:bg-white/80 sm:p-6 sm:shadow-[0_28px_54px_-40px_rgba(24,24,27,0.58)] sm:backdrop-blur-sm">
+        <div className="space-y-3 sm:space-y-4 sm:rounded-2xl sm:border sm:border-[#eadfd2] sm:bg-white/82 sm:p-6 sm:shadow-[0_28px_54px_-40px_rgba(24,24,27,0.58)] sm:backdrop-blur-sm">
           {!store ? (
             <div className="space-y-2 text-left">
               <p className="font-medium text-zinc-800">Nenhuma loja encontrada</p>
@@ -510,10 +510,10 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
             </div>
           ) : (
             <>
-              <section className="rounded-xl border border-zinc-200 bg-gradient-to-br from-zinc-50 via-white to-zinc-100/70 p-3 shadow-sm sm:rounded-2xl sm:p-5">
+              <section className="cx-brand-panel bg-gradient-to-br from-white via-[#fffaf2] to-[#fff7ed] p-3 sm:p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Status da loja</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#9f1239]">Status da loja</p>
                     <p className="mt-1 text-base font-semibold text-zinc-900">{store.name}</p>
                     <p className="mt-1 text-sm text-zinc-600">Telefone: {store.phone ?? "—"}</p>
                     <p className="mt-1 text-xs text-zinc-500">Conta: {displayName}</p>
@@ -543,11 +543,19 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
 
               <div className="grid gap-3 sm:gap-4">
                 <div className="space-y-3 sm:space-y-4">
-                  <section className="cx-dashboard-card p-3 sm:p-5">
-                    <h2 className="text-sm font-semibold text-zinc-900">Visão operacional</h2>
+                  <section className="cx-brand-section p-3 sm:p-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9f1239]">Operação em tempo real</p>
+                        <h2 className="mt-1 text-base font-semibold text-zinc-900">Visão operacional</h2>
+                      </div>
+                      <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 sm:inline-flex">
+                        Ritmo da loja
+                      </span>
+                    </div>
 
                     <div className="mt-3 space-y-3">
-                      <div className="space-y-2 sm:rounded-xl sm:border sm:border-zinc-200 sm:bg-zinc-50/70 sm:p-3">
+                      <div className="space-y-2 sm:rounded-xl sm:border sm:border-[#eadfd2] sm:bg-[#fffaf2]/70 sm:p-3">
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Catálogo e estoque</p>
                         <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
                           <article className="cx-kpi-card p-3 sm:p-4">
@@ -573,7 +581,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                         </div>
                       </div>
 
-                      <div className="space-y-2 sm:rounded-xl sm:border sm:border-zinc-200 sm:bg-zinc-50/70 sm:p-3">
+                      <div className="space-y-2 sm:rounded-xl sm:border sm:border-[#eadfd2] sm:bg-[#fffaf2]/70 sm:p-3">
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Fila operacional</p>
                         <div className="grid grid-cols-3 gap-2 sm:gap-3">
                           <article className="cx-kpi-card p-3 sm:p-4">
@@ -595,10 +603,10 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                     </div>
                   </section>
 
-                  <section className="cx-dashboard-card p-3 sm:p-5">
+                  <section className="cx-brand-section p-3 sm:p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Alertas de estoque</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9f1239]">Alertas de estoque</p>
                         <h2 className="mt-1 text-base font-semibold text-zinc-900">Produtos que pedem atenção</h2>
                       </div>
                       <Link
@@ -610,7 +618,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                     </div>
 
                     <div className="mt-3 grid gap-2 sm:gap-3 lg:grid-cols-2">
-                      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                      <div className="rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-3">
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">Sem estoque</p>
                           <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
@@ -631,7 +639,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                         )}
                       </div>
 
-                      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                      <div className="rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-3">
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">Estoque baixo</p>
                           <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
@@ -659,7 +667,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                   <DashboardIndicatorsPanel periods={indicatorPeriods} topProductsLimit={TOP_PRODUCTS_LIMIT} />
                 </div>
 
-                <section className="cx-dashboard-card p-3 sm:p-5">
+                <section className="cx-brand-section p-3 sm:p-5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-sm font-semibold text-zinc-900">Últimos pedidos</h2>
                     <Link
@@ -675,7 +683,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                   ) : (
                     <ul className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
                       {recentOrders.map((order) => (
-                        <li key={order.id} className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition hover:border-zinc-300 hover:bg-white">
+                        <li key={order.id} className="rounded-xl border border-[#eadfd2] bg-[#fffaf2] px-3 py-2 transition hover:border-amber-300 hover:bg-white">
                           <Link
                             href={`/dashboard/pedidos?escopo=todos&pedido=${encodeURIComponent(order.id)}`}
                             prefetch

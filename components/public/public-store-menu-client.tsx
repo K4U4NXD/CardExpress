@@ -274,16 +274,16 @@ export function PublicStoreMenuClient({
   }
 
   return (
-    <div className="relative isolate space-y-6 pb-28 sm:pb-24">
+    <div className="relative isolate max-w-full space-y-5 pb-[calc(8.25rem+env(safe-area-inset-bottom))] sm:space-y-6 sm:pb-28">
       {hasProducts ? (
-        <section className="cx-public-sticky-surface sticky top-[4.5rem] z-40 rounded-2xl p-3">
+        <section className="cx-public-sticky-surface z-20 rounded-2xl p-2.5 sm:sticky sm:top-[4.25rem] sm:z-40 sm:p-3">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-zinc-800">Explore o cardápio</p>
+              <p className="text-sm font-semibold text-[#9f1239]">Explore o cardápio</p>
               <p className="text-xs text-zinc-500">{visibleProductsCount} resultado(s)</p>
             </div>
 
-            <label htmlFor="menu-search-input" className="text-xs font-medium text-zinc-500">
+            <label htmlFor="menu-search-input" className="text-[11px] font-medium text-zinc-500 sm:text-xs">
               Filtre por categoria ou busque por produto.
             </label>
             <div className="flex items-center gap-2">
@@ -294,7 +294,7 @@ export function PublicStoreMenuClient({
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Buscar por nome ou descrição"
                 data-testid="menu-search-input"
-                className="cx-input min-h-11"
+                className="cx-input min-h-10 sm:min-h-11"
               />
               {searchQuery ? (
                 <button
@@ -307,7 +307,7 @@ export function PublicStoreMenuClient({
               ) : null}
             </div>
 
-            <div className="-mx-1 rounded-xl border border-zinc-200 bg-zinc-50/80 px-1.5 py-1">
+            <div className="-mx-1 rounded-xl border border-[#eadfd2] bg-[#fff7ed]/80 px-1.5 py-1">
               <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {categoryFilters.map((filter) => {
                 const active = activeCategory === filter.value;
@@ -355,13 +355,14 @@ export function PublicStoreMenuClient({
                   <article
                     key={product.id}
                     data-testid={`menu-product-${product.id}`}
-                    className={`relative z-0 rounded-2xl border bg-white p-3 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_42px_-32px_rgba(24,24,27,0.5)] sm:p-4 ${
-                      isOutOfStock ? "border-zinc-300 bg-zinc-50/80" : "border-zinc-200"
+                    className={`relative z-0 overflow-hidden rounded-2xl border bg-white p-2.5 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_42px_-32px_rgba(24,24,27,0.5)] sm:p-4 ${
+                      isOutOfStock ? "border-zinc-300 bg-zinc-50/80" : "border-[#eadfd2] hover:border-amber-300"
                     }`}
                   >
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#9f1239]/65 via-[#c58a1a]/85 to-transparent" />
                     <div className="flex gap-3 sm:gap-4">
                       {product.image_url ? (
-                        <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:h-28 sm:w-28">
+                        <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:h-28 sm:w-28">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" />
                         </div>
@@ -372,7 +373,7 @@ export function PublicStoreMenuClient({
                           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                             <h3 className="break-words text-sm font-semibold text-zinc-900 sm:text-base">{product.name}</h3>
                             <div className="flex flex-wrap items-center gap-1 sm:flex-col sm:items-end">
-                              <span className="text-sm font-semibold text-zinc-900">{formatBRL(product.price)}</span>
+                              <span className="text-sm font-semibold text-[#9f1239]">{formatBRL(product.price)}</span>
                               {isOutOfStock ? (
                                 <span
                                   data-testid={`menu-stock-badge-${product.id}`}
@@ -441,7 +442,7 @@ export function PublicStoreMenuClient({
                             onClick={() => addProduct(product)}
                             disabled={!canAddOrIncrease}
                             data-testid={`menu-add-${product.id}`}
-                            className="cx-btn-primary w-fit px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-60 sm:py-2 sm:text-sm"
+                            className="cx-btn-accent w-fit px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-60 sm:py-2 sm:text-sm"
                           >
                             Adicionar
                           </button>
@@ -486,30 +487,38 @@ export function PublicStoreMenuClient({
         </div>
       )}
 
-      <div className="cx-public-bottom-surface fixed inset-x-0 bottom-0 z-30">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <div className="cx-public-bottom-surface fixed inset-x-0 bottom-0 z-50">
+        <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:flex sm:py-2.5 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <p className="text-xs text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</p>
-            <p className="text-sm font-semibold text-zinc-900">{formatBRL(totalAmount)}</p>
+            <p className="text-xs text-zinc-300">{totalItems} {totalItems === 1 ? "item" : "itens"}</p>
+            <p className="text-sm font-semibold text-white">{formatBRL(totalAmount)}</p>
             {totalItems === 0 ? (
-              <p className="text-[11px] text-zinc-500">Adicione itens para liberar o checkout.</p>
+              <p className="text-[11px] text-zinc-300">Adicione itens para liberar o checkout.</p>
             ) : unavailableItemsInCartCount > 0 ? (
-              <p data-testid="menu-cart-unavailable-hint" className="text-[11px] text-zinc-600">
+              <p data-testid="menu-cart-unavailable-hint" className="text-[11px] text-zinc-200">
                 {allCartProductsUnavailable
                   ? "Checkout bloqueado: todos os itens do carrinho estão indisponíveis no momento."
                   : `${unavailableItemsInCartCount} ${unavailableItemsInCartCount === 1 ? "item indisponível" : "itens indisponíveis"} para novos incrementos.`}
               </p>
             ) : !hasPurchasableItemsInCart ? (
-              <p className="text-[11px] text-zinc-500">Seu carrinho tem apenas itens indisponíveis para compra agora.</p>
+              <p className="text-[11px] text-zinc-300">Seu carrinho tem apenas itens indisponíveis para compra agora.</p>
             ) : null}
-          </div>
-
-          <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
             <button
               type="button"
               onClick={clearCart}
               disabled={totalItems === 0}
-              className="text-xs font-medium text-zinc-500 transition hover:text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-0.5 text-[11px] font-medium text-zinc-300 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50 min-[420px]:hidden"
+            >
+              Limpar carrinho
+            </button>
+          </div>
+
+          <div className="flex min-w-0 items-center justify-end gap-2 sm:w-auto">
+            <button
+              type="button"
+              onClick={clearCart}
+              disabled={totalItems === 0}
+              className="hidden text-xs font-medium text-zinc-300 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50 min-[420px]:inline"
             >
               Limpar carrinho
             </button>
@@ -517,7 +526,7 @@ export function PublicStoreMenuClient({
             {isCheckoutDisabled ? (
               <span
                 aria-disabled
-                className="inline-flex min-h-10 cursor-not-allowed items-center justify-center rounded-xl bg-zinc-300 px-3 py-2 text-xs font-semibold text-zinc-600 sm:px-4 sm:text-sm"
+                className="inline-flex min-h-10 cursor-not-allowed items-center justify-center rounded-xl bg-white/20 px-3 py-2 text-xs font-semibold text-zinc-300 sm:px-4 sm:text-sm"
               >
                 Ir para checkout
               </span>
@@ -525,7 +534,7 @@ export function PublicStoreMenuClient({
               <Link
                 href={`/${slug}/checkout`}
                 data-testid="menu-go-checkout"
-                className="cx-btn-primary min-h-10 px-3 py-2 text-xs sm:px-4 sm:text-sm"
+                className="cx-btn-accent min-h-10 whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
               >
                 Ir para checkout
               </Link>
@@ -534,7 +543,7 @@ export function PublicStoreMenuClient({
         </div>
 
         {!acceptsOrders ? (
-          <p className="mx-auto max-w-4xl px-4 pb-2 text-[11px] text-amber-700 sm:px-6">{unavailableMessage}</p>
+          <p className="mx-auto max-w-5xl px-4 pb-2 text-[11px] text-amber-100 sm:px-6">{unavailableMessage}</p>
         ) : null}
       </div>
     </div>

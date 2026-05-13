@@ -815,18 +815,18 @@ export function PublicCheckoutClient({
     const canCancelCheckout = isPendingCheckout && !isSimulatingPayment && !isCancellingCheckout;
 
     return (
-      <section className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-[0_24px_44px_-34px_rgba(24,24,27,0.55)] sm:p-6">
+      <section className="cx-brand-panel space-y-5 p-4 sm:p-6">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Sessão de checkout criada</h2>
-            <p className="mt-1 text-sm text-zinc-600">
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-zinc-600">
               Sessão registrada para {storeName}. Nesta demonstração, você pode simular a aprovação do pagamento para concluir o fluxo.
             </p>
           </div>
 
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
             isPendingCheckout
-              ? "bg-emerald-100 text-emerald-900"
+              ? "border border-amber-200 bg-amber-50 text-amber-900"
               : isCancelledCheckout
                 ? "bg-zinc-200 text-zinc-800"
                 : isExpiredCheckout
@@ -848,7 +848,7 @@ export function PublicCheckoutClient({
           </div>
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Total confirmado</p>
-            <p className="mt-1 text-base font-semibold text-zinc-900">{formatBRL(Number(success.total_amount ?? 0))}</p>
+            <p className="mt-1 text-lg font-semibold text-[#9f1239]">{formatBRL(Number(success.total_amount ?? 0))}</p>
           </div>
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Expira em</p>
@@ -857,7 +857,7 @@ export function PublicCheckoutClient({
         </div>
 
         {cancelSuccessMessage ? (
-          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm font-medium text-amber-900">
             {cancelSuccessMessage}
           </p>
         ) : null}
@@ -876,18 +876,18 @@ export function PublicCheckoutClient({
             {simulationErrorMessage ?? resolveSessionUnavailableMessage(checkoutStatus)}
           </div>
         ) : (
-          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900">
             Sessão pronta para simulação de pagamento.
           </p>
         )}
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <div className="grid gap-2 sm:flex sm:flex-wrap">
           <button
             type="button"
             onClick={handleSimulatePaymentApproved}
             disabled={simulationActionDisabled}
             data-testid="checkout-simulate-payment"
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cx-btn-accent min-h-11 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSimulatingPayment
               ? "Simulando pagamento..."
@@ -936,7 +936,7 @@ export function PublicCheckoutClient({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-      <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_20px_40px_-30px_rgba(24,24,27,0.45)] sm:p-5">
+      <section className="cx-brand-panel p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-zinc-900">Resumo do pedido</h2>
           <span className="text-sm text-zinc-600">{totalItems} {totalItems === 1 ? "item" : "itens"}</span>
@@ -1071,7 +1071,7 @@ export function PublicCheckoutClient({
         <div className="mt-4 border-t border-zinc-200 pt-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-zinc-600">Total estimado</span>
-            <span className="font-semibold text-zinc-900">{formatBRL(localTotalAmount)}</span>
+            <span className="font-semibold text-[#9f1239]">{formatBRL(localTotalAmount)}</span>
           </div>
           <p className="mt-1 text-xs text-zinc-500">
             O valor oficial é recalculado no servidor no momento da criação da sessão.
@@ -1079,7 +1079,7 @@ export function PublicCheckoutClient({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_20px_40px_-30px_rgba(24,24,27,0.45)] sm:p-5">
+      <section className="cx-brand-panel p-4 sm:p-5">
         <h2 className="text-lg font-semibold text-zinc-900">Dados do cliente</h2>
         <p className="mt-1 text-xs text-zinc-500">Esses dados são usados para identificar e atualizar o pedido.</p>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
@@ -1146,7 +1146,7 @@ export function PublicCheckoutClient({
             type="submit"
             disabled={!canSubmit}
             data-testid="checkout-create-session"
-            className="cx-btn-primary min-h-11 w-full px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cx-btn-accent min-h-11 w-full px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Criando sessão..." : "Criar sessão de checkout"}
           </button>

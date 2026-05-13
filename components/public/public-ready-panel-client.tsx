@@ -114,7 +114,8 @@ export function PublicReadyPanelClient({
   if (mode === "tv") {
     return (
       <div className="relative min-h-screen w-full overflow-hidden bg-black text-white">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.18),rgba(0,0,0,0.95)_58%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(197,138,26,0.22),rgba(0,0,0,0.95)_58%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#9f1239] via-[#c58a1a] to-[#70102a]" />
 
         <header className="relative z-10 flex items-start justify-between gap-4 px-6 py-4 sm:px-10 sm:py-6">
           <div className="space-y-2">
@@ -131,7 +132,7 @@ export function PublicReadyPanelClient({
           <div className="flex flex-col items-end gap-2">
             <Link
               href={`/${slug}/painel`}
-              className="inline-flex min-h-8 items-center justify-center rounded-md border border-zinc-700/80 bg-zinc-900/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
+              className="inline-flex min-h-8 items-center justify-center rounded-md border border-amber-700/40 bg-zinc-900/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-100 transition hover:bg-[#70102a]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
             >
               Versão web
             </Link>
@@ -147,7 +148,7 @@ export function PublicReadyPanelClient({
           <p
             data-testid="panel-latest-display-code"
             className={`mt-4 font-black leading-none tracking-tight ${
-              latestCalled ? "text-[clamp(7rem,28vw,18rem)] text-emerald-300" : "text-[clamp(5rem,20vw,12rem)] text-zinc-500"
+              latestCalled ? "text-[clamp(7rem,28vw,18rem)] text-amber-300 drop-shadow-[0_0_34px_rgba(197,138,26,0.35)]" : "text-[clamp(5rem,20vw,12rem)] text-zinc-500"
             }`}
           >
             {latestDisplayCode}
@@ -158,7 +159,7 @@ export function PublicReadyPanelClient({
           </p>
         </main>
 
-        <footer className="absolute inset-x-0 bottom-0 z-10 border-t border-zinc-800/80 bg-zinc-950/90 backdrop-blur-sm">
+        <footer className="absolute inset-x-0 bottom-0 z-10 border-t border-[#9f1239]/45 bg-zinc-950/90 backdrop-blur-sm">
           <div className="flex flex-wrap items-end justify-between gap-4 px-6 py-4 sm:px-10">
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-zinc-500">Últimos chamados</p>
@@ -166,7 +167,7 @@ export function PublicReadyPanelClient({
               {calledHistory.length > 0 ? (
                 <ul className="mt-2 flex flex-wrap gap-2">
                   {calledHistory.map((item) => (
-                    <li key={item.render_key} className="rounded-lg border border-zinc-700/80 bg-zinc-900/90 px-3 py-1.5 text-sm">
+                    <li key={item.render_key} className="rounded-lg border border-amber-700/30 bg-zinc-900/90 px-3 py-1.5 text-sm">
                       <span className="font-semibold text-zinc-100">{item.display_code ?? "----"}</span>
                       <span className="ml-2 text-xs text-zinc-400">{formatDateTime(item.ready_at)}</span>
                     </li>
@@ -187,7 +188,7 @@ export function PublicReadyPanelClient({
                   ensurePublicAudioInteractionTracking();
                 }
               }}
-              className="inline-flex min-h-9 items-center justify-center rounded-md border border-zinc-700 bg-zinc-900/90 px-3 py-1.5 text-[11px] font-semibold text-zinc-300 transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
+              className="inline-flex min-h-9 items-center justify-center rounded-md border border-amber-700/40 bg-zinc-900/90 px-3 py-1.5 text-[11px] font-semibold text-amber-100 transition hover:bg-[#70102a]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
               aria-pressed={soundEnabled}
             >
               {soundEnabled ? "Som: ligado" : "Som: desligado"}
@@ -200,7 +201,7 @@ export function PublicReadyPanelClient({
 
   return (
     <div className="mx-auto max-w-5xl space-y-4 px-4 sm:px-6">
-      <section className="rounded-xl border border-zinc-800/80 bg-zinc-900/65 px-3 py-1.5 text-zinc-300 sm:px-4">
+      <section className="rounded-xl border border-[#9f1239]/45 bg-zinc-900/70 px-3 py-1.5 text-zinc-300 sm:px-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-2">
             <PublicStoreBrandBadge
@@ -217,7 +218,7 @@ export function PublicReadyPanelClient({
             {tvModeHref ? (
               <Link
                 href={tvModeHref}
-                className="inline-flex min-h-8 items-center rounded-md border border-zinc-700 bg-zinc-900/90 px-2 py-0.5 text-[10px] font-semibold text-zinc-300 transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
+                className="inline-flex min-h-8 items-center rounded-md border border-amber-700/40 bg-zinc-900/90 px-2 py-0.5 text-[10px] font-semibold text-amber-100 transition hover:bg-[#70102a]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
               >
                 Abrir modo TV
               </Link>
@@ -233,7 +234,7 @@ export function PublicReadyPanelClient({
                   ensurePublicAudioInteractionTracking();
                 }
               }}
-              className="inline-flex min-h-8 items-center rounded-md border border-zinc-700 bg-zinc-900/90 px-2 py-0.5 text-[10px] font-semibold text-zinc-300 transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
+              className="inline-flex min-h-8 items-center rounded-md border border-amber-700/40 bg-zinc-900/90 px-2 py-0.5 text-[10px] font-semibold text-amber-100 transition hover:bg-[#70102a]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
               aria-pressed={soundEnabled}
             >
               {soundEnabled ? "Som: ligado" : "Som: desligado"}
@@ -245,7 +246,7 @@ export function PublicReadyPanelClient({
       <article
         className={`rounded-[30px] border p-8 text-center shadow-[0_30px_56px_-34px_rgba(0,0,0,0.86)] sm:p-10 ${
           latestCalled
-            ? "border-emerald-300/50 bg-gradient-to-b from-zinc-900 via-zinc-900 to-black text-white"
+            ? "border-amber-300/60 bg-gradient-to-b from-zinc-900 via-zinc-900 to-black text-white"
             : "border-zinc-700/80 bg-zinc-900/85 text-zinc-200"
         }`}
       >
@@ -256,7 +257,7 @@ export function PublicReadyPanelClient({
 
         <p
           data-testid="panel-latest-display-code"
-          className={`mt-5 font-black tracking-tight ${latestCalled ? "text-7xl sm:text-8xl text-emerald-300" : "text-6xl text-zinc-500"}`}
+          className={`mt-5 font-black tracking-tight ${latestCalled ? "text-7xl text-amber-300 drop-shadow-[0_0_28px_rgba(197,138,26,0.38)] sm:text-8xl" : "text-6xl text-zinc-500"}`}
         >
           {latestDisplayCode}
         </p>
@@ -266,7 +267,7 @@ export function PublicReadyPanelClient({
         </p>
       </article>
 
-      <section className="rounded-2xl border border-zinc-700/75 bg-zinc-900/70 p-4 text-zinc-100">
+      <section className="rounded-2xl border border-[#9f1239]/45 bg-zinc-900/70 p-4 text-zinc-100">
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">Últimos chamados</p>
           <span className="text-[11px] text-zinc-500">{calledHistory.length} de {HISTORY_LIMIT}</span>
@@ -275,9 +276,9 @@ export function PublicReadyPanelClient({
         {calledHistory.length > 0 ? (
           <ul className="mt-3 grid gap-2 md:grid-cols-2">
             {calledHistory.map((item, index) => (
-              <li key={item.render_key} className="flex items-center justify-between rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm">
+              <li key={item.render_key} className="flex items-center justify-between rounded-lg border border-amber-700/30 bg-zinc-900 px-3 py-2.5 text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-zinc-800 px-1.5 text-[11px] font-semibold text-zinc-300">
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#9f1239] px-1.5 text-[11px] font-semibold text-white">
                     {index + 1}
                   </span>
                   <span className="font-semibold text-zinc-100">{item.display_code ?? "----"}</span>

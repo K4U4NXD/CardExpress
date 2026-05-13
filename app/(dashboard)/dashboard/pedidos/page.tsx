@@ -164,9 +164,15 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
         stickyTopClassName="top-14 md:top-0"
         maxWidthClassName="max-w-6xl"
         bottomContent={
-          <div className="space-y-2">
-            <p className="text-xs text-zinc-500">Escopo atual: {selectedScopeLabel}.</p>
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 pt-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[11px] text-zinc-500 sm:text-xs">Escopo atual: {selectedScopeLabel}.</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {store ? <OrdersRealtimeSync storeId={store.id} /> : null}
+                {store ? <NewOrderSoundToggle /> : null}
+              </div>
+            </div>
+            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 pt-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {SCOPE_FILTERS.map((filter) => {
                 const isActive = filter.value === selectedScope;
                 const href =
@@ -179,15 +185,13 @@ export default async function DashboardOrdersPage({ searchParams }: PageProps) {
                     key={filter.value}
                     href={href}
                     aria-current={isActive ? "page" : undefined}
-                    className={`${isActive ? "cx-chip-active" : "cx-chip"} px-3.5 py-1.5`}
+                    className={`${isActive ? "cx-chip-active" : "cx-chip"} px-3 py-1.5 text-[11px] sm:text-xs`}
                   >
                     {filter.label}
                   </Link>
                 );
               })}
             </div>
-            {store ? <OrdersRealtimeSync storeId={store.id} /> : null}
-            {store ? <NewOrderSoundToggle /> : null}
           </div>
         }
       />

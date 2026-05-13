@@ -45,7 +45,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   });
 
   return (
-    <>
+    <div className="cx-public-bg min-h-screen">
       <PageHeader
         title={`Checkout - ${store.name}`}
         description="Revise os itens e confirme os dados para concluir esta etapa do pedido."
@@ -56,11 +56,11 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
         bottomContent={<p className="text-xs text-zinc-500">Etapa atual: revisão do carrinho e dados do cliente.</p>}
       />
 
-      <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
-        <section className="rounded-2xl border border-zinc-200 bg-white/95 p-4 shadow-[0_24px_44px_-34px_rgba(24,24,27,0.55)] sm:p-5">
+      <div className="mx-auto max-w-5xl space-y-5 px-4 py-5 sm:space-y-6 sm:px-6 sm:py-8">
+        <section className="cx-brand-panel p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-sm font-medium text-zinc-700">Estabelecimento</p>
+              <p className="text-sm font-medium text-[#9f1239]">Estabelecimento</p>
               <p className="text-lg font-semibold text-zinc-900">{store.name}</p>
               {store.phone ? (
                 <a href={`tel:${store.phone}`} className="text-sm text-zinc-600 hover:text-zinc-900">
@@ -71,7 +71,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
 
             <span
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                operationalState.canPlaceOrders ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                operationalState.canPlaceOrders ? "border border-amber-200 bg-amber-50 text-amber-900" : "border border-rose-200 bg-rose-50 text-rose-800"
               }`}
             >
               {operationalState.summaryLabel}
@@ -85,7 +85,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
           ) : null}
 
           {store.public_message ? (
-            <p className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700">{store.public_message}</p>
+            <p className="mt-4 rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-3 text-sm text-zinc-700">{store.public_message}</p>
           ) : null}
 
           <PublicMenuRealtimeSync slug={store.slug} className="mt-4" />
@@ -104,6 +104,6 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
           menuRows={menuRows}
         />
       </div>
-    </>
+    </div>
   );
 }

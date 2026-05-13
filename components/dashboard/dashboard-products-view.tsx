@@ -414,7 +414,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
             </section>
           ) : null}
 
-          <section className="cx-scroll-panel flex-1">
+          <section className="cx-scroll-panel">
             <div className="cx-scroll-panel-header flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
               <div className="min-w-0 flex-1">
                 <h2 className="text-sm font-semibold text-zinc-900">Produtos cadastrados</h2>
@@ -617,7 +617,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
                       onDrop={(event) => handleDrop(event, product.id)}
                       className={`group flex items-start gap-2 rounded-2xl px-1 py-1 transition ${
                         dropTargetProductId === product.id && draggingProductId !== product.id
-                          ? "bg-sky-50/60 ring-2 ring-sky-200 ring-offset-1"
+                          ? "bg-amber-50/70 ring-2 ring-amber-200 ring-offset-1"
                           : ""
                       }`}
                     >
@@ -631,7 +631,7 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
                         title="Arrastar para reordenar"
                         className={`mt-3 hidden h-11 w-9 shrink-0 items-center justify-center rounded-xl border bg-white text-zinc-500 shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-45 md:inline-flex ${
                           draggingProductId === product.id
-                            ? "cursor-grabbing border-sky-300 bg-sky-50 text-sky-700"
+                            ? "cursor-grabbing border-amber-300 bg-amber-50 text-amber-800"
                             : "cursor-grab border-zinc-200 hover:bg-zinc-50 hover:text-zinc-700"
                         }`}
                       >
@@ -678,6 +678,12 @@ export function DashboardProductsView({ storeId, categories, products }: Dashboa
                     </div>
                   );
                 })}
+                {orderedProducts.length <= 2 ? (
+                  <div className="rounded-2xl border border-amber-200 bg-[#fff7e6] px-4 py-3 text-xs leading-5 text-zinc-700">
+                    Complete cada produto com imagem, preço e status de venda para deixar o cardápio público mais claro
+                    e mais confiável para o cliente.
+                  </div>
+                ) : null}
               </div>
             )}
             </div>

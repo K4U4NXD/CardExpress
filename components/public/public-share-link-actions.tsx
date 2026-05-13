@@ -71,7 +71,7 @@ export function PublicShareLinkActions({ relativePath, microcopy, className }: P
         ) : null}
       </div>
 
-      {shareFeedback ? <p className="mt-1 text-[11px] text-emerald-700">{shareFeedback}</p> : null}
+      {shareFeedback ? <p className="mt-1 text-[11px] text-amber-700">{shareFeedback}</p> : null}
     </div>
   );
 }

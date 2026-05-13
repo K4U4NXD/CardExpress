@@ -404,10 +404,11 @@ export function ProductRow({
   return (
     <>
       <div
-        className={`rounded-2xl border p-3 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)] transition md:p-4 ${
-          isSelected ? "border-zinc-300 bg-zinc-50/80 ring-1 ring-zinc-300/70" : "border-zinc-200 bg-white"
+        className={`relative overflow-hidden rounded-2xl border p-2.5 shadow-[0_16px_34px_-30px_rgba(24,24,27,0.45)] transition md:p-4 ${
+          isSelected ? "border-[#9f1239]/35 bg-[#fff7ed] ring-1 ring-[#9f1239]/20" : "border-[#eadfd2] bg-white"
         }`}
       >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#9f1239]/70 via-[#c58a1a]/80 to-transparent" />
       {!editing ? (
         <div className="space-y-2.5 md:space-y-3">
           <div className="mb-0.5 flex items-center justify-between md:hidden">
@@ -477,9 +478,9 @@ export function ProductRow({
             </div>
 
             <div className="flex shrink-0 items-start gap-2">
-              <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-right md:rounded-xl md:px-3 md:py-2">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-right md:rounded-xl md:px-3 md:py-2">
                 <p className="hidden text-[10px] font-semibold uppercase tracking-wide text-zinc-500 md:block">Preço</p>
-                <p className="text-base font-semibold leading-tight text-zinc-900 sm:text-lg">{formatBRL(product.price)}</p>
+                <p className="text-base font-semibold leading-tight text-[#9f1239] sm:text-lg">{formatBRL(product.price)}</p>
               </div>
               <div className="hidden md:block">
                 <SelectionCheckbox
@@ -496,7 +497,7 @@ export function ProductRow({
           <div className="flex flex-wrap gap-1.5 md:gap-2 text-[10px] md:text-[11px]">
             <span
               className={`rounded-full px-2 md:px-2.5 py-0.5 font-medium ${
-                product.is_active ? "bg-sky-100 text-sky-900" : "bg-zinc-200 text-zinc-700"
+                product.is_active ? "border border-rose-200 bg-rose-50 text-rose-900" : "border border-zinc-200 bg-zinc-100 text-zinc-700"
               }`}
             >
               {product.is_active ? "Ativo" : "Inativo"}
@@ -504,7 +505,7 @@ export function ProductRow({
             {product.is_active ? (
               <span
                 className={`rounded-full px-2 md:px-2.5 py-0.5 font-medium ${
-                  product.is_available ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900"
+                  product.is_available ? "border border-emerald-200 bg-white text-emerald-700" : "border border-amber-200 bg-amber-50 text-amber-900"
                 }`}
               >
                 {product.is_available ? "Venda liberada" : "Venda pausada"}
@@ -521,16 +522,16 @@ export function ProductRow({
             ) : null}
           </div>
 
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2 text-xs text-zinc-600">
+          <div className="grid gap-1.5 rounded-xl border border-[#eadfd2] bg-[#fffaf2] px-3 py-2 text-xs text-zinc-600 sm:grid-cols-3">
             <p>
               <span className="font-medium text-zinc-700">Cardápio público:</span>{" "}
               {isVisibleOnPublicMenu ? "visível" : "oculto"}
             </p>
-            <p className="mt-1">
+            <p>
               <span className="font-medium text-zinc-700">Compra agora:</span>{" "}
               {isPurchasableNow ? "apta" : "indisponível"}
             </p>
-            <p className="mt-1">
+            <p>
               <span className="font-medium text-zinc-700">Estoque:</span> {stockSummary}
             </p>
           </div>

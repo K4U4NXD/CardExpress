@@ -57,10 +57,10 @@ export function CategoryRow({
   return (
     <>
       <div
-        className={`flex flex-col gap-2.5 rounded-xl border p-3.5 transition sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-4 ${
+        className={`cx-brand-rail flex flex-col gap-2.5 rounded-xl border p-3.5 pl-5 transition sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-4 sm:pl-5 ${
           isSelected
-            ? "border-zinc-300 bg-zinc-50/90 shadow-[0_14px_32px_-28px_rgba(24,24,27,0.7)] ring-1 ring-zinc-300/70"
-            : "border-zinc-200/80 bg-zinc-50/65"
+            ? "border-[#9f1239]/35 bg-[#fff7ed] shadow-[0_14px_32px_-28px_rgba(112,16,42,0.42)] ring-1 ring-[#9f1239]/18"
+            : "border-[#eadfd2] bg-white/80"
         }`}
       >
         <div className="min-w-0 flex-1">
@@ -114,7 +114,7 @@ export function CategoryRow({
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="cx-btn-primary px-3 py-1.5 text-xs sm:text-sm"
+                  className="cx-btn-accent px-3 py-1.5 text-xs sm:text-sm"
                 >
                   Salvar
                 </button>

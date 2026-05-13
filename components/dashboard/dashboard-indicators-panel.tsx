@@ -32,13 +32,13 @@ export function DashboardIndicatorsPanel({ periods, topProductsLimit }: Dashboar
   const metrics = currentPeriod?.metrics;
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm sm:rounded-2xl sm:p-5">
+    <section className="cx-brand-section p-3 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Indicadores</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9f1239]">Indicadores</p>
           <h2 className="mt-1 text-base font-semibold text-zinc-900">Vendas do período</h2>
         </div>
-        <div className="inline-flex w-full max-w-full overflow-x-auto rounded-lg border border-zinc-200 bg-zinc-50 p-1 sm:w-auto" role="tablist">
+        <div className="inline-flex w-full max-w-full overflow-x-auto rounded-lg border border-[#eadfd2] bg-[#fff7ed] p-1 sm:w-auto" role="tablist">
           {periods.map((period) => {
             const active = selectedPeriod === period.key;
 
@@ -51,7 +51,7 @@ export function DashboardIndicatorsPanel({ periods, topProductsLimit }: Dashboar
                 onClick={() => setSelectedPeriod(period.key)}
                 data-testid={`dashboard-period-${period.key}`}
                 className={`flex-1 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-semibold transition sm:flex-none sm:px-3 ${
-                  active ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
+                  active ? "bg-[#9f1239] text-white" : "text-zinc-600 hover:bg-white"
                 }`}
               >
                 {period.label}
@@ -94,7 +94,7 @@ export function DashboardIndicatorsPanel({ periods, topProductsLimit }: Dashboar
             </article>
           </div>
 
-          <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 sm:mt-4">
+          <div className="mt-3 rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-3 sm:mt-4">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
               Top {topProductsLimit} produtos mais vendidos
             </h3>
@@ -108,7 +108,7 @@ export function DashboardIndicatorsPanel({ periods, topProductsLimit }: Dashboar
                 {metrics.topProducts.map((product, index) => (
                   <li
                     key={`${currentPeriod?.key}-${product.name}-${index}`}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 sm:rounded-xl sm:px-3 sm:py-2"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-[#eadfd2] bg-white px-2.5 py-1.5 sm:rounded-xl sm:px-3 sm:py-2"
                   >
                     <p className="min-w-0 truncate text-xs font-medium text-zinc-900 sm:text-sm">{product.name}</p>
                     <span className="shrink-0 rounded-full bg-zinc-50 px-2.5 py-0.5 text-xs font-semibold text-zinc-700">

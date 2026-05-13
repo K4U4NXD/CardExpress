@@ -72,6 +72,22 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
 
   const statusLabel = ORDER_STATUS_LABELS[order.status];
   const statusBadge = ORDER_STATUS_BADGE[order.status];
+  const statusMessage: Record<OrderStatus, string> = {
+    aguardando_aceite: "Seu pedido está aguardando aceite.",
+    em_preparo: "Seu pedido está em preparo.",
+    pronto_para_retirada: "Seu pedido está pronto para retirada.",
+    finalizado: "Seu pedido foi finalizado.",
+    recusado: "Seu pedido foi recusado.",
+    cancelado: "Seu pedido foi cancelado.",
+  };
+  const statusMessageClass: Record<OrderStatus, string> = {
+    aguardando_aceite: "border-amber-200 bg-amber-50 text-amber-950",
+    em_preparo: "border-indigo-200 bg-indigo-50 text-indigo-950",
+    pronto_para_retirada: "border-teal-200 bg-teal-50 text-teal-950",
+    finalizado: "border-zinc-200 bg-zinc-50 text-zinc-800",
+    recusado: "border-red-200 bg-red-50 text-red-900",
+    cancelado: "border-orange-200 bg-orange-50 text-orange-900",
+  };
   const refundLabel = REFUND_STATUS_LABELS[order.refund_status];
   const isTerminalStatus = order.status === "finalizado" || order.status === "recusado" || order.status === "cancelado";
   const timelineEvents = [
@@ -84,7 +100,7 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
   ].filter((event) => Boolean(event.value));
 
   return (
-    <>
+    <div className="cx-public-bg min-h-screen">
       <PageHeader
         title={`Pedido ${formatOrderCode(order)}`}
         description={`Acompanhe o status do pedido no estabelecimento ${store.name}.`}
@@ -93,9 +109,12 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
       />
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
-        <div className="rounded-2xl border border-zinc-200 bg-white/96 p-5 shadow-[0_24px_46px_-34px_rgba(24,24,27,0.55)] sm:p-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-lg font-semibold text-zinc-900">{formatOrderCode(order)}</span>
+        <div className="cx-brand-panel p-5 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#9f1239]">Acompanhamento</p>
+              <p className="mt-1 text-4xl font-black tracking-tight text-[#171717] sm:text-5xl">{formatOrderCode(order)}</p>
+            </div>
             <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>{statusLabel}</span>
             {order.refund_status && order.refund_status !== "none" ? (
               <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">
@@ -104,7 +123,9 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
             ) : null}
           </div>
 
-          <p className="mt-2 text-xs text-zinc-500">Use esta tela para acompanhar atualizações automáticas do pedido.</p>
+          <p className={`mt-3 rounded-xl border px-3 py-2 text-sm font-medium ${statusMessageClass[order.status]}`}>
+            {statusMessage[order.status]} Use esta tela para acompanhar atualizações automáticas do pedido.
+          </p>
           <PublicOrderStatusAlert orderId={order.id} publicToken={token} status={order.status} />
           <PublicOrderRealtimeSync
             orderId={order.id}
@@ -121,17 +142,30 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
             displayCode={order.display_code}
           />
 
-          <div className="mt-3 space-y-2 text-sm text-zinc-700">
-            <p>Total: {formatBRL(order.total_amount)}</p>
-            {order.note ? <p>Observações: {order.note}</p> : null}
-            {order.customer_name ? <p>Cliente: {order.customer_name}</p> : null}
+          <div className="mt-4 grid gap-2 text-sm text-zinc-700 sm:grid-cols-2">
+            <p className="rounded-xl border border-[#eadfd2] bg-[#fffaf2] px-3 py-2">
+              <span className="block text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Total</span>
+              <span className="font-semibold text-[#9f1239]">{formatBRL(order.total_amount)}</span>
+            </p>
+            {order.customer_name ? (
+              <p className="rounded-xl border border-[#eadfd2] bg-[#fffaf2] px-3 py-2">
+                <span className="block text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Cliente</span>
+                <span className="font-semibold text-zinc-900">{order.customer_name}</span>
+              </p>
+            ) : null}
+            {order.note ? (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 sm:col-span-2">
+                <span className="block text-[10px] font-semibold uppercase tracking-wide text-amber-800">Observações</span>
+                <span className="text-amber-900">{order.note}</span>
+              </p>
+            ) : null}
           </div>
 
-          <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50/90 p-3 text-sm text-zinc-700 sm:p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Linha do tempo</p>
+          <div className="mt-5 rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-3 text-sm text-zinc-700 sm:p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#9f1239]">Linha do tempo</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {timelineEvents.map((event) => (
-                <span key={event.label} className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs text-zinc-700">
+                <span key={event.label} className="rounded-lg border border-[#eadfd2] bg-white px-2.5 py-1 text-xs text-zinc-700">
                   <span className="font-semibold text-zinc-600">{event.label}:</span> {formatDateTime(event.value)}
                 </span>
               ))}
@@ -142,6 +176,6 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { PageHeader } from "@/components/layout/page-header";
+import { notFound } from "next/navigation";
+
 import { PublicReadyPanelClient } from "@/components/public/public-ready-panel-client";
 import { BRANDING } from "@/lib/branding";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -84,12 +84,13 @@ export default async function PublicReadyPanelPage({ params }: PageProps) {
   const recentCalled = historyResult.error ? [] : ((historyResult.data ?? []) as RecentCalledOrder[]);
 
   return (
-    <>
-      <PageHeader
-        title={`Painel de retirada — ${store.name}`}
-        description="Exibição em tempo real dos pedidos liberados para retirada."
-      />
-      <div className="bg-gradient-to-b from-zinc-950 via-zinc-900 to-black py-8 sm:py-10">
+    <div className="cx-dark-brand-surface min-h-screen py-5 sm:py-8">
+      <div className="mx-auto max-w-5xl px-4 pb-4 sm:px-6">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-100/80">CardExpress</p>
+        <h1 className="mt-2 text-xl font-semibold text-white sm:text-2xl">Painel de retirada</h1>
+        <p className="mt-1 text-sm text-zinc-400">Pedidos liberados para retirada em tempo real.</p>
+      </div>
+      <div className="pb-8">
         <PublicReadyPanelClient
           slug={slug}
           latestOrder={order}
@@ -99,6 +100,6 @@ export default async function PublicReadyPanelPage({ params }: PageProps) {
           tvModeHref={`/${slug}/painel/tv`}
         />
       </div>
-    </>
+    </div>
   );
 }

@@ -103,7 +103,7 @@ export function SignupForm() {
   return (
     <form
       action={formAction}
-      className="space-y-3.5 rounded-2xl border border-zinc-200 bg-white/95 p-5 shadow-[0_20px_40px_-32px_rgba(24,24,27,0.58)] sm:p-6"
+      className="cx-brand-panel space-y-3 p-4 sm:p-5"
       onSubmit={() => {
         lastSubmittedSecretsRef.current = {
           password,
@@ -182,7 +182,7 @@ export function SignupForm() {
         </p>
         {hasPasswordInput ? (
           <div
-            className="mt-2 space-y-2.5 rounded-lg border border-zinc-200 bg-zinc-50/80 p-3"
+            className="mt-2 space-y-2 rounded-lg border border-[#eadfd2] bg-[#fffaf2]/80 p-2.5"
             aria-live="polite"
             data-testid="signup-password-strength"
           >

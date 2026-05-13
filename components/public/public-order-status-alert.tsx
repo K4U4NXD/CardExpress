@@ -1,6 +1,7 @@
 "use client";
 
 import { useToast } from "@/components/shared/toast-provider";
+import type { FlashMessageTone } from "@/components/shared/flash-message-center";
 import {
   ensurePublicAudioInteractionTracking,
   playPublicOrderStatusSound,
@@ -48,6 +49,22 @@ function resolveStatusMessage(status: OrderStatus) {
   }
 
   return "Seu pedido foi cancelado.";
+}
+
+function resolveStatusTone(status: OrderStatus): FlashMessageTone {
+  if (status === "pronto_para_retirada" || status === "finalizado") {
+    return "success";
+  }
+
+  if (status === "recusado" || status === "cancelado") {
+    return "error";
+  }
+
+  if (status === "aguardando_aceite") {
+    return "warning";
+  }
+
+  return "info";
 }
 
 export function PublicOrderStatusAlert({ orderId, publicToken, status }: PublicOrderStatusAlertProps) {
@@ -126,7 +143,7 @@ export function PublicOrderStatusAlert({ orderId, publicToken, status }: PublicO
 
     enqueueToast({
       id: `public-order-status-${orderId}-${status}-${Date.now().toString(36)}`,
-      tone: "info",
+      tone: resolveStatusTone(status),
       title: "Seu pedido foi atualizado",
       text: resolveStatusMessage(status),
       durationMs: 7000,
@@ -149,7 +166,7 @@ export function PublicOrderStatusAlert({ orderId, publicToken, status }: PublicO
   }
 
   return (
-    <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+    <div className="mt-2 rounded-lg border border-amber-200 bg-[#fff7e6] px-3 py-2 text-xs text-zinc-800">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p>Som de atualizações indisponível até uma interação nesta página.</p>
         <button
@@ -171,7 +188,7 @@ export function PublicOrderStatusAlert({ orderId, publicToken, status }: PublicO
               }
             })();
           }}
-          className="rounded-md border border-sky-300 bg-white px-2.5 py-1 font-semibold text-sky-800 transition hover:bg-sky-100"
+          className="rounded-md border border-[#eadfd2] bg-white px-2.5 py-1 font-semibold text-zinc-700 transition hover:border-amber-300 hover:bg-[#fff7ed]"
         >
           Ativar som das atualizações
         </button>

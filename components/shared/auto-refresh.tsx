@@ -86,7 +86,9 @@ export function AutoRefresh({
 
   return (
     <p className={mergedClassName} aria-live="polite">
-      {statusText} - Ultima atualizacao: {formattedLastUpdated}
+      <span className="hidden sm:inline">{statusText} - Ultima atualizacao: </span>
+      <span className="sm:hidden">Atualizado: </span>
+      {formattedLastUpdated}
     </p>
   );
 }

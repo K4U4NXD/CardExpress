@@ -51,6 +51,7 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
   const sectionIds = useMemo(() => sections.map((section) => section.id), [sections]);
   const [activeId, setActiveId] = useState(sectionIds[0] ?? "");
   const [showTopAction, setShowTopAction] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const ratioBySectionRef = useRef<Record<string, number>>({});
   const mobileLinkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
 
@@ -139,6 +140,7 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
   }, [activeId]);
 
   function handleMobileSectionClick(sectionId: string) {
+    setMobileMenuOpen(false);
     window.setTimeout(() => {
       mobileLinkRefs.current[sectionId]?.scrollIntoView({
         behavior: "smooth",
@@ -160,8 +162,8 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  const activeClass = "border-zinc-900 bg-zinc-900 text-white";
-  const idleClass = "border-zinc-200/80 bg-white/75 text-zinc-700 hover:border-zinc-300 hover:bg-white";
+  const activeClass = "border-[#9f1239] bg-[#9f1239] text-white shadow-sm shadow-rose-950/15";
+  const idleClass = "border-[#eadfd2] bg-white/82 text-zinc-700 hover:border-amber-300 hover:bg-[#fffaf2]";
   const accountHref = isAuthenticated ? "/dashboard" : "/login";
   const accountLabel = isAuthenticated ? "Painel" : "Entrar";
 
@@ -169,11 +171,11 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
     <>
       <div className="fixed inset-x-0 top-0 z-50 hidden md:block">
         <div className="mx-auto max-w-7xl px-4 pt-2 sm:px-6">
-          <div className="rounded-xl border border-zinc-200/75 bg-white/88 p-1 shadow-md shadow-zinc-900/10 backdrop-blur-xl">
+          <div className="rounded-xl border border-[#eadfd2]/90 bg-white/90 p-1 shadow-md shadow-zinc-900/10 backdrop-blur-xl">
             <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
               <a
                 href="#inicio"
-                className="inline-flex items-center rounded-lg px-2 py-1 transition duration-300 hover:bg-zinc-100"
+                className="inline-flex items-center rounded-lg px-2 py-1 transition duration-300 hover:bg-[#fff7ed]"
               >
                 <Image
                   src={BRANDING.logoPath}
@@ -210,8 +212,8 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
                   onClick={handleBackToTop}
                   className={`inline-flex min-h-8 items-center rounded-lg border px-2 py-1 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
                     showTopAction
-                      ? "border-zinc-300 bg-zinc-900 text-white hover:bg-zinc-800"
-                      : "border-zinc-200 bg-white text-zinc-500 hover:text-zinc-700"
+                      ? "border-[#9f1239] bg-[#9f1239] text-white hover:bg-[#70102a]"
+                      : "border-[#eadfd2] bg-white text-zinc-500 hover:text-zinc-700"
                   }`}
                   aria-label="Voltar ao topo"
                 >
@@ -219,14 +221,14 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
                 </button>
                 <Link
                   href={accountHref}
-                  className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 transition duration-300 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
+                  className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg border border-[#eadfd2] bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 transition duration-300 hover:bg-[#fff7ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
                 >
                   {accountLabel}
                 </Link>
                 {!isAuthenticated ? (
                   <Link
                     href="/cadastro"
-                    className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg bg-zinc-900 px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition duration-300 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60"
+                    className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg bg-[#9f1239] px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition duration-300 hover:bg-[#70102a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
                   >
                     Criar conta
                   </Link>
@@ -238,11 +240,11 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
       </div>
 
       <div className="fixed inset-x-0 top-0 z-50 px-2 pt-1.5 md:hidden">
-        <div className="rounded-xl border border-zinc-200/80 bg-white/92 p-1.5 shadow-md shadow-zinc-900/10 backdrop-blur-xl">
-          <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
+        <div className="rounded-xl border border-[#eadfd2]/90 bg-white/94 p-1.5 shadow-md shadow-zinc-900/10 backdrop-blur-xl">
+          <div className={`${mobileMenuOpen ? "mb-1.5" : ""} flex items-center justify-between gap-2 px-1`}>
             <a
               href="#inicio"
-              className="inline-flex min-h-8 items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-bold tracking-tight text-zinc-900 transition hover:bg-zinc-100"
+              className="inline-flex min-h-8 items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-bold tracking-tight text-[#9f1239] transition hover:bg-[#fff7ed]"
             >
               <Image
                 src={BRANDING.iconPath}
@@ -257,24 +259,25 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
             <div className="flex items-center gap-1.5">
               <Link
                 href={accountHref}
-                className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg border border-zinc-200 bg-white px-2 py-1 text-[11px] font-semibold text-zinc-700 transition duration-300 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
+                className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg border border-[#eadfd2] bg-white px-2 py-1 text-[11px] font-semibold text-zinc-700 transition duration-300 hover:bg-[#fff7ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
               >
-                {accountLabel}
+                Painel
               </Link>
-              {!isAuthenticated ? (
-                <Link
-                  href="/cadastro"
-                  className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg bg-zinc-900 px-2 py-1 text-[11px] font-semibold text-white shadow-sm transition duration-300 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60"
-                >
-                  Criar conta
-                </Link>
-              ) : null}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((open) => !open)}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="landing-mobile-menu"
+                className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg bg-[#9f1239] px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm transition duration-300 hover:bg-[#70102a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
+              >
+                Menu
+              </button>
             </div>
           </div>
 
-          <div className="relative">
+          <div id="landing-mobile-menu" className={mobileMenuOpen ? "block" : "hidden"}>
             <div
-              className="flex items-center gap-2 overflow-x-auto pr-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="grid grid-cols-2 gap-1.5 rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-1.5"
               role="navigation"
               aria-label="Navegação da landing"
             >
@@ -290,7 +293,7 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
                     }}
                     onClick={() => handleMobileSectionClick(section.id)}
                     aria-current={isActive ? "page" : undefined}
-                    className={`inline-flex min-h-8 shrink-0 items-center whitespace-nowrap rounded-lg border px-2.5 py-1 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
+                    className={`inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
                       isActive ? activeClass : idleClass
                     }`}
                   >
@@ -299,20 +302,15 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
                 );
               })}
 
-              <button
-                type="button"
-                onClick={handleBackToTop}
-                className={`hidden min-h-8 shrink-0 items-center whitespace-nowrap rounded-lg border px-2.5 py-1 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
-                  showTopAction
-                    ? "border-zinc-300 bg-zinc-900 text-white hover:bg-zinc-800"
-                    : "border-zinc-200 bg-white text-zinc-500 hover:text-zinc-700"
-                }`}
-                aria-label="Voltar ao topo"
-              >
-                Topo
-              </button>
+              {!isAuthenticated ? (
+                <Link
+                  href="/cadastro"
+                  className="inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-900 transition duration-300 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
+                >
+                  Criar conta
+                </Link>
+              ) : null}
             </div>
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white via-white/90 to-transparent" />
           </div>
         </div>
       </div>

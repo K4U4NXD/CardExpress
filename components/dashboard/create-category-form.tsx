@@ -25,8 +25,17 @@ export function CreateCategoryForm({ onCancel }: CreateCategoryFormProps) {
     setName(value);
   };
 
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    if (name.trim()) {
+      return;
+    }
+
+    event.preventDefault();
+    setLocalError("Informe o nome da categoria.");
+  };
+
   return (
-    <form action={formAction} data-testid="create-category-form" className="space-y-3">
+    <form action={formAction} noValidate onSubmit={handleSubmit} data-testid="create-category-form" className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="min-w-0 flex-1">
           <label htmlFor="new-category-name" className="block text-sm font-medium text-zinc-800">
@@ -41,7 +50,8 @@ export function CreateCategoryForm({ onCancel }: CreateCategoryFormProps) {
             value={name}
             onChange={(event) => handleChange(event.target.value)}
             aria-invalid={Boolean(localError)}
-            className="cx-input mt-1"
+            aria-describedby={localError ? "new-category-name-error" : undefined}
+            className={`cx-input mt-1 ${localError ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
           />
         </div>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto">
@@ -65,7 +75,7 @@ export function CreateCategoryForm({ onCancel }: CreateCategoryFormProps) {
         </div>
       </div>
       {localError ? (
-        <p className="text-sm text-red-700" role="alert">
+        <p id="new-category-name-error" className="text-sm text-red-700" role="alert">
           {localError}
         </p>
       ) : null}

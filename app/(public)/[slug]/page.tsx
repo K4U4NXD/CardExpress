@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { PublicFlowRecoveryBanner } from "@/components/public/public-flow-recovery-banner";
 import { PublicMenuRealtimeSync } from "@/components/public/public-menu-realtime-sync";
 import { PublicStoreBrandBadge } from "@/components/public/public-store-brand-badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { BRANDING } from "@/lib/branding";
 import { PublicStoreMenuClient } from "@/components/public/public-store-menu-client";
 import { getPublicStoreOperationalState } from "@/lib/public/store-operational";
@@ -91,8 +92,8 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
         <PublicFlowRecoveryBanner slug={store.slug} />
 
         <section className="cx-brand-panel p-4 sm:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
+          <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 max-w-full space-y-2">
               <p className="text-sm font-medium text-[#9f1239]">Estabelecimento</p>
 
               <PublicStoreBrandBadge
@@ -107,25 +108,20 @@ export default async function PublicMenuPage({ params }: PublicMenuPageProps) {
                   Telefone: {store.phone}
                 </a>
               ) : null}
+              {store.public_message ? (
+                <p className="max-w-2xl break-words text-sm leading-6 text-zinc-700 [overflow-wrap:anywhere]">{store.public_message}</p>
+              ) : null}
             </div>
 
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                operationalState.canPlaceOrders ? "border border-amber-200 bg-amber-50 text-amber-900" : "border border-rose-200 bg-rose-50 text-rose-800"
-              }`}
-            >
+            <StatusBadge tone={operationalState.canPlaceOrders ? "success" : "danger"}>
               {operationalState.summaryLabel}
-            </span>
+            </StatusBadge>
           </div>
 
           {operationalState.unavailableMessage ? (
             <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800" role="status">
               {operationalState.unavailableMessage}
             </p>
-          ) : null}
-
-          {store.public_message ? (
-            <p className="mt-4 rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-3 text-sm text-zinc-700">{store.public_message}</p>
           ) : null}
 
           <PublicMenuRealtimeSync slug={store.slug} className="mt-4" />

@@ -56,6 +56,8 @@ type SimulateCheckoutErrorFeedback = {
 type StockIssueItemMessages = Record<string, string>;
 
 const OPERATIONAL_RECHECK_INTERVAL_MS = 12000;
+const FREE_ORDER_ERROR_MESSAGE =
+  "A loja não aceita pedidos gratuitos. Revise os itens do carrinho ou escolha produtos com valor válido.";
 
 /**
  * Cliente do checkout público.
@@ -87,6 +89,7 @@ export function PublicCheckoutClient({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [stockIssueProductIds, setStockIssueProductIds] = useState<string[]>([]);
   const [stockIssueItemMessages, setStockIssueItemMessages] = useState<StockIssueItemMessages>({});
+  const [draftQuantities, setDraftQuantities] = useState<Record<string, string>>({});
   const [simulationErrorMessage, setSimulationErrorMessage] = useState<string | null>(null);
   const [cancelSuccessMessage, setCancelSuccessMessage] = useState<string | null>(null);
   const [simulationBlockedByOperationalState, setSimulationBlockedByOperationalState] = useState(false);
@@ -309,6 +312,7 @@ export function PublicCheckoutClient({
   const canSubmit =
     acceptsOrders &&
     hasPurchasableItemsInCart &&
+    localTotalAmount > 0 &&
     !hasBlockingCartIssues &&
     customerNameTrimmed.length > 0 &&
     hasPhoneInput &&
@@ -318,6 +322,8 @@ export function PublicCheckoutClient({
     ? unavailableMessage
     : totalItems <= 0
       ? "Adicione itens no cardápio para continuar."
+      : localTotalAmount <= 0
+        ? FREE_ORDER_ERROR_MESSAGE
       : !hasPurchasableItemsInCart
         ? "Seu carrinho tem apenas itens indisponíveis para compra agora."
       : hasBlockingCartIssues
@@ -393,6 +399,12 @@ export function PublicCheckoutClient({
         return;
       }
 
+      setDraftQuantities((current) => {
+        const next = { ...current };
+        delete next[productId];
+        return next;
+      });
+
       updateCheckoutCart((current) =>
         current.map((item) =>
           item.product_id === productId
@@ -409,6 +421,12 @@ export function PublicCheckoutClient({
 
   const decreaseItemQuantity = useCallback(
     (productId: string) => {
+      setDraftQuantities((current) => {
+        const next = { ...current };
+        delete next[productId];
+        return next;
+      });
+
       updateCheckoutCart((current) =>
         current.flatMap((item) => {
           if (item.product_id !== productId) {
@@ -431,6 +449,101 @@ export function PublicCheckoutClient({
     [updateCheckoutCart]
   );
 
+  const setCheckoutItemQuantity = useCallback(
+    (productId: string, rawQuantity: string) => {
+      const currentQuantity = cartItems.find((item) => item.product_id === productId)?.quantity ?? 0;
+      setDraftQuantities((current) => ({ ...current, [productId]: rawQuantity }));
+
+      if (rawQuantity.trim() === "") {
+        return;
+      }
+
+      const parsed = Number(rawQuantity);
+      if (!Number.isFinite(parsed)) {
+        return;
+      }
+
+      const nextQuantity = Math.floor(parsed);
+      if (nextQuantity > currentQuantity && !canIncreaseCartItem(productId)) {
+        return;
+      }
+
+      updateCheckoutCart((current) =>
+        current.flatMap((item) => {
+          if (item.product_id !== productId) {
+            return [item];
+          }
+
+          if (nextQuantity <= 0) {
+            return [];
+          }
+
+          return [{ ...item, quantity: nextQuantity }];
+        })
+      );
+    },
+    [canIncreaseCartItem, cartItems, updateCheckoutCart]
+  );
+
+  const normalizeCheckoutItemQuantityInput = useCallback(
+    (productId: string) => {
+      const rawQuantity = draftQuantities[productId];
+      const realQuantity = cartItems.find((item) => item.product_id === productId)?.quantity ?? 0;
+
+      if (rawQuantity !== undefined) {
+        const parsed = Number(rawQuantity);
+        if (!Number.isFinite(parsed)) {
+          setDraftQuantities((current) => {
+            const next = { ...current };
+            if (realQuantity > 0) {
+              next[productId] = String(realQuantity);
+            } else {
+              delete next[productId];
+            }
+            return next;
+          });
+          return;
+        }
+
+        if (Math.floor(parsed) <= 0) {
+          updateCheckoutCart((current) => current.filter((item) => item.product_id !== productId));
+          setDraftQuantities((current) => {
+            const next = { ...current };
+            delete next[productId];
+            return next;
+          });
+          return;
+        }
+
+        const normalizedValue = Math.floor(parsed);
+        if (normalizedValue > realQuantity && !canIncreaseCartItem(productId)) {
+          setDraftQuantities((current) => {
+            const next = { ...current };
+            if (realQuantity > 0) {
+              next[productId] = String(realQuantity);
+            } else {
+              delete next[productId];
+            }
+            return next;
+          });
+          return;
+        }
+
+        const normalizedQuantity = String(normalizedValue);
+        setCheckoutItemQuantity(productId, normalizedQuantity);
+        setDraftQuantities((current) => ({ ...current, [productId]: normalizedQuantity }));
+        return;
+      }
+
+      setDraftQuantities((current) => {
+        const next = { ...current };
+        delete next[productId];
+        return next;
+      });
+    },
+    [canIncreaseCartItem, cartItems, draftQuantities, setCheckoutItemQuantity, updateCheckoutCart]
+  );
+
   /**
    * Cria a sessão de checkout após revalidar loja, cardápio e estoque no momento do envio.
    */
@@ -447,6 +560,11 @@ export function PublicCheckoutClient({
 
     if (totalItems <= 0) {
       setErrorMessage("Seu carrinho está vazio.");
+      return;
+    }
+
+    if (localTotalAmount <= 0) {
+      setErrorMessage(FREE_ORDER_ERROR_MESSAGE);
       return;
     }
 
@@ -1004,7 +1122,7 @@ export function PublicCheckoutClient({
                     {item.quantity} x {formatBRL(item.unit_price)}
                   </p>
 
-                  <div className="mt-2 inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-2 py-1.5">
+                  <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-1.5 py-1">
                     <button
                       type="button"
                       onClick={() => decreaseItemQuantity(item.product_id)}
@@ -1016,7 +1134,19 @@ export function PublicCheckoutClient({
                       -
                     </button>
 
-                    <span className="min-w-6 text-center text-sm font-semibold text-zinc-800">{item.quantity}</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      step={1}
+                      value={draftQuantities[item.product_id] ?? String(item.quantity)}
+                      onChange={(event) => setCheckoutItemQuantity(item.product_id, event.target.value)}
+                      onBlur={() => normalizeCheckoutItemQuantityInput(item.product_id)}
+                      disabled={isSubmitting}
+                      data-testid={`checkout-item-quantity-input-${item.product_id}`}
+                      aria-label={`Quantidade de ${item.name}`}
+                      className="h-9 w-12 rounded-md border border-zinc-300 bg-white px-1.5 text-center text-sm font-semibold text-zinc-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
+                    />
 
                     <button
                       type="button"
@@ -1261,6 +1391,14 @@ function mapCreateCheckoutSessionError(
   const localDiagnosis = diagnoseStockIssue(cartItems, currentMenuRows);
   const inferredProblemProductIds = inferProblemProductIdsFromDiagnosis(localDiagnosis, cartItems);
   const inferredProblemItemMessages = buildProblemItemMessagesFromDiagnosis(localDiagnosis, cartItems);
+
+  if (normalized.includes("carrinho invalido")) {
+    return {
+      message: FREE_ORDER_ERROR_MESSAGE,
+      shouldRefresh: true,
+      problemProductIds: [],
+    };
+  }
 
   if (normalized.includes("nao esta aceitando pedidos")) {
     return {

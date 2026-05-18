@@ -14,6 +14,8 @@ const EMPTY_VALUES: NonNullable<AuthFormState["values"]> = {
   phone: "",
 };
 
+type SignupClientErrors = Partial<Record<"full_name" | "email" | "password" | "password_confirmation" | "store_name" | "store_slug" | "phone", string>>;
+
 function composeDescribedBy(...ids: Array<string | undefined>): string | undefined {
   const validIds = ids.filter(Boolean) as string[];
   return validIds.length > 0 ? validIds.join(" ") : undefined;
@@ -48,6 +50,7 @@ export function SignupForm() {
   const [values, setValues] = useState(EMPTY_VALUES);
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [clientErrors, setClientErrors] = useState<SignupClientErrors>({});
   const lastSubmittedSecretsRef = useRef({ password: "", passwordConfirmation: "" });
 
   useEffect(() => {
@@ -97,19 +100,60 @@ export function SignupForm() {
   const hasPasswordInput = password.length > 0;
 
   const fieldErrors = state?.fieldErrors ?? {};
+  const mergedErrors = {
+    ...clientErrors,
+    ...fieldErrors,
+  };
   const hasFieldErrors = Object.keys(fieldErrors).length > 0;
   const showGlobalError = Boolean(state?.error) && !hasFieldErrors;
+
+  function clearClientError(field: keyof SignupClientErrors) {
+    setClientErrors((current) => ({ ...current, [field]: undefined }));
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    lastSubmittedSecretsRef.current = {
+      password,
+      passwordConfirmation,
+    };
+
+    const nextErrors: SignupClientErrors = {};
+
+    if (!values.full_name.trim()) {
+      nextErrors.full_name = "Informe seu nome.";
+    }
+    if (!values.email.trim()) {
+      nextErrors.email = "Informe seu e-mail.";
+    }
+    if (!password) {
+      nextErrors.password = "Informe sua senha.";
+    }
+    if (!passwordConfirmation) {
+      nextErrors.password_confirmation = "Confirme sua senha.";
+    }
+    if (!values.store_name.trim()) {
+      nextErrors.store_name = "Informe o nome da loja.";
+    }
+    if (!values.store_slug.trim()) {
+      nextErrors.store_slug = "Informe o slug da loja.";
+    }
+    if (!values.phone.trim()) {
+      nextErrors.phone = "Informe o telefone da loja.";
+    }
+
+    setClientErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      event.preventDefault();
+    }
+  }
 
   return (
     <form
       action={formAction}
+      noValidate
       className="cx-brand-panel space-y-3 p-4 sm:p-5"
-      onSubmit={() => {
-        lastSubmittedSecretsRef.current = {
-          password,
-          passwordConfirmation,
-        };
-      }}
+      onSubmit={handleSubmit}
     >
       <div>
         <label htmlFor="full_name" className="block text-sm font-medium text-zinc-800">
@@ -122,14 +166,17 @@ export function SignupForm() {
           autoComplete="name"
           required
           value={values.full_name}
-          onChange={(event) => setValues((current) => ({ ...current, full_name: event.target.value }))}
-          aria-invalid={Boolean(fieldErrors.full_name)}
-          aria-describedby={fieldErrors.full_name ? "full_name-error" : undefined}
-          className="cx-input mt-1"
+          onChange={(event) => {
+            clearClientError("full_name");
+            setValues((current) => ({ ...current, full_name: event.target.value }));
+          }}
+          aria-invalid={Boolean(mergedErrors.full_name)}
+          aria-describedby={mergedErrors.full_name ? "full_name-error" : undefined}
+          className={`cx-input mt-1 ${mergedErrors.full_name ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
         />
-        {fieldErrors.full_name ? (
+        {mergedErrors.full_name ? (
           <p id="full_name-error" className="mt-1 text-xs text-red-700">
-            {fieldErrors.full_name}
+            {mergedErrors.full_name}
           </p>
         ) : null}
       </div>
@@ -147,14 +194,17 @@ export function SignupForm() {
           spellCheck={false}
           required
           value={values.email}
-          onChange={(event) => setValues((current) => ({ ...current, email: event.target.value }))}
-          aria-invalid={Boolean(fieldErrors.email)}
-          aria-describedby={fieldErrors.email ? "email-error" : undefined}
-          className="cx-input mt-1"
+          onChange={(event) => {
+            clearClientError("email");
+            setValues((current) => ({ ...current, email: event.target.value }));
+          }}
+          aria-invalid={Boolean(mergedErrors.email)}
+          aria-describedby={mergedErrors.email ? "email-error" : undefined}
+          className={`cx-input mt-1 ${mergedErrors.email ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
         />
-        {fieldErrors.email ? (
+        {mergedErrors.email ? (
           <p id="email-error" className="mt-1 text-xs text-red-700">
-            {fieldErrors.email}
+            {mergedErrors.email}
           </p>
         ) : null}
       </div>
@@ -169,12 +219,15 @@ export function SignupForm() {
           required
           minLength={8}
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          aria-invalid={Boolean(fieldErrors.password)}
-          aria-describedby={composeDescribedBy("password-help", fieldErrors.password ? "password-error" : undefined)}
+          onChange={(event) => {
+            clearClientError("password");
+            setPassword(event.target.value);
+          }}
+          aria-invalid={Boolean(mergedErrors.password)}
+          aria-describedby={composeDescribedBy("password-help", mergedErrors.password ? "password-error" : undefined)}
           data-testid="signup-password-input"
           toggleTestId="signup-password-toggle"
-          className="cx-input"
+          className={`cx-input ${mergedErrors.password ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
           containerClassName="mt-1"
         />
         <p id="password-help" className="mt-1 text-xs text-zinc-500">
@@ -212,9 +265,9 @@ export function SignupForm() {
             </ul>
           </div>
         ) : null}
-        {fieldErrors.password ? (
+        {mergedErrors.password ? (
           <p id="password-error" className="mt-1 text-xs text-red-700">
-            {fieldErrors.password}
+            {mergedErrors.password}
           </p>
         ) : null}
       </div>
@@ -228,17 +281,20 @@ export function SignupForm() {
           autoComplete="new-password"
           required
           value={passwordConfirmation}
-          onChange={(event) => setPasswordConfirmation(event.target.value)}
-          aria-invalid={Boolean(fieldErrors.password_confirmation)}
-          aria-describedby={fieldErrors.password_confirmation ? "password_confirmation-error" : undefined}
+          onChange={(event) => {
+            clearClientError("password_confirmation");
+            setPasswordConfirmation(event.target.value);
+          }}
+          aria-invalid={Boolean(mergedErrors.password_confirmation)}
+          aria-describedby={mergedErrors.password_confirmation ? "password_confirmation-error" : undefined}
           data-testid="signup-password-confirm-input"
           toggleTestId="signup-password-confirm-toggle"
-          className="cx-input"
+          className={`cx-input ${mergedErrors.password_confirmation ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
           containerClassName="mt-1"
         />
-        {fieldErrors.password_confirmation ? (
+        {mergedErrors.password_confirmation ? (
           <p id="password_confirmation-error" className="mt-1 text-xs text-red-700">
-            {fieldErrors.password_confirmation}
+            {mergedErrors.password_confirmation}
           </p>
         ) : null}
       </div>
@@ -252,14 +308,17 @@ export function SignupForm() {
           type="text"
           required
           value={values.store_name}
-          onChange={(event) => setValues((current) => ({ ...current, store_name: event.target.value }))}
-          aria-invalid={Boolean(fieldErrors.store_name)}
-          aria-describedby={fieldErrors.store_name ? "store_name-error" : undefined}
-          className="cx-input mt-1"
+          onChange={(event) => {
+            clearClientError("store_name");
+            setValues((current) => ({ ...current, store_name: event.target.value }));
+          }}
+          aria-invalid={Boolean(mergedErrors.store_name)}
+          aria-describedby={mergedErrors.store_name ? "store_name-error" : undefined}
+          className={`cx-input mt-1 ${mergedErrors.store_name ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
         />
-        {fieldErrors.store_name ? (
+        {mergedErrors.store_name ? (
           <p id="store_name-error" className="mt-1 text-xs text-red-700">
-            {fieldErrors.store_name}
+            {mergedErrors.store_name}
           </p>
         ) : null}
       </div>
@@ -277,14 +336,17 @@ export function SignupForm() {
           autoCorrect="off"
           spellCheck={false}
           value={values.store_slug}
-          onChange={(event) => setValues((current) => ({ ...current, store_slug: event.target.value }))}
-          aria-invalid={Boolean(fieldErrors.store_slug)}
-          aria-describedby={composeDescribedBy("store_slug-help", fieldErrors.store_slug ? "store_slug-error" : undefined)}
-          className="cx-input mt-1"
+          onChange={(event) => {
+            clearClientError("store_slug");
+            setValues((current) => ({ ...current, store_slug: event.target.value }));
+          }}
+          aria-invalid={Boolean(mergedErrors.store_slug)}
+          aria-describedby={composeDescribedBy("store_slug-help", mergedErrors.store_slug ? "store_slug-error" : undefined)}
+          className={`cx-input mt-1 ${mergedErrors.store_slug ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
         />
-        {fieldErrors.store_slug ? (
+        {mergedErrors.store_slug ? (
           <p id="store_slug-error" className="mt-1 text-xs text-red-700">
-            {fieldErrors.store_slug}
+            {mergedErrors.store_slug}
           </p>
         ) : null}
         <p id="store_slug-help" className="mt-1 text-xs text-zinc-500">
@@ -303,14 +365,17 @@ export function SignupForm() {
           inputMode="tel"
           required
           value={values.phone}
-          onChange={(event) => setValues((current) => ({ ...current, phone: event.target.value }))}
-          aria-invalid={Boolean(fieldErrors.phone)}
-          aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
-          className="cx-input mt-1"
+          onChange={(event) => {
+            clearClientError("phone");
+            setValues((current) => ({ ...current, phone: event.target.value }));
+          }}
+          aria-invalid={Boolean(mergedErrors.phone)}
+          aria-describedby={mergedErrors.phone ? "phone-error" : undefined}
+          className={`cx-input mt-1 ${mergedErrors.phone ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
         />
-        {fieldErrors.phone ? (
+        {mergedErrors.phone ? (
           <p id="phone-error" className="mt-1 text-xs text-red-700">
-            {fieldErrors.phone}
+            {mergedErrors.phone}
           </p>
         ) : null}
       </div>

@@ -3,7 +3,7 @@
 import { loginAction, type AuthFormState } from "@/app/actions/auth";
 import { PasswordInput } from "@/components/auth/password-input";
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 type LoginFormProps = {
   nextPath?: string;
@@ -19,12 +19,36 @@ const initial: AuthFormState = {};
  */
 export function LoginForm({ nextPath, initialError, initialSuccess }: LoginFormProps) {
   const [state, formAction, pending] = useActionState(loginAction, initial);
+  const [clientErrors, setClientErrors] = useState<{ email?: string; password?: string }>({});
   const displayError = state?.error ?? initialError;
   const displaySuccess = displayError ? undefined : state?.success ?? initialSuccess;
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+    const nextErrors: typeof clientErrors = {};
+
+    if (!email) {
+      nextErrors.email = "Informe seu e-mail.";
+    }
+
+    if (!password) {
+      nextErrors.password = "Informe sua senha.";
+    }
+
+    setClientErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      event.preventDefault();
+    }
+  }
 
   return (
     <form
       action={formAction}
+      noValidate
+      onSubmit={handleSubmit}
       className="cx-brand-panel space-y-4 p-4 sm:p-6"
     >
       {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
@@ -38,8 +62,16 @@ export function LoginForm({ nextPath, initialError, initialSuccess }: LoginFormP
           type="email"
           autoComplete="email"
           required
-          className="cx-input mt-1"
+          aria-invalid={Boolean(clientErrors.email)}
+          aria-describedby={clientErrors.email ? "login-email-error" : undefined}
+          onChange={() => setClientErrors((current) => ({ ...current, email: undefined }))}
+          className={`cx-input mt-1 ${clientErrors.email ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
         />
+        {clientErrors.email ? (
+          <p id="login-email-error" className="mt-1 text-xs text-red-700">
+            {clientErrors.email}
+          </p>
+        ) : null}
       </div>
       <div>
         <div className="flex items-center justify-between gap-3">
@@ -58,11 +90,19 @@ export function LoginForm({ nextPath, initialError, initialSuccess }: LoginFormP
           name="password"
           autoComplete="current-password"
           required
+          aria-invalid={Boolean(clientErrors.password)}
+          aria-describedby={clientErrors.password ? "login-password-error" : undefined}
+          onChange={() => setClientErrors((current) => ({ ...current, password: undefined }))}
           data-testid="login-password-input"
           toggleTestId="login-password-toggle"
-          className="cx-input"
+          className={`cx-input ${clientErrors.password ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
           containerClassName="mt-1"
         />
+        {clientErrors.password ? (
+          <p id="login-password-error" className="mt-1 text-xs text-red-700">
+            {clientErrors.password}
+          </p>
+        ) : null}
       </div>
       {displayError ? (
         <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">

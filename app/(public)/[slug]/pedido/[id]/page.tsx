@@ -111,7 +111,7 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="cx-brand-panel p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wide text-[#9f1239]">Acompanhamento</p>
               <p className="mt-1 text-4xl font-black tracking-tight text-[#171717] sm:text-5xl">{formatOrderCode(order)}</p>
             </div>
@@ -150,13 +150,13 @@ export default async function OrderStatusPage({ params, searchParams }: OrderSta
             {order.customer_name ? (
               <p className="rounded-xl border border-[#eadfd2] bg-[#fffaf2] px-3 py-2">
                 <span className="block text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Cliente</span>
-                <span className="font-semibold text-zinc-900">{order.customer_name}</span>
+                <span className="break-words font-semibold text-zinc-900 [overflow-wrap:anywhere]">{order.customer_name}</span>
               </p>
             ) : null}
             {order.note ? (
               <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 sm:col-span-2">
                 <span className="block text-[10px] font-semibold uppercase tracking-wide text-amber-800">Observações</span>
-                <span className="text-amber-900">{order.note}</span>
+                <span className="break-words text-amber-900 [overflow-wrap:anywhere]">{order.note}</span>
               </p>
             ) : null}
           </div>

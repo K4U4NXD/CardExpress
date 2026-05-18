@@ -8,6 +8,7 @@ import {
 } from "@/components/dashboard/dashboard-indicators-panel";
 import { DashboardHomeRealtimeSync } from "@/components/dashboard/dashboard-home-realtime-sync";
 import { PageHeader } from "@/components/layout/page-header";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { extractPendingSignupData } from "@/lib/auth/onboarding";
 import { formatDateTime, formatOrderCode, ORDER_STATUS_BADGE, ORDER_STATUS_LABELS } from "@/lib/orders/presenter";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -178,26 +179,26 @@ function resolveOperationStatus({
   effectiveAcceptsOrders: boolean;
 }) {
   if (!readinessOk) {
-    return { text: "Com pendências", badge: "bg-amber-100 text-amber-900" };
+    return { text: "Com pendências", tone: "warning" as const };
   }
 
   if (!acceptsOrdersManual) {
-    return { text: "Loja offline", badge: "bg-zinc-200 text-zinc-700" };
+    return { text: "Loja offline", tone: "danger" as const };
   }
 
   if (autoScheduleEnabled && !withinServiceHours) {
-    return { text: "Fora do horário", badge: "bg-amber-100 text-amber-900" };
+    return { text: "Fora do horário", tone: "warning" as const };
   }
 
   if (autoScheduleEnabled && effectiveAcceptsOrders) {
-    return { text: "Horário automático", badge: "bg-emerald-100 text-emerald-900" };
+    return { text: "Horário automático", tone: "success" as const };
   }
 
   if (effectiveAcceptsOrders) {
-    return { text: "Aberta manualmente", badge: "bg-emerald-100 text-emerald-900" };
+    return { text: "Aberta manualmente", tone: "success" as const };
   }
 
-  return { text: "Loja offline", badge: "bg-zinc-200 text-zinc-700" };
+  return { text: "Loja offline", tone: "danger" as const };
 }
 
 export default async function DashboardHomePage({ searchParams }: DashboardHomePageProps) {
@@ -521,9 +522,9 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                       <p className="mt-1 text-xs text-zinc-500">Horário automático: {openingTime} às {closingTime}</p>
                     ) : null}
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${operationStatus.badge}`}>
+                  <StatusBadge tone={operationStatus.tone}>
                     {operationStatus.text}
-                  </span>
+                  </StatusBadge>
                 </div>
               </section>
 
@@ -549,9 +550,9 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9f1239]">Operação em tempo real</p>
                         <h2 className="mt-1 text-base font-semibold text-zinc-900">Visão operacional</h2>
                       </div>
-                      <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 sm:inline-flex">
+                      <StatusBadge tone="warning" className="hidden sm:inline-flex">
                         Ritmo da loja
-                      </span>
+                      </StatusBadge>
                     </div>
 
                     <div className="mt-3 space-y-3">

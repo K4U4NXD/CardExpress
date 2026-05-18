@@ -47,7 +47,7 @@ export function PageHeader({
   return (
     <header className={headerClassName}>
       <div className={`mx-auto ${maxWidthClassName} px-4 sm:px-6 ${compact ? "py-2.5 sm:py-3.5" : "py-4 sm:py-6"}`}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             {backHref ? (
               <Link
@@ -58,9 +58,9 @@ export function PageHeader({
                 <span>{backLabel}</span>
               </Link>
             ) : null}
-            <h1 className={`${compact ? "text-base sm:text-lg" : "text-lg sm:text-xl"} font-semibold tracking-tight text-zinc-900`}>{title}</h1>
+            <h1 className={`${compact ? "text-base sm:text-lg" : "text-lg sm:text-xl"} min-w-0 break-words font-semibold tracking-tight text-zinc-900 [overflow-wrap:anywhere]`}>{title}</h1>
             {description ? (
-              <p className={`mt-1 ${compact ? "text-xs" : "text-sm"} text-zinc-600`}>{description}</p>
+              <p className={`mt-1 ${compact ? "text-xs" : "text-sm"} break-words text-zinc-600 [overflow-wrap:anywhere]`}>{description}</p>
             ) : null}
           </div>
 

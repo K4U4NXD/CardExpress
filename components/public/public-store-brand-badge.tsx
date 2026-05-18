@@ -66,7 +66,7 @@ export function PublicStoreBrandBadge({
   const badgeBaseClassName = compact ? "h-11 w-11" : "h-14 w-14";
 
   return (
-    <div className={`flex items-center gap-3 ${wrapperClassName} ${className ?? ""}`}>
+    <div className={`flex min-w-0 max-w-full items-center gap-3 ${wrapperClassName} ${className ?? ""}`}>
       <div className={`relative overflow-hidden rounded-2xl border ${theme === "dark" ? "border-zinc-700 bg-zinc-900" : "border-zinc-200 bg-zinc-100"} ${badgeBaseClassName}`}>
         {canRenderImage ? (
           <Image
@@ -85,9 +85,9 @@ export function PublicStoreBrandBadge({
         )}
       </div>
 
-      <div className="min-w-0">
-        <p className={`${compact ? "text-sm" : "text-base"} truncate font-semibold`}>{displayName}</p>
-        {showSlug && slug ? <p className={`${subtitleClassName} text-xs`}>/{slug}</p> : null}
+      <div className="min-w-0 max-w-full flex-1">
+        <p className={`${compact ? "truncate text-sm" : "break-words text-base [overflow-wrap:anywhere]"} font-semibold`}>{displayName}</p>
+        {showSlug && slug ? <p className={`${subtitleClassName} truncate text-xs [overflow-wrap:anywhere]`}>/{slug}</p> : null}
       </div>
     </div>
   );

@@ -81,6 +81,7 @@ export function PublicStoreMenuClient({
   const [hasHydratedCart, setHasHydratedCart] = useState(false);
   const [cartSyncMessage, setCartSyncMessage] = useState<string | null>(null);
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
+  const [draftQuantities, setDraftQuantities] = useState<Record<string, string>>({});
 
   const categoryFilters = useMemo(
     () => [{ value: "todos", label: "Todos" }, ...sections.map((section) => ({ value: section.category_id, label: section.category_name }))],
@@ -228,6 +229,12 @@ export function PublicStoreMenuClient({
       return;
     }
 
+    setDraftQuantities((current) => {
+      const next = { ...current };
+      delete next[productId];
+      return next;
+    });
+
     setCartItems((previous) =>
       previous.map((item) =>
         item.product_id === productId
@@ -241,6 +248,12 @@ export function PublicStoreMenuClient({
   }
 
   function decreaseQuantity(productId: string) {
+    setDraftQuantities((current) => {
+      const next = { ...current };
+      delete next[productId];
+      return next;
+    });
+
     setCartItems((previous) => {
       const target = previous.find((item) => item.product_id === productId);
       if (!target) {
@@ -259,6 +272,109 @@ export function PublicStoreMenuClient({
             }
           : item
       );
+    });
+  }
+
+  function setProductQuantity(product: MenuProduct, rawQuantity: string) {
+    const currentQuantity = cartItems.find((item) => item.product_id === product.id)?.quantity ?? 0;
+    setDraftQuantities((current) => ({ ...current, [product.id]: rawQuantity }));
+
+    if (rawQuantity.trim() === "") {
+      return;
+    }
+
+    const parsed = Number(rawQuantity);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+
+    const nextQuantity = Math.floor(parsed);
+    if (nextQuantity > currentQuantity && (!hasHydratedCart || !acceptsOrders || !product.isPurchasableNow)) {
+      return;
+    }
+
+    setCartItems((previous) => {
+      if (nextQuantity <= 0) {
+        return previous.filter((item) => item.product_id !== product.id);
+      }
+
+      const existing = previous.find((item) => item.product_id === product.id);
+      if (!existing) {
+        return [
+          ...previous,
+          {
+            product_id: product.id,
+            name: product.name,
+            unit_price: product.price,
+            quantity: nextQuantity,
+          },
+        ];
+      }
+
+      return previous.map((item) =>
+        item.product_id === product.id
+          ? {
+              ...item,
+              quantity: nextQuantity,
+            }
+          : item
+      );
+    });
+  }
+
+  function normalizeProductQuantityInput(product: MenuProduct) {
+    const rawQuantity = draftQuantities[product.id];
+    const realQuantity = cartItems.find((item) => item.product_id === product.id)?.quantity ?? 0;
+
+    if (rawQuantity !== undefined) {
+      const parsed = Number(rawQuantity);
+      if (!Number.isFinite(parsed)) {
+        setDraftQuantities((current) => {
+          const next = { ...current };
+          if (realQuantity > 0) {
+            next[product.id] = String(realQuantity);
+          } else {
+            delete next[product.id];
+          }
+          return next;
+        });
+        return;
+      }
+
+      if (Math.floor(parsed) <= 0) {
+        setCartItems((previous) => previous.filter((item) => item.product_id !== product.id));
+        setDraftQuantities((current) => {
+          const next = { ...current };
+          delete next[product.id];
+          return next;
+        });
+        return;
+      }
+
+      const normalizedValue = Math.floor(parsed);
+      if (normalizedValue > realQuantity && (!hasHydratedCart || !acceptsOrders || !product.isPurchasableNow)) {
+        setDraftQuantities((current) => {
+          const next = { ...current };
+          if (realQuantity > 0) {
+            next[product.id] = String(realQuantity);
+          } else {
+            delete next[product.id];
+          }
+          return next;
+        });
+        return;
+      }
+
+      const normalizedQuantity = String(normalizedValue);
+      setProductQuantity(product, normalizedQuantity);
+      setDraftQuantities((current) => ({ ...current, [product.id]: normalizedQuantity }));
+      return;
+    }
+
+    setDraftQuantities((current) => {
+      const next = { ...current };
+      delete next[product.id];
+      return next;
     });
   }
 
@@ -414,24 +530,35 @@ export function PublicStoreMenuClient({
                         </div>
 
                         {quantity > 0 ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
                             <button
                               type="button"
                               onClick={() => decreaseQuantity(product.id)}
                               data-testid={`menu-decrease-${product.id}`}
                               aria-label={`Diminuir quantidade de ${product.name}`}
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
                             >
                               -
                             </button>
-                            <span className="min-w-8 text-center text-sm font-semibold text-zinc-900">{quantity}</span>
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min={1}
+                              step={1}
+                              value={draftQuantities[product.id] ?? String(quantity)}
+                              onChange={(event) => setProductQuantity(product, event.target.value)}
+                              onBlur={() => normalizeProductQuantityInput(product)}
+                              aria-label={`Quantidade de ${product.name}`}
+                              data-testid={`menu-quantity-input-${product.id}`}
+                              className="h-9 w-12 rounded-lg border border-zinc-300 bg-white px-1.5 text-center text-sm font-semibold text-zinc-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+                            />
                             <button
                               type="button"
                               onClick={() => increaseQuantity(product.id)}
                               disabled={!canAddOrIncrease}
                               data-testid={`menu-increase-${product.id}`}
                               aria-label={`Aumentar quantidade de ${product.name}`}
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               +
                             </button>

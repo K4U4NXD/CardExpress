@@ -21,6 +21,17 @@ function buildFlashToken() {
 
 export type ProductFormState = {
   error?: string;
+  values?: {
+    name: string;
+    description: string;
+    price: string;
+    category_id: string;
+    image_url: string;
+    track_stock: boolean;
+    stock_quantity: string;
+    is_available: boolean;
+    additional_category_ids: string[];
+  };
 };
 
 export type BulkProductsActionResult = {
@@ -393,43 +404,58 @@ export async function createProductAction(
   const priceRaw = String(formData.get("price") ?? "");
   const categoryId = String(formData.get("category_id") ?? "").trim();
   const imageUrlRaw = String(formData.get("image_url") ?? "").trim();
+  const values: NonNullable<ProductFormState["values"]> = {
+    name,
+    description: descriptionRaw,
+    price: priceRaw,
+    category_id: categoryId,
+    image_url: imageUrlRaw,
+    track_stock: formData.get("track_stock") === "on",
+    stock_quantity: String(formData.get("stock_quantity") ?? "").trim(),
+    is_available: formData.get("is_available") === "on",
+    additional_category_ids: formData
+      .getAll("additional_category_ids")
+      .map((value) => String(value ?? "").trim())
+      .filter(Boolean),
+  };
   const categoryIds = parseAdditionalCategoryIds(formData, categoryId);
+  const fail = (error: string): ProductFormState => ({ error, values });
 
   if (!name) {
-    return { error: "O nome do produto é obrigatório." };
+    return fail("O nome do produto é obrigatório.");
   }
   if (!categoryId) {
-    return { error: "Selecione uma categoria." };
+    return fail("Selecione uma categoria.");
   }
 
   const parsed = parseMoneyInput(priceRaw);
   if (!parsed.ok) {
-    return { error: parsed.message };
+    return fail(parsed.message);
   }
 
   const stock = resolveStockAndAvailability(formData);
   if (!stock.ok) {
-    return { error: stock.message };
+    return fail(stock.message);
   }
 
   const imageNormalization = normalizeProductImageUrl(imageUrlRaw);
   if (imageNormalization.error) {
-    return { error: imageNormalization.error };
+    return fail(imageNormalization.error);
   }
 
   const { supabase, store } = await getUserStore();
   if (!store) {
-    return { error: "Nenhuma loja vinculada à sua conta." };
+    return fail("Nenhuma loja vinculada à sua conta.");
   }
 
   const catOk = await assertCategoryAllowedForProduct(supabase, store.id, categoryId, null);
   if (!catOk.ok) {
-    return { error: catOk.message };
+    return fail(catOk.message);
   }
 
   const categoriesOk = await assertCategoriesAllowedForProduct(supabase, store.id, categoryIds);
   if (!categoriesOk.ok) {
-    return { error: categoriesOk.message };
+    return fail(categoriesOk.message);
   }
 
   const { data: last } = await supabase
@@ -460,13 +486,13 @@ export async function createProductAction(
   }).select("id").single();
 
   if (error || !insertedProduct) {
-    return { error: formatPostgrestError(error ?? { message: "Não foi possível criar o produto." }) };
+    return fail(formatPostgrestError(error ?? { message: "Não foi possível criar o produto." }));
   }
 
   const { error: syncError } = await syncProductCategories(supabase, store.id, insertedProduct.id, categoriesOk.categoryIds);
   if (syncError) {
     await supabase.from("products").delete().eq("id", insertedProduct.id).eq("store_id", store.id);
-    return { error: formatPostgrestError(syncError) };
+    return fail(formatPostgrestError(syncError));
   }
 
   revalidateStoreViews(store.slug);

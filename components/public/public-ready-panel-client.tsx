@@ -117,8 +117,8 @@ export function PublicReadyPanelClient({
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(197,138,26,0.22),rgba(0,0,0,0.95)_58%)]" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#9f1239] via-[#c58a1a] to-[#70102a]" />
 
-        <header className="relative z-10 flex items-start justify-between gap-4 px-6 py-4 sm:px-10 sm:py-6">
-          <div className="space-y-2">
+        <header className="relative z-10 flex min-w-0 flex-wrap items-start justify-between gap-4 px-6 py-4 sm:px-10 sm:py-6">
+          <div className="min-w-0 max-w-full space-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-zinc-400">Painel de retirada</p>
             <PublicStoreBrandBadge
               storeName={storeName}
@@ -202,7 +202,7 @@ export function PublicReadyPanelClient({
   return (
     <div className="mx-auto max-w-5xl space-y-4 px-4 sm:px-6">
       <section className="rounded-xl border border-[#9f1239]/45 bg-zinc-900/70 px-3 py-1.5 text-zinc-300 sm:px-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-2">
             <PublicStoreBrandBadge
               storeName={storeName}

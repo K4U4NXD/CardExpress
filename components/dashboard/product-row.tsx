@@ -10,7 +10,8 @@ import {
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { formatBRL, formatPriceForInput } from "@/lib/validation/price";
 import type { Product } from "@/types";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import type { CategoryOption } from "./create-product-form";
 
 type ProductRowProps = {
@@ -43,8 +44,57 @@ type ProductImageUploadFeedback = {
   text: string;
 };
 
+type EditProductClientErrors = Partial<Record<"name" | "price" | "category_id" | "image_url" | "stock_quantity", string>>;
+
+type EditProductSnapshot = {
+  name: string;
+  description: string;
+  price: string;
+  category_id: string;
+  additional_category_ids: string[];
+  track_stock: boolean;
+  stock_quantity: string;
+  is_available: boolean;
+  image_url: string;
+};
+
 function normalizeImageUrlValue(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+function buildEditProductSnapshot(product: Product): EditProductSnapshot {
+  return {
+    name: product.name,
+    description: product.description ?? "",
+    price: formatPriceForInput(product.price),
+    category_id: product.category_id ?? "",
+    additional_category_ids: [...(product.additional_category_ids ?? [])].sort(),
+    track_stock: Boolean(product.track_stock),
+    stock_quantity: String(product.stock_quantity ?? 0),
+    is_available: Boolean(product.is_available),
+    image_url: normalizeImageUrlValue(product.image_url),
+  };
+}
+
+function normalizeSnapshot(snapshot: EditProductSnapshot): EditProductSnapshot {
+  return {
+    ...snapshot,
+    name: snapshot.name.trim(),
+    description: snapshot.description.trim(),
+    price: snapshot.price.trim(),
+    category_id: snapshot.category_id.trim(),
+    stock_quantity: snapshot.track_stock ? snapshot.stock_quantity.trim() : "0",
+    is_available: snapshot.track_stock ? true : snapshot.is_available,
+    image_url: snapshot.image_url.trim(),
+    additional_category_ids: [...snapshot.additional_category_ids].sort(),
+  };
+}
+
+function snapshotsEqual(a: EditProductSnapshot, b: EditProductSnapshot) {
+  const left = normalizeSnapshot(a);
+  const right = normalizeSnapshot(b);
+
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function toDebugErrorObject(error: unknown): Record<string, unknown> {
@@ -64,6 +114,46 @@ function toDebugErrorObject(error: unknown): Record<string, unknown> {
   };
 }
 
+function EditProductFormActions({
+  isDirty,
+  imageUploadPending,
+  onCancel,
+}: {
+  isDirty: boolean;
+  imageUploadPending: boolean;
+  onCancel: () => void;
+}) {
+  const { pending } = useFormStatus();
+  const saveDisabled = !isDirty || imageUploadPending || pending;
+
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      {!isDirty ? (
+        <p className="text-xs text-zinc-500">Altere algum campo para salvar.</p>
+      ) : (
+        <p className="text-xs text-zinc-500">Revise as alterações antes de salvar.</p>
+      )}
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={saveDisabled}
+          className="cx-btn-primary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-55"
+        >
+          {pending ? "Salvando..." : "Salvar"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={pending || imageUploadPending}
+          className="cx-btn-secondary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ProductRow({
   product,
   categoryName,
@@ -81,21 +171,53 @@ export function ProductRow({
   editRequestToken = 0,
 }: ProductRowProps) {
   const [editing, setEditing] = useState(false);
-  const [trackStock, setTrackStock] = useState<boolean>(() => Boolean(product.track_stock));
+  const initialSnapshot = useMemo(() => buildEditProductSnapshot(product), [product]);
+  const [editName, setEditName] = useState(() => initialSnapshot.name);
+  const [editDescription, setEditDescription] = useState(() => initialSnapshot.description);
+  const [editPrice, setEditPrice] = useState(() => initialSnapshot.price);
+  const [trackStock, setTrackStock] = useState<boolean>(() => initialSnapshot.track_stock);
+  const [editStockQuantity, setEditStockQuantity] = useState(() => initialSnapshot.stock_quantity);
+  const [editIsAvailable, setEditIsAvailable] = useState(() => initialSnapshot.is_available);
   const [imageMode, setImageMode] = useState<"url" | "upload">("url");
-  const [editImageUrl, setEditImageUrl] = useState<string>(() => normalizeImageUrlValue(product.image_url));
-  const [selectedPrimaryCategoryId, setSelectedPrimaryCategoryId] = useState(() => product.category_id ?? "");
+  const [editImageUrl, setEditImageUrl] = useState<string>(() => initialSnapshot.image_url);
+  const [selectedPrimaryCategoryId, setSelectedPrimaryCategoryId] = useState(() => initialSnapshot.category_id);
   const [selectedAdditionalCategoryIds, setSelectedAdditionalCategoryIds] = useState<Set<string>>(
-    () => new Set(product.additional_category_ids ?? [])
+    () => new Set(initialSnapshot.additional_category_ids)
   );
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreviewBroken, setImagePreviewBroken] = useState(false);
   const [imageUploadPending, setImageUploadPending] = useState(false);
   const [imageUploadFeedback, setImageUploadFeedback] = useState<ProductImageUploadFeedback | null>(null);
+  const [clientErrors, setClientErrors] = useState<EditProductClientErrors>({});
   const imageFileInputRef = useRef<HTMLInputElement | null>(null);
   const supabaseClientRef = useRef<ReturnType<typeof createBrowserSupabaseClient> | null>(null);
 
   const selectedImageFileName = selectedImageFile?.name ?? "";
+  const currentSnapshot = useMemo<EditProductSnapshot>(
+    () => ({
+      name: editName,
+      description: editDescription,
+      price: editPrice,
+      category_id: selectedPrimaryCategoryId,
+      additional_category_ids: Array.from(selectedAdditionalCategoryIds),
+      track_stock: trackStock,
+      stock_quantity: editStockQuantity,
+      is_available: editIsAvailable,
+      image_url: editImageUrl,
+    }),
+    [
+      editDescription,
+      editImageUrl,
+      editIsAvailable,
+      editName,
+      editPrice,
+      editStockQuantity,
+      selectedAdditionalCategoryIds,
+      selectedPrimaryCategoryId,
+      trackStock,
+    ]
+  );
+  const isDirty = !snapshotsEqual(currentSnapshot, initialSnapshot);
 
   const setEditingState = (isEditing: boolean) => {
     setEditing(isEditing);
@@ -122,12 +244,9 @@ export function ProductRow({
 
   useEffect(() => {
     if (!editing) {
-      setEditImageUrl(normalizeImageUrlValue(product.image_url));
-      setTrackStock(Boolean(product.track_stock));
-      setSelectedPrimaryCategoryId(product.category_id ?? "");
-      setSelectedAdditionalCategoryIds(new Set(product.additional_category_ids ?? []));
+      restoreEditSnapshot(initialSnapshot);
     }
-  }, [editing, product.additional_category_ids, product.category_id, product.image_url, product.track_stock]);
+  }, [editing, initialSnapshot]);
 
   useEffect(() => {
     if (typeof trackStock !== "boolean") {
@@ -160,16 +279,26 @@ export function ProductRow({
 
   function resetEditImageState() {
     setImageMode("url");
-    setEditImageUrl(normalizeImageUrlValue(product.image_url));
-    setTrackStock(Boolean(product.track_stock));
-    setSelectedPrimaryCategoryId(product.category_id ?? "");
-    setSelectedAdditionalCategoryIds(new Set(product.additional_category_ids ?? []));
+    restoreEditSnapshot(initialSnapshot);
     setSelectedImageFile(null);
     setImagePreviewBroken(false);
     setImageUploadFeedback(null);
+    setClientErrors({});
     if (imageFileInputRef.current) {
       imageFileInputRef.current.value = "";
     }
+  }
+
+  function restoreEditSnapshot(snapshot: EditProductSnapshot) {
+    setEditName(snapshot.name);
+    setEditDescription(snapshot.description);
+    setEditPrice(snapshot.price);
+    setEditImageUrl(snapshot.image_url);
+    setTrackStock(snapshot.track_stock);
+    setEditStockQuantity(snapshot.stock_quantity);
+    setEditIsAvailable(snapshot.is_available);
+    setSelectedPrimaryCategoryId(snapshot.category_id);
+    setSelectedAdditionalCategoryIds(new Set(snapshot.additional_category_ids));
   }
 
   function clearUploadInput() {
@@ -361,6 +490,7 @@ export function ProductRow({
     setImageMode("url");
     setImagePreviewBroken(false);
     setImageUploadFeedback(null);
+    clearClientError("image_url");
     clearUploadInput();
   }
 
@@ -387,6 +517,50 @@ export function ProductRow({
       }
       return next;
     });
+  }
+
+  function clearClientError(field: keyof EditProductClientErrors) {
+    setClientErrors((current) => ({ ...current, [field]: undefined }));
+  }
+
+  function handleEditSubmit(event: React.FormEvent<HTMLFormElement>) {
+    const nextErrors: EditProductClientErrors = {};
+    const priceValue = Number(editPrice.replace(",", "."));
+    const trimmedImageUrl = editImageUrl.trim();
+
+    if (!editName.trim()) {
+      nextErrors.name = "Informe o nome do produto.";
+    }
+    if (!editPrice.trim()) {
+      nextErrors.price = "Informe o preço.";
+    } else if (!Number.isFinite(priceValue) || priceValue < 0) {
+      nextErrors.price = "Informe um preço válido.";
+    }
+    if (!selectedPrimaryCategoryId) {
+      nextErrors.category_id = "Selecione uma categoria.";
+    }
+    if (trimmedImageUrl) {
+      try {
+        const url = new URL(trimmedImageUrl);
+        if (!["http:", "https:"].includes(url.protocol)) {
+          nextErrors.image_url = "Informe uma URL de imagem válida.";
+        }
+      } catch {
+        nextErrors.image_url = "Informe uma URL de imagem válida.";
+      }
+    }
+    if (trackStock) {
+      const stockQuantity = Number(editStockQuantity);
+      if (!editStockQuantity.trim() || !Number.isInteger(stockQuantity) || stockQuantity < 0) {
+        nextErrors.stock_quantity = "Informe uma quantidade de estoque válida.";
+      }
+    }
+
+    setClientErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      event.preventDefault();
+    }
   }
 
   const isVisibleOnPublicMenu = product.is_active && product.is_available;
@@ -538,7 +712,7 @@ export function ProductRow({
 
         </div>
       ) : (
-        <form action={updateProductAction} className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+        <form action={updateProductAction} noValidate onSubmit={handleEditSubmit} className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
           <input type="hidden" name="product_id" value={product.id} />
           <input type="hidden" name="image_url" value={editImageUrl.trim()} />
           <div>
@@ -547,16 +721,28 @@ export function ProductRow({
               name="name"
               type="text"
               required
-              defaultValue={product.name}
-              className="cx-input mt-1"
+              value={editName}
+              onChange={(event) => {
+                clearClientError("name");
+                setEditName(event.target.value);
+              }}
+              aria-invalid={Boolean(clientErrors.name)}
+              aria-describedby={clientErrors.name ? `edit-product-name-error-${product.id}` : undefined}
+              className={`cx-input mt-1 ${clientErrors.name ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
             />
+            {clientErrors.name ? (
+              <p id={`edit-product-name-error-${product.id}`} className="mt-1 text-xs text-red-700">
+                {clientErrors.name}
+              </p>
+            ) : null}
           </div>
           <div>
             <label className="block text-sm font-medium text-zinc-800">Descrição</label>
             <textarea
               name="description"
               rows={2}
-              defaultValue={product.description ?? ""}
+              value={editDescription}
+              onChange={(event) => setEditDescription(event.target.value)}
               className="cx-textarea mt-1"
             />
           </div>
@@ -567,9 +753,20 @@ export function ProductRow({
                 name="price"
                 type="text"
                 required
-                defaultValue={formatPriceForInput(product.price)}
-                className="cx-input mt-1"
+                value={editPrice}
+                onChange={(event) => {
+                  clearClientError("price");
+                  setEditPrice(event.target.value);
+                }}
+                aria-invalid={Boolean(clientErrors.price)}
+                aria-describedby={clientErrors.price ? `edit-product-price-error-${product.id}` : undefined}
+                className={`cx-input mt-1 ${clientErrors.price ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
               />
+              {clientErrors.price ? (
+                <p id={`edit-product-price-error-${product.id}`} className="mt-1 text-xs text-red-700">
+                  {clientErrors.price}
+                </p>
+              ) : null}
             </div>
             <div>
               <label className="block text-sm font-medium text-zinc-800">Categoria</label>
@@ -577,8 +774,13 @@ export function ProductRow({
                 name="category_id"
                 required
                 value={selectedPrimaryCategoryId}
-                onChange={(event) => handlePrimaryCategoryChange(event.target.value)}
-                className="cx-select mt-1"
+                onChange={(event) => {
+                  clearClientError("category_id");
+                  handlePrimaryCategoryChange(event.target.value);
+                }}
+                aria-invalid={Boolean(clientErrors.category_id)}
+                aria-describedby={clientErrors.category_id ? `edit-product-category-error-${product.id}` : undefined}
+                className={`cx-select mt-1 ${clientErrors.category_id ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
               >
                 {categoryOptions.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -586,6 +788,11 @@ export function ProductRow({
                   </option>
                 ))}
               </select>
+              {clientErrors.category_id ? (
+                <p id={`edit-product-category-error-${product.id}`} className="mt-1 text-xs text-red-700">
+                  {clientErrors.category_id}
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -644,9 +851,20 @@ export function ProductRow({
                   type="number"
                   min={0}
                   step={1}
-                  defaultValue={product.stock_quantity}
-                  className="cx-input mt-1 max-w-xs"
+                  value={editStockQuantity}
+                  onChange={(event) => {
+                    clearClientError("stock_quantity");
+                    setEditStockQuantity(event.target.value);
+                  }}
+                  aria-invalid={Boolean(clientErrors.stock_quantity)}
+                  aria-describedby={clientErrors.stock_quantity ? `edit-product-stock-error-${product.id}` : undefined}
+                  className={`cx-input mt-1 max-w-xs ${clientErrors.stock_quantity ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
                 />
+                {clientErrors.stock_quantity ? (
+                  <p id={`edit-product-stock-error-${product.id}`} className="mt-1 text-xs text-red-700">
+                    {clientErrors.stock_quantity}
+                  </p>
+                ) : null}
                 <p className="mt-1 text-xs text-zinc-500">
                   Com controle de estoque, o produto continua visível no cardápio, mas pode ficar indisponível para
                   compra quando zerar. A pausa/liberação manual da venda é feita no botão da listagem de produtos.
@@ -660,7 +878,8 @@ export function ProductRow({
                     type="checkbox"
                     name="is_available"
                     value="on"
-                    defaultChecked={product.is_available}
+                    checked={editIsAvailable}
+                    onChange={(event) => setEditIsAvailable(event.target.checked)}
                     className="rounded border-zinc-300"
                   />
                   Venda liberada agora
@@ -733,12 +952,20 @@ export function ProductRow({
                       type="url"
                       value={normalizeImageUrlValue(editImageUrl)}
                       onChange={(event) => {
+                        clearClientError("image_url");
                         setEditImageUrl(event.target.value);
                         setImageUploadFeedback(null);
                       }}
-                      className="cx-input"
+                      aria-invalid={Boolean(clientErrors.image_url)}
+                      aria-describedby={clientErrors.image_url ? `edit-product-image-url-error-${product.id}` : undefined}
+                      className={`cx-input ${clientErrors.image_url ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
                       placeholder="https://..."
                     />
+                    {clientErrors.image_url ? (
+                      <p id={`edit-product-image-url-error-${product.id}`} className="text-xs text-red-700">
+                        {clientErrors.image_url}
+                      </p>
+                    ) : null}
                     <p className="text-xs text-zinc-500">Cole um link direto para imagem (PNG, JPG, WEBP ou SVG).</p>
                   </div>
                 ) : (
@@ -794,24 +1021,14 @@ export function ProductRow({
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              className="cx-btn-primary px-3 py-2"
-            >
-              Salvar
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                resetEditImageState();
-                setEditingState(false);
-              }}
-              className="cx-btn-secondary px-3 py-2"
-            >
-              Cancelar
-            </button>
-          </div>
+          <EditProductFormActions
+            isDirty={isDirty}
+            imageUploadPending={imageUploadPending}
+            onCancel={() => {
+              resetEditImageState();
+              setEditingState(false);
+            }}
+          />
         </form>
       )}
       </div>

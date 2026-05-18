@@ -31,6 +31,16 @@ type ImageUploadFeedback = {
   text: string;
 };
 
+type ProductClientErrors = Partial<Record<"name" | "price" | "category_id" | "image_url" | "stock_quantity", string>>;
+
+const EMPTY_PRODUCT_VALUES = {
+  name: "",
+  description: "",
+  price: "",
+  stock_quantity: "",
+  is_available: true,
+};
+
 function normalizeImageUrlValue(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
@@ -54,6 +64,7 @@ function toDebugErrorObject(error: unknown): Record<string, unknown> {
 
 export function CreateProductForm({ storeId, categories, onCancel }: CreateProductFormProps) {
   const [state, formAction, pending] = useActionState(createProductAction, initial);
+  const [formValues, setFormValues] = useState(EMPTY_PRODUCT_VALUES);
   const [trackStock, setTrackStock] = useState(false);
   const [imageMode, setImageMode] = useState<"url" | "upload">("url");
   const [imageUrlValue, setImageUrlValue] = useState("");
@@ -61,12 +72,33 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
   const [imagePreviewBroken, setImagePreviewBroken] = useState(false);
   const [imageUploadPending, setImageUploadPending] = useState(false);
   const [imageUploadFeedback, setImageUploadFeedback] = useState<ImageUploadFeedback | null>(null);
+  const [clientErrors, setClientErrors] = useState<ProductClientErrors>({});
   const [selectedPrimaryCategoryId, setSelectedPrimaryCategoryId] = useState("");
   const [selectedAdditionalCategoryIds, setSelectedAdditionalCategoryIds] = useState<Set<string>>(() => new Set());
   const imageFileInputRef = useRef<HTMLInputElement | null>(null);
   const supabaseClientRef = useRef<ReturnType<typeof createBrowserSupabaseClient> | null>(null);
   const disabled = categories.length === 0;
   const selectedImageFileName = selectedImageFile?.name ?? "";
+
+  useEffect(() => {
+    if (!state?.values) {
+      return;
+    }
+
+    setFormValues({
+      name: state.values.name,
+      description: state.values.description,
+      price: state.values.price,
+      stock_quantity: state.values.stock_quantity,
+      is_available: state.values.is_available,
+    });
+    setTrackStock(state.values.track_stock);
+    setSelectedPrimaryCategoryId(state.values.category_id);
+    setSelectedAdditionalCategoryIds(new Set(state.values.additional_category_ids));
+    setImageUrlValue(state.values.image_url);
+    setImageMode(state.values.image_url ? "url" : "url");
+    setImagePreviewBroken(false);
+  }, [state?.values]);
 
   useEffect(() => {
     if (typeof trackStock !== "boolean") {
@@ -287,6 +319,7 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
     setImagePreviewBroken(false);
     clearUploadInput();
     setImageUploadFeedback(null);
+    clearClientError("image_url");
     setImageMode("url");
   }
 
@@ -315,8 +348,52 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
     });
   }
 
+  function clearClientError(field: keyof ProductClientErrors) {
+    setClientErrors((current) => ({ ...current, [field]: undefined }));
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    const nextErrors: ProductClientErrors = {};
+    const priceValue = Number(formValues.price.replace(",", "."));
+    const trimmedImageUrl = imageUrlValue.trim();
+
+    if (!formValues.name.trim()) {
+      nextErrors.name = "Informe o nome do produto.";
+    }
+    if (!formValues.price.trim()) {
+      nextErrors.price = "Informe o preço.";
+    } else if (!Number.isFinite(priceValue) || priceValue < 0) {
+      nextErrors.price = "Informe um preço válido.";
+    }
+    if (!selectedPrimaryCategoryId) {
+      nextErrors.category_id = "Selecione uma categoria.";
+    }
+    if (trimmedImageUrl) {
+      try {
+        const url = new URL(trimmedImageUrl);
+        if (!["http:", "https:"].includes(url.protocol)) {
+          nextErrors.image_url = "Informe uma URL de imagem válida.";
+        }
+      } catch {
+        nextErrors.image_url = "Informe uma URL de imagem válida.";
+      }
+    }
+    if (trackStock) {
+      const stockQuantity = Number(formValues.stock_quantity);
+      if (!formValues.stock_quantity.trim() || !Number.isInteger(stockQuantity) || stockQuantity < 0) {
+        nextErrors.stock_quantity = "Informe uma quantidade de estoque válida.";
+      }
+    }
+
+    setClientErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      event.preventDefault();
+    }
+  }
+
   return (
-    <form action={formAction} data-testid="create-product-form" className="space-y-4">
+    <form action={formAction} noValidate onSubmit={handleSubmit} data-testid="create-product-form" className="space-y-4">
       <input type="hidden" name="image_url" value={imageUrlValue.trim()} />
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -331,9 +408,21 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
             required
             disabled={disabled}
             placeholder="Ex.: Refrigerante 350ml"
+            value={formValues.name}
+            onChange={(event) => {
+              clearClientError("name");
+              setFormValues((current) => ({ ...current, name: event.target.value }));
+            }}
+            aria-invalid={Boolean(clientErrors.name)}
+            aria-describedby={clientErrors.name ? "product-name-error" : undefined}
             data-testid="product-name-input"
-            className="cx-input mt-1 disabled:bg-zinc-100"
+            className={`cx-input mt-1 disabled:bg-zinc-100 ${clientErrors.name ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
           />
+          {clientErrors.name ? (
+            <p id="product-name-error" className="mt-1 text-xs text-red-700">
+              {clientErrors.name}
+            </p>
+          ) : null}
         </div>
         <div className="sm:col-span-2">
           <label htmlFor="product-description" className="block text-sm font-medium text-zinc-800">
@@ -344,6 +433,8 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
             name="description"
             rows={2}
             disabled={disabled}
+            value={formValues.description}
+            onChange={(event) => setFormValues((current) => ({ ...current, description: event.target.value }))}
             className="cx-textarea mt-1 disabled:bg-zinc-100"
           />
         </div>
@@ -358,9 +449,21 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
             required
             disabled={disabled}
             placeholder="Ex.: 8,90"
+            value={formValues.price}
+            onChange={(event) => {
+              clearClientError("price");
+              setFormValues((current) => ({ ...current, price: event.target.value }));
+            }}
+            aria-invalid={Boolean(clientErrors.price)}
+            aria-describedby={clientErrors.price ? "product-price-error" : undefined}
             data-testid="product-price-input"
-            className="cx-input mt-1 disabled:bg-zinc-100"
+            className={`cx-input mt-1 disabled:bg-zinc-100 ${clientErrors.price ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
           />
+          {clientErrors.price ? (
+            <p id="product-price-error" className="mt-1 text-xs text-red-700">
+              {clientErrors.price}
+            </p>
+          ) : null}
         </div>
         <div>
           <label htmlFor="product-category" className="block text-sm font-medium text-zinc-800">
@@ -372,9 +475,14 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
             required
             disabled={disabled}
             value={selectedPrimaryCategoryId}
-            onChange={(event) => handlePrimaryCategoryChange(event.target.value)}
+            onChange={(event) => {
+              clearClientError("category_id");
+              handlePrimaryCategoryChange(event.target.value);
+            }}
+            aria-invalid={Boolean(clientErrors.category_id)}
+            aria-describedby={clientErrors.category_id ? "product-category-error" : undefined}
             data-testid="product-category-select"
-            className="cx-select mt-1 disabled:bg-zinc-100"
+            className={`cx-select mt-1 disabled:bg-zinc-100 ${clientErrors.category_id ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
           >
             <option value="">Selecione…</option>
             {categories.map((c) => (
@@ -383,6 +491,11 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
               </option>
             ))}
           </select>
+          {clientErrors.category_id ? (
+            <p id="product-category-error" className="mt-1 text-xs text-red-700">
+              {clientErrors.category_id}
+            </p>
+          ) : null}
         </div>
 
         <div className="sm:col-span-2 rounded-xl border border-zinc-200 bg-zinc-50/90 p-4">
@@ -446,9 +559,21 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
                 min={0}
                 step={1}
                 disabled={disabled}
+                value={formValues.stock_quantity}
+                onChange={(event) => {
+                  clearClientError("stock_quantity");
+                  setFormValues((current) => ({ ...current, stock_quantity: event.target.value }));
+                }}
+                aria-invalid={Boolean(clientErrors.stock_quantity)}
+                aria-describedby={clientErrors.stock_quantity ? "product-stock-error" : undefined}
                 data-testid="product-stock-input"
-                className="cx-input mt-1 max-w-xs disabled:bg-zinc-100"
+                className={`cx-input mt-1 max-w-xs disabled:bg-zinc-100 ${clientErrors.stock_quantity ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
               />
+              {clientErrors.stock_quantity ? (
+                <p id="product-stock-error" className="mt-1 text-xs text-red-700">
+                  {clientErrors.stock_quantity}
+                </p>
+              ) : null}
               <p className="mt-1 text-xs text-zinc-500">
                 Com controle de estoque, a visibilidade pública depende da quantidade. A pausa/liberação manual da
                 venda pode ser feita na listagem de produtos.
@@ -462,7 +587,8 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
                   type="checkbox"
                   name="is_available"
                   value="on"
-                  defaultChecked
+                  checked={formValues.is_available}
+                  onChange={(event) => setFormValues((current) => ({ ...current, is_available: event.target.checked }))}
                   disabled={disabled}
                   className="rounded border-zinc-300"
                 />
@@ -546,13 +672,21 @@ export function CreateProductForm({ storeId, categories, onCancel }: CreateProdu
                     type="url"
                     value={normalizeImageUrlValue(imageUrlValue)}
                     onChange={(event) => {
+                      clearClientError("image_url");
                       setImageUrlValue(event.target.value);
                       setImageUploadFeedback(null);
                     }}
                     disabled={disabled || pending || imageUploadPending}
                     placeholder="https://..."
-                    className="cx-input disabled:bg-zinc-100"
+                    aria-invalid={Boolean(clientErrors.image_url)}
+                    aria-describedby={clientErrors.image_url ? "product-image-url-error" : undefined}
+                    className={`cx-input disabled:bg-zinc-100 ${clientErrors.image_url ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
                   />
+                  {clientErrors.image_url ? (
+                    <p id="product-image-url-error" className="text-xs text-red-700">
+                      {clientErrors.image_url}
+                    </p>
+                  ) : null}
                   <p className="text-xs text-zinc-500">Cole um link direto para imagem (PNG, JPG, WEBP ou SVG).</p>
                 </div>
               ) : (

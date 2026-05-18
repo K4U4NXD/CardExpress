@@ -1,14 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
-
-import { BRANDING } from "@/lib/branding";
 
 type LandingSectionItem = {
   id: string;
   label: string;
+  href?: string;
 };
 
 type LandingStickyNavProps = {
@@ -22,7 +19,6 @@ function normalizeMostVisibleSection(sectionIds: string[], ratios: Record<string
 
   sectionIds.forEach((id) => {
     const ratio = ratios[id] ?? 0;
-
     if (ratio > bestRatio) {
       bestRatio = ratio;
       bestId = id;
@@ -38,7 +34,6 @@ function normalizeMostVisibleSection(sectionIds: string[], ratios: Record<string
 
   sectionIds.forEach((id) => {
     const sectionElement = document.getElementById(id);
-
     if (sectionElement && sectionElement.offsetTop <= viewportAnchor) {
       fallbackId = id;
     }
@@ -47,10 +42,25 @@ function normalizeMostVisibleSection(sectionIds: string[], ratios: Record<string
   return fallbackId;
 }
 
-export function LandingStickyNav({ sections, isAuthenticated = false }: LandingStickyNavProps) {
-  const sectionIds = useMemo(() => sections.map((section) => section.id), [sections]);
+function CardExpressWordmark() {
+  return (
+    <span
+      className="group/wordmark inline-flex items-center whitespace-nowrap text-base font-black tracking-tight sm:text-lg"
+      aria-label="CardExpress"
+    >
+      <span className="relative">
+        <span className="text-[#9f1239] drop-shadow-[0_1px_0_rgba(255,255,255,0.45)]">Card</span>
+        <span className="absolute -bottom-1 left-0 h-0.5 w-full origin-left scale-x-0 rounded-full bg-[#9f1239]/35 transition-transform duration-300 group-hover/wordmark:scale-x-100" />
+      </span>
+      <span className="text-[#c58a1a] drop-shadow-[0_1px_0_rgba(255,255,255,0.55)]">Express</span>
+      <span className="ml-1 mt-1 h-1.5 w-1.5 rounded-full bg-[#f59e0b] shadow-[0_0_14px_rgba(245,158,11,0.55)] transition duration-300 group-hover/wordmark:scale-125" />
+    </span>
+  );
+}
+
+export function LandingStickyNav({ sections }: LandingStickyNavProps) {
+  const sectionIds = useMemo(() => sections.filter((section) => !section.href).map((section) => section.id), [sections]);
   const [activeId, setActiveId] = useState(sectionIds[0] ?? "");
-  const [showTopAction, setShowTopAction] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const ratioBySectionRef = useRef<Record<string, number>>({});
   const mobileLinkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
@@ -87,13 +97,8 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
         Boolean(lastSectionId) &&
         (isNearPageBottom || (hasReachedLastSection && lastSectionClearlyDominant));
 
-      const nextActiveId =
-        shouldForceLastSection && lastSectionId
-          ? lastSectionId
-          : mostVisibleId;
-
+      const nextActiveId = shouldForceLastSection && lastSectionId ? lastSectionId : mostVisibleId;
       setActiveId((currentId) => (currentId === nextActiveId ? currentId : nextActiveId));
-      setShowTopAction(window.scrollY > 420 && nextActiveId !== (sectionIds[0] ?? ""));
     };
 
     const observer = new IntersectionObserver(
@@ -101,7 +106,6 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
         entries.forEach((entry) => {
           ratioBySectionRef.current[entry.target.id] = entry.isIntersecting ? entry.intersectionRatio : 0;
         });
-
         updateActiveSection();
       },
       {
@@ -114,16 +118,12 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
       observer.observe(element);
     });
 
-    const handleScroll = () => {
-      updateActiveSection();
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
     updateActiveSection();
 
     return () => {
       observer.disconnect();
-      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("scroll", updateActiveSection);
     };
   }, [sectionIds]);
 
@@ -139,10 +139,14 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
     });
   }, [activeId]);
 
-  function handleMobileSectionClick(sectionId: string) {
+  function handleMobileSectionClick(section: LandingSectionItem) {
     setMobileMenuOpen(false);
+    if (section.href) {
+      return;
+    }
+
     window.setTimeout(() => {
-      mobileLinkRefs.current[sectionId]?.scrollIntoView({
+      mobileLinkRefs.current[section.id]?.scrollIntoView({
         behavior: "smooth",
         block: "nearest",
         inline: "center",
@@ -150,53 +154,32 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
     }, 0);
   }
 
-  function handleBackToTop() {
-    const firstSection = sectionIds[0];
-    const firstSectionElement = firstSection ? document.getElementById(firstSection) : null;
-
-    if (firstSectionElement) {
-      firstSectionElement.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
   const activeClass = "border-[#9f1239] bg-[#9f1239] text-white shadow-sm shadow-rose-950/15";
   const idleClass = "border-[#eadfd2] bg-white/82 text-zinc-700 hover:border-amber-300 hover:bg-[#fffaf2]";
-  const accountHref = isAuthenticated ? "/dashboard" : "/login";
-  const accountLabel = isAuthenticated ? "Painel" : "Entrar";
 
   return (
     <>
       <div className="fixed inset-x-0 top-0 z-50 hidden md:block">
         <div className="mx-auto max-w-7xl px-4 pt-2 sm:px-6">
-          <div className="rounded-xl border border-[#eadfd2]/90 bg-white/90 p-1 shadow-md shadow-zinc-900/10 backdrop-blur-xl">
-            <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
+          <div className="rounded-2xl border border-[#eadfd2]/90 bg-white/92 p-1.5 shadow-md shadow-zinc-900/10 backdrop-blur-xl">
+            <div className="grid grid-cols-[auto_1fr] items-center gap-4">
               <a
                 href="#inicio"
-                className="inline-flex items-center rounded-lg px-2 py-1 transition duration-300 hover:bg-[#fff7ed]"
+                className="inline-flex min-h-10 items-center rounded-xl px-3 py-1.5 transition duration-300 hover:-translate-y-0.5 hover:bg-[#fff7ed]"
               >
-                <Image
-                  src={BRANDING.logoPath}
-                  alt={BRANDING.productName}
-                  width={148}
-                  height={36}
-                  priority
-                  className="h-auto w-auto max-w-[148px]"
-                />
+                <CardExpressWordmark />
               </a>
 
-              <div className="flex items-center justify-center gap-2" role="navigation" aria-label="Navegação da landing">
+              <div className="flex items-center justify-end gap-1.5 xl:gap-2" role="navigation" aria-label="Navegação da landing">
                 {sections.map((section) => {
-                  const isActive = activeId === section.id;
+                  const isActive = !section.href && activeId === section.id;
 
                   return (
                     <a
                       key={section.id}
-                      href={`#${section.id}`}
+                      href={section.href ?? `#${section.id}`}
                       aria-current={isActive ? "page" : undefined}
-                      className={`inline-flex min-h-8 shrink-0 items-center whitespace-nowrap rounded-lg border px-2 py-1 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
+                      className={`inline-flex min-h-9 shrink-0 items-center whitespace-nowrap rounded-xl border px-2.5 py-1 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 xl:px-3 ${
                         isActive ? activeClass : idleClass
                       }`}
                     >
@@ -205,95 +188,50 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
                   );
                 })}
               </div>
-
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={handleBackToTop}
-                  className={`inline-flex min-h-8 items-center rounded-lg border px-2 py-1 text-xs font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
-                    showTopAction
-                      ? "border-[#9f1239] bg-[#9f1239] text-white hover:bg-[#70102a]"
-                      : "border-[#eadfd2] bg-white text-zinc-500 hover:text-zinc-700"
-                  }`}
-                  aria-label="Voltar ao topo"
-                >
-                  Topo
-                </button>
-                <Link
-                  href={accountHref}
-                  className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg border border-[#eadfd2] bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 transition duration-300 hover:bg-[#fff7ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
-                >
-                  {accountLabel}
-                </Link>
-                {!isAuthenticated ? (
-                  <Link
-                    href="/cadastro"
-                    className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg bg-[#9f1239] px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition duration-300 hover:bg-[#70102a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
-                  >
-                    Criar conta
-                  </Link>
-                ) : null}
-              </div>
             </div>
           </div>
         </div>
       </div>
 
       <div className="fixed inset-x-0 top-0 z-50 px-2 pt-1.5 md:hidden">
-        <div className="rounded-xl border border-[#eadfd2]/90 bg-white/94 p-1.5 shadow-md shadow-zinc-900/10 backdrop-blur-xl">
+        <div className="rounded-2xl border border-[#eadfd2]/90 bg-white/94 p-1.5 shadow-md shadow-zinc-900/10 backdrop-blur-xl">
           <div className={`${mobileMenuOpen ? "mb-1.5" : ""} flex items-center justify-between gap-2 px-1`}>
             <a
               href="#inicio"
-              className="inline-flex min-h-8 items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-bold tracking-tight text-[#9f1239] transition hover:bg-[#fff7ed]"
+              className="inline-flex min-h-9 items-center rounded-xl px-2 py-1 transition hover:bg-[#fff7ed]"
             >
-              <Image
-                src={BRANDING.iconPath}
-                alt={BRANDING.productName}
-                width={18}
-                height={18}
-                className="h-[18px] w-[18px] rounded"
-                priority
-              />
-              <span className="whitespace-nowrap">CARDEXPRESS</span>
+              <CardExpressWordmark />
             </a>
-            <div className="flex items-center gap-1.5">
-              <Link
-                href={accountHref}
-                className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg border border-[#eadfd2] bg-white px-2 py-1 text-[11px] font-semibold text-zinc-700 transition duration-300 hover:bg-[#fff7ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
-              >
-                Painel
-              </Link>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen((open) => !open)}
-                aria-expanded={mobileMenuOpen}
-                aria-controls="landing-mobile-menu"
-                className="inline-flex min-h-8 items-center whitespace-nowrap rounded-lg bg-[#9f1239] px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm transition duration-300 hover:bg-[#70102a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
-              >
-                Menu
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="landing-mobile-menu"
+              className="inline-flex min-h-9 items-center whitespace-nowrap rounded-xl bg-[#9f1239] px-3 py-1 text-[11px] font-semibold text-white shadow-sm transition duration-300 hover:bg-[#70102a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
+            >
+              Navegação
+            </button>
           </div>
 
           <div id="landing-mobile-menu" className={mobileMenuOpen ? "block" : "hidden"}>
             <div
-              className="grid grid-cols-2 gap-1.5 rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-1.5"
+              className="grid grid-cols-2 gap-2 rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-2"
               role="navigation"
               aria-label="Navegação da landing"
             >
               {sections.map((section) => {
-                const isActive = activeId === section.id;
+                const isActive = !section.href && activeId === section.id;
 
                 return (
                   <a
                     key={section.id}
-                    href={`#${section.id}`}
+                    href={section.href ?? `#${section.id}`}
                     ref={(element) => {
                       mobileLinkRefs.current[section.id] = element;
                     }}
-                    onClick={() => handleMobileSectionClick(section.id)}
+                    onClick={() => handleMobileSectionClick(section)}
                     aria-current={isActive ? "page" : undefined}
-                    className={`inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
+                    className={`inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70 ${
                       isActive ? activeClass : idleClass
                     }`}
                   >
@@ -301,15 +239,6 @@ export function LandingStickyNav({ sections, isAuthenticated = false }: LandingS
                   </a>
                 );
               })}
-
-              {!isAuthenticated ? (
-                <Link
-                  href="/cadastro"
-                  className="inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-900 transition duration-300 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
-                >
-                  Criar conta
-                </Link>
-              ) : null}
             </div>
           </div>
         </div>

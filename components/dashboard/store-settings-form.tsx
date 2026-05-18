@@ -20,6 +20,7 @@ import {
 import { buildStoreLogoObjectPath, STORE_LOGO_BUCKET } from "@/lib/public/store-logo-storage";
 import { buildAbsoluteUrlFromOrigin } from "@/lib/public-store-url";
 import { useToast } from "@/components/shared/toast-provider";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 type StoreSettingsFormProps = {
@@ -49,21 +50,25 @@ const OPERATIONAL_MODE_OPTIONS: Array<{
   value: StoreOperationalMode;
   title: string;
   description: string;
+  tone: "danger" | "success" | "warning";
 }> = [
   {
     value: "offline",
     title: "Loja offline",
     description: "Pausa novos pedidos até você abrir a loja novamente.",
+    tone: "danger",
   },
   {
     value: "manual",
     title: "Aberta manualmente",
     description: "Mantém a loja aberta até você mudar o modo operacional.",
+    tone: "success",
   },
   {
     value: "schedule",
     title: "Horário automático",
     description: "Recebe pedidos apenas dentro do horário configurado.",
+    tone: "warning",
   },
 ];
 
@@ -795,8 +800,8 @@ export function StoreSettingsForm({
                   Baixar QR Code
                 </button>
               </div>
-              <p className="text-[11px] text-zinc-500">Destino: {initialValues.public_path}</p>
-              <p className="text-[11px] text-zinc-500">Arquivo exportado em PNG com nome baseado no slug da loja.</p>
+              <p className="break-words text-[11px] text-zinc-500 [overflow-wrap:anywhere]">Destino: {initialValues.public_path}</p>
+              <p className="break-words text-[11px] text-zinc-500">Arquivo exportado em PNG com nome baseado no slug da loja.</p>
             </div>
           </div>
 
@@ -871,7 +876,7 @@ export function StoreSettingsForm({
                     className="mt-1 border-zinc-300"
                   />
                   <span>
-                    <span className="block font-semibold text-zinc-900">{option.title}</span>
+                    <StatusBadge tone={option.tone}>{option.title}</StatusBadge>
                     <span className="mt-1 block text-xs leading-5 text-zinc-600">{option.description}</span>
                   </span>
                 </span>

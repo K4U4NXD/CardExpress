@@ -58,10 +58,10 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
 
       <div className="mx-auto max-w-5xl space-y-5 px-4 py-5 sm:space-y-6 sm:px-6 sm:py-8">
         <section className="cx-brand-panel p-4 sm:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-1">
+          <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 max-w-full space-y-1">
               <p className="text-sm font-medium text-[#9f1239]">Estabelecimento</p>
-              <p className="text-lg font-semibold text-zinc-900">{store.name}</p>
+              <p className="break-words text-lg font-semibold text-zinc-900 [overflow-wrap:anywhere]">{store.name}</p>
               {store.phone ? (
                 <a href={`tel:${store.phone}`} className="text-sm text-zinc-600 hover:text-zinc-900">
                   Telefone: {store.phone}
@@ -85,7 +85,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
           ) : null}
 
           {store.public_message ? (
-            <p className="mt-4 rounded-xl border border-[#eadfd2] bg-[#fffaf2] p-3 text-sm text-zinc-700">{store.public_message}</p>
+            <p className="mt-4 max-w-2xl break-words text-sm leading-6 text-zinc-700 [overflow-wrap:anywhere]">{store.public_message}</p>
           ) : null}
 
           <PublicMenuRealtimeSync slug={store.slug} className="mt-4" />

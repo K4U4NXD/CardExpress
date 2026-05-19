@@ -202,11 +202,11 @@ function LandingHeroMockup() {
 
   return (
     // As contenções min-w-0/minmax evitam que cards internos empurrem o hero além da largura em mobiles estreitos.
-    <div className="relative w-full min-w-0 overflow-hidden rounded-3xl border border-amber-200/20 bg-white/[0.07] p-3 shadow-[0_34px_100px_-48px_rgba(0,0,0,0.95)] sm:p-4">
+    <div className="relative w-full min-w-0 overflow-hidden rounded-3xl border border-amber-200/20 bg-white/[0.07] p-2.5 shadow-[0_34px_100px_-48px_rgba(0,0,0,0.95)] sm:p-4">
       <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/70 to-transparent" />
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] items-start gap-3 lg:grid-cols-[minmax(0,1.14fr)_minmax(0,0.86fr)]">
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3">
-        <div className="w-full min-w-0 max-w-full rounded-2xl border border-amber-100 bg-[#fffaf2] p-3 text-zinc-900">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] items-start gap-2.5 sm:gap-3 lg:grid-cols-[minmax(0,1.14fr)_minmax(0,0.86fr)]">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2.5 sm:gap-3">
+        <div className="w-full min-w-0 max-w-full rounded-2xl border border-amber-100 bg-[#fffaf2] p-2.5 text-zinc-900 sm:p-3">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="flex min-w-0 items-center gap-3">
               <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#eadfd2] bg-white p-1">
@@ -223,11 +223,11 @@ function LandingHeroMockup() {
             </span>
           </div>
 
-          <div className="mt-3 space-y-2">
+          <div className="mt-3 space-y-1.5 sm:space-y-2">
             {menuItems.map((product) => (
-              <div key={product.name} className="w-full min-w-0 rounded-xl border border-[#eadfd2] bg-white p-2.5">
-                <div className="flex items-center gap-3">
-                  <DemoProductVisual kind={product.kind as DemoProductKind} size="lg" />
+              <div key={product.name} className="w-full min-w-0 rounded-xl border border-[#eadfd2] bg-white p-2 sm:p-2.5">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <DemoProductVisual kind={product.kind as DemoProductKind} size="md" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate whitespace-nowrap text-sm font-semibold text-zinc-950">{product.name}</p>
                     <p className="mt-1 text-sm font-black text-[#9f1239]">{product.price}</p>
@@ -247,7 +247,7 @@ function LandingHeroMockup() {
             ))}
           </div>
 
-          <div className="mt-3 rounded-2xl border border-[#70102a]/30 bg-[#3d0719] p-3 text-white">
+          <div className="mt-3 rounded-2xl border border-[#70102a]/30 bg-[#3d0719] p-2.5 text-white sm:p-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-xs font-semibold">3 itens</p>
@@ -259,35 +259,36 @@ function LandingHeroMockup() {
           </div>
         </div>
 
-        <div className="w-full min-w-0 max-w-full rounded-2xl border border-amber-300/20 bg-zinc-950 p-4 text-white">
-          <div className="grid items-center gap-4 sm:grid-cols-[1fr_auto]">
+        <div className="w-full min-w-0 max-w-full rounded-2xl border border-amber-300/20 bg-zinc-950 p-3 text-white sm:p-4">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Painel de retirada</p>
-                  <p className="mt-1 text-sm text-zinc-300">Chamando agora</p>
-                </div>
-                <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-2 py-0.5 text-[10px] font-semibold text-amber-100">
-                  TV
-                </span>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {["0247", "0243", "0239"].map((code) => (
-                  <span key={code} className="rounded-lg border border-white/10 bg-white/[0.07] px-2 py-1 text-[11px] font-semibold text-zinc-200">
-                    {code}
-                  </span>
-                ))}
-              </div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Painel de retirada</p>
+              <p className="mt-1 text-sm text-zinc-300">Chamando agora</p>
             </div>
-            <p className="text-right text-5xl font-black leading-none text-amber-300">0248</p>
+            <span className="shrink-0 rounded-full border border-amber-300/25 bg-amber-300/10 px-2 py-0.5 text-[10px] font-semibold text-amber-100">
+              TV
+            </span>
+          </div>
+          <p className="mt-3 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-3 py-3 text-center text-5xl font-black leading-none text-amber-300 sm:text-6xl lg:text-5xl">
+            0248
+          </p>
+          <div className="mt-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Últimos chamados</p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {["0247", "0243", "0239"].map((code) => (
+                <span key={code} className="rounded-lg border border-white/10 bg-white/[0.07] px-2 py-1 text-[10px] font-semibold text-zinc-200 sm:text-[11px]">
+                  {code}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
         </div>
 
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3">
-          <div className="w-full min-w-0 max-w-full rounded-2xl border border-[#eadfd2] bg-[#fffaf2] p-4 text-zinc-900">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2.5 sm:gap-3">
+          <div className="w-full min-w-0 max-w-full rounded-2xl border border-[#eadfd2] bg-[#fffaf2] p-3 text-zinc-900 sm:p-4">
             <div className="flex items-center justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9f1239]">Dashboard</p>
                 <p className="mt-1 text-sm font-semibold">Visão operacional</p>
               </div>
@@ -295,21 +296,22 @@ function LandingHeroMockup() {
                 Ao vivo
               </span>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="mt-3 grid grid-cols-2 gap-1.5 sm:gap-2">
               {[
                 ["7", "Pedidos hoje"],
                 ["1", "Aguardando"],
                 ["2", "Em preparo"],
                 ["1", "Pronto"],
                 ["2", "Estoque baixo"],
+                ["R$ 18,14", "Ticket médio"],
               ].map(([value, label]) => (
-                <div key={label} className="rounded-xl border border-[#eadfd2] bg-white p-2">
+                <div key={label} className="min-h-[3.4rem] rounded-xl border border-[#eadfd2] bg-white p-2">
                   <p className="text-lg font-black leading-none text-zinc-950">{value}</p>
                   <p className="mt-1 text-[10px] leading-tight text-zinc-500">{label}</p>
                 </div>
               ))}
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+            <div className="mt-3 grid grid-cols-2 gap-1.5 text-[11px] sm:gap-2">
               <div className="rounded-xl border border-[#eadfd2] bg-white px-3 py-2">
                 <p className="text-zinc-500">Hoje</p>
                 <p className="font-black text-[#9f1239]">R$ 128,70</p>
@@ -324,7 +326,7 @@ function LandingHeroMockup() {
             </div>
           </div>
 
-          <div className="w-full min-w-0 max-w-full rounded-2xl border border-[#eadfd2] bg-white p-4 text-zinc-900">
+          <div className="w-full min-w-0 max-w-full rounded-2xl border border-[#eadfd2] bg-white p-3 text-zinc-900 sm:p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9f1239]">Checkout</p>
@@ -440,7 +442,7 @@ export default async function HomePage() {
                 {heroBadges.map((badge) => (
                   <span
                     key={badge}
-                    className="max-w-full rounded-full border border-amber-200/20 bg-white/[0.07] px-2.5 py-1 text-center text-[11px] font-medium leading-5 text-zinc-200 sm:px-3 sm:text-xs"
+                    className="flex min-h-10 max-w-full items-center justify-center rounded-xl border border-amber-200/20 bg-white/[0.07] px-2 py-1 text-center text-[11px] font-medium leading-[1.15] text-zinc-200 sm:min-h-0 sm:rounded-full sm:px-3 sm:py-1 sm:text-xs sm:leading-5"
                   >
                     {badge}
                   </span>

@@ -449,10 +449,10 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
                 {/* Só a barra compacta fica sticky no mobile; as ações completas continuam no fluxo normal. */}
                 <div
                   data-testid="category-bulk-toolbar"
-                  className="sticky top-36 z-30 mx-2 mt-2 rounded-2xl border border-amber-200/70 bg-[#fffaf2]/95 px-3 py-2 shadow-[0_18px_44px_-34px_rgba(24,24,27,0.75)] backdrop-blur md:hidden"
+                  className="sticky top-[10rem] z-40 mx-3 mt-2 rounded-2xl border border-amber-200/70 bg-[#fffaf2]/95 px-3 py-2 shadow-[0_18px_44px_-34px_rgba(24,24,27,0.75)] backdrop-blur sm:top-36 md:hidden"
                 >
-                  <div className="flex min-w-0 items-center justify-between gap-3">
-                    <p className="min-w-0 text-xs font-semibold text-zinc-800">
+                  <div className="flex min-w-0 items-center justify-between gap-2.5">
+                    <p className="min-w-0 whitespace-nowrap text-xs font-semibold text-zinc-800">
                       {selectedCount} {selectedCount === 1 ? "categoria selecionada" : "categorias selecionadas"}
                     </p>
                     <div className="flex shrink-0 items-center gap-2">
@@ -494,7 +494,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
                   </div>
                   <div
                     ref={bulkActionsRef}
-                    className={`${mobileActionsOpen ? "grid" : "hidden"} scroll-mt-36 grid-cols-2 gap-1.5 md:flex md:scroll-mt-0 md:flex-wrap md:justify-end md:gap-2`}
+                    className={`${mobileActionsOpen ? "grid" : "hidden"} scroll-mt-[10.5rem] grid-cols-2 gap-1.5 md:flex md:scroll-mt-0 md:flex-wrap md:justify-end md:gap-2`}
                   >
                   <button
                     type="button"

@@ -21,7 +21,7 @@ O checkout ainda não possui pagamento real. A etapa de Mercado Pago não foi im
 
 SaaS, billing, domínio próprio, Conta/Segurança, 2FA, edição controlada de slug e políticas avançadas de LGPD ficam para etapas futuras. A Vercel é usada como ambiente gratuito de homologação, não como produção real com pagamento.
 
-Na fase atual, o CardExpress trabalha com uma conta autenticada vinculada a uma única loja. Múltiplas lojas por conta não fazem parte do escopo atual do produto.
+Na fase atual, o CardExpress trabalha com uma conta autenticada vinculada a uma única loja. Múltiplas lojas por conta não fazem parte do escopo atual do produto nem do roadmap previsto.
 
 ## Stack
 
@@ -422,7 +422,7 @@ Scripts auxiliares de diagnóstico podem existir para investigação local. Eles
 - pagamento real;
 - webhook e idempotência de pagamento;
 - remoção da simulação de pagamento;
-- relatórios avançados além do relatório semanal e das vendas por período operacional já existentes;
+- relatórios avançados além dos indicadores já existentes, mantendo relatório semanal e vendas por período operacional/turno como funcionalidades implementadas;
 - Conta/Segurança;
 - login por usuário ou e-mail;
 - 2FA;

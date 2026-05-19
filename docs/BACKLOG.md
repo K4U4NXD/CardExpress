@@ -352,7 +352,7 @@ Estado validado na última rodada:
 - Mercado Pago/pagamento real;
 - webhook e idempotência de pagamento;
 - remoção futura do botão “Simular pagamento aprovado”;
-- relatórios avançados além do relatório semanal e das vendas por período operacional já implementadas;
+- relatórios avançados além dos indicadores já implementados, mantendo relatório semanal e vendas por período operacional/turno como funcionalidades concluídas;
 - Conta/Segurança;
 - login com e-mail ou usuário;
 - 2FA;
@@ -415,12 +415,13 @@ Evitar que README, backlog e deploy guiem decisões com informações antigas.
 ### 4. Relatórios avançados
 
 #### Objetivo
-Expandir a visão operacional além do relatório semanal e das vendas por período operacional já implementadas.
+Expandir a visão operacional além dos indicadores já implementados, sem tratar relatório semanal ou vendas por período operacional/turno como pendência.
 
 #### Escopo recomendado
 
 - manter visão diária;
-- manter relatório semanal;
+- manter relatório semanal como funcionalidade já implementada;
+- manter vendas por período operacional/turno como funcionalidade já implementada;
 - avaliar mensal ou comparativos somente se houver necessidade real;
 - sem menos vendidos nesta etapa;
 - usar vendas/faturamento, não lucro.
@@ -429,10 +430,10 @@ Expandir a visão operacional além do relatório semanal e das vendas por perí
 
 Definir quais visões avançadas realmente ajudam a operação antes de criar telas novas.
 
-### 5. Evoluções do período operacional
+### 5. Evoluções avançadas do período operacional
 
 #### Objetivo
-Evoluir a visão por turno/período aberto-fechado sem quebrar o painel atual.
+Evoluir recursos avançados de turno/período aberto-fechado sem reabrir como pendência a visão de vendas por período operacional já entregue.
 
 #### Observação
 
@@ -496,7 +497,7 @@ Ordem recomendada:
 
 Essa é uma frente sensível e não deve ser misturada com melhorias menores de UX ou documentação.
 
-Na fase atual, o CardExpress trabalha com uma conta autenticada vinculada a uma única loja. Múltiplas lojas por conta não fazem parte do escopo atual do produto nem da próxima fase recomendada.
+Na fase atual, o CardExpress trabalha com uma conta autenticada vinculada a uma única loja. Múltiplas lojas por conta não fazem parte do escopo atual do produto, da próxima fase recomendada nem do roadmap previsto.
 
 ### 9. Landing comercial aprimorada
 
@@ -515,7 +516,7 @@ Transformar a home em página institucional e de conversão.
 ### 10. Venda do acesso ao sistema
 
 #### Objetivo
-Permitir comercializar o CardExpress para múltiplos estabelecimentos.
+Permitir comercializar o CardExpress para diferentes comerciantes, mantendo a regra de uma conta autenticada para uma loja.
 
 #### Ideia consolidada
 
@@ -800,5 +801,5 @@ A sequência mais segura é:
 
 1. manter documentação e homologação estáveis;
 2. corrigir polimentos pequenos percebidos em uso real;
-3. escolher incremento operacional de baixo risco além do relatório semanal já entregue;
+3. escolher incremento operacional de baixo risco além dos indicadores já entregues;
 4. só depois abrir frentes sensíveis de conta, pagamento e SaaS.

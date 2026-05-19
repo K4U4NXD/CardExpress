@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { DemoProductVisual, type DemoProductKind } from "@/components/layout/demo-product-visual";
+import { MarketingFooter } from "@/components/layout/marketing-footer";
 import { WhatsappFloatingButton } from "@/components/layout/whatsapp-floating-button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -360,6 +361,14 @@ export default async function DemonstracaoPage() {
           </div>
         </div>
       </section>
+
+      {/* A demonstração reutiliza o rodapé institucional e aponta as âncoras para a landing. */}
+      <MarketingFooter
+        isAuthenticated={isAuthenticated}
+        primaryCtaHref={primaryHref}
+        anchorPrefix="/"
+        demoHref="/#demonstracao"
+      />
     </main>
   );
 }

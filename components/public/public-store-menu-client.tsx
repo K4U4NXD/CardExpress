@@ -392,14 +392,15 @@ export function PublicStoreMenuClient({
   return (
     <div className="relative isolate max-w-full space-y-5 pb-[calc(8.25rem+env(safe-area-inset-bottom))] sm:space-y-6 sm:pb-28">
       {hasProducts ? (
-        <section className="cx-public-sticky-surface z-20 rounded-2xl p-2.5 sm:sticky sm:top-[4.25rem] sm:z-40 sm:p-3">
-          <div className="space-y-3">
+        // Busca e filtros ficam acessíveis durante a rolagem; no mobile o bloco é propositalmente compacto.
+        <section className="cx-public-sticky-surface sticky top-[4.75rem] z-30 rounded-xl p-2 sm:top-20 sm:z-40 sm:rounded-2xl sm:p-3">
+          <div className="space-y-2 sm:space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-semibold text-[#9f1239]">Explore o cardápio</p>
               <p className="text-xs text-zinc-500">{visibleProductsCount} resultado(s)</p>
             </div>
 
-            <label htmlFor="menu-search-input" className="text-[11px] font-medium text-zinc-500 sm:text-xs">
+            <label htmlFor="menu-search-input" className="hidden text-xs font-medium text-zinc-500 sm:block">
               Filtre por categoria ou busque por produto.
             </label>
             <div className="flex items-center gap-2">
@@ -410,21 +411,21 @@ export function PublicStoreMenuClient({
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Buscar por nome ou descrição"
                 data-testid="menu-search-input"
-                className="cx-input min-h-10 sm:min-h-11"
+                className="cx-input min-h-9 py-1.5 text-xs sm:min-h-11 sm:py-2 sm:text-sm"
               />
               {searchQuery ? (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="cx-btn-secondary shrink-0 px-3 py-2"
+                  className="cx-btn-secondary shrink-0 px-2.5 py-1.5 text-xs sm:px-3 sm:py-2"
                 >
                   Limpar
                 </button>
               ) : null}
             </div>
 
-            <div className="-mx-1 rounded-xl border border-[#eadfd2] bg-[#fff7ed]/80 px-1.5 py-1">
-              <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="-mx-1 rounded-xl border border-[#eadfd2] bg-[#fff7ed]/80 px-1 py-1 sm:px-1.5">
+              <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] sm:gap-2 sm:pb-1 [&::-webkit-scrollbar]:hidden">
               {categoryFilters.map((filter) => {
                 const active = activeCategory === filter.value;
                 return (
@@ -433,7 +434,7 @@ export function PublicStoreMenuClient({
                     type="button"
                     onClick={() => setActiveCategory(filter.value)}
                     data-testid={`menu-category-filter-${filter.value}`}
-                    className={active ? "cx-chip-active" : "cx-chip"}
+                    className={`${active ? "cx-chip-active" : "cx-chip"} !px-2.5 !py-1 !text-[11px] sm:!px-3 sm:!text-xs`}
                   >
                     {filter.label}
                   </button>

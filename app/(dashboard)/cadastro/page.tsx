@@ -21,10 +21,10 @@ const signupSteps = [
 const readyStoreStats = [
   ["8", "produtos"],
   ["3", "categorias"],
-  ["Demo", "checkout"],
+  ["7", "pedidos hoje"],
 ] as const;
 
-const readyStoreResources = ["Painel de retirada", "Venda liberada", "Status público"] as const;
+const readyStoreResources = ["Checkout organizado", "Fila operacional", "Status público"] as const;
 
 export default async function CadastroPage() {
   const supabase = await createServerSupabaseClient();
@@ -84,9 +84,9 @@ export default async function CadastroPage() {
         compact
         maxWidthClassName="max-w-6xl"
       />
-      <main className="mx-auto flex w-full max-w-6xl flex-1 items-center px-4 py-5 sm:px-6 sm:py-7 lg:min-h-[calc(100dvh-4.5rem)] lg:py-8">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 items-center px-4 py-5 sm:px-6 sm:py-7 lg:min-h-[calc(100dvh-4.5rem)] lg:py-6">
         <section className="grid w-full gap-5 overflow-hidden rounded-3xl border border-[#eadfd2] bg-white/65 shadow-[0_28px_80px_-56px_rgba(24,24,27,0.75)] backdrop-blur lg:grid-cols-[0.86fr_1.14fr] lg:gap-0">
-        <aside className="hidden min-h-[36rem] bg-[#171717] p-7 text-white lg:flex lg:flex-col lg:gap-5">
+        <aside className="hidden min-h-[34rem] bg-[#171717] p-6 text-white lg:flex lg:flex-col lg:gap-4">
           <div>
             <Image
               src={BRANDING.logoPath}
@@ -94,17 +94,17 @@ export default async function CadastroPage() {
               width={236}
               height={58}
               priority
-              className="h-auto w-auto max-w-[236px] rounded-xl bg-white px-3 py-2"
+              className="h-auto w-auto max-w-[218px] rounded-xl bg-white px-3 py-2"
             />
-            <p className="mt-5 text-2xl font-semibold leading-tight">Comece com uma loja organizada desde o primeiro pedido.</p>
-            <p className="mt-4 text-sm leading-6 text-zinc-300">
-              Crie sua conta, configure sua loja e publique um cardápio pronto para receber pedidos em poucos passos.
+            <p className="mt-4 text-2xl font-semibold leading-tight">Comece com uma loja pronta para vender.</p>
+            <p className="mt-2.5 text-sm leading-6 text-zinc-300">
+              Crie sua conta, publique o link e acompanhe pedidos em poucos passos.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-amber-300/20 bg-white/[0.06] p-4">
+          <div className="rounded-2xl border border-amber-300/20 bg-white/[0.06] p-3.5">
             <p className="text-xs font-semibold uppercase tracking-wide text-amber-100">Como sua loja fica pronta</p>
-            <div className="mt-4 space-y-3">
+            <div className="mt-3 space-y-2.5">
               {signupSteps.map(([title, description, icon], index) => (
                 <div key={title} className="flex gap-3">
                   <span className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-300/25 bg-amber-300/10 text-amber-100">
@@ -122,18 +122,32 @@ export default async function CadastroPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-amber-300/20 bg-[#fffaf2] p-4 text-zinc-900 shadow-[0_24px_70px_-48px_rgba(0,0,0,0.9)]">
+          {/* Prévia visual apenas institucional: comunica loja pronta sem interferir no fluxo real de cadastro. */}
+          <div className="rounded-2xl border border-amber-300/20 bg-[#fffaf2] p-3.5 text-zinc-900 shadow-[0_24px_70px_-48px_rgba(0,0,0,0.9)]">
             <div className="flex items-start justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9f1239]">Loja pronta</p>
                 <p className="mt-1 break-words text-base font-semibold">Sabor no Ponto</p>
-                <p className="mt-1 text-xs text-zinc-500">cardexpress.app/sabor-no-ponto</p>
+                <p className="mt-1 text-xs leading-5 text-zinc-500">Cardápio publicado para retirada no balcão.</p>
               </div>
-              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
+              <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
                 Aceitando pedidos
               </span>
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-2">
+
+            <div className="mt-3 rounded-xl border border-[#eadfd2] bg-white px-3 py-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-[#c58a1a]">
+                  <SignupStepIcon name="link" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Link público</p>
+                  <p className="truncate text-xs font-semibold text-[#9f1239]">cardexpress.app/sabor-no-ponto</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-3 gap-2">
               {readyStoreStats.map(([value, label]) => (
                 <div key={label} className="rounded-xl border border-[#eadfd2] bg-white p-2 text-center">
                   <p className="text-sm font-black text-[#9f1239]">{value}</p>
@@ -141,9 +155,9 @@ export default async function CadastroPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-3 grid gap-2">
+            <div className="mt-3 grid grid-cols-3 gap-2">
               {readyStoreResources.map((item) => (
-                <div key={item} className="flex items-center gap-2 rounded-xl border border-[#eadfd2] bg-white px-3 py-2 text-xs">
+                <div key={item} className="flex flex-col items-center justify-center gap-1 rounded-xl border border-[#eadfd2] bg-white px-2 py-2 text-center text-[10px] leading-4">
                   <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-50 text-[#c58a1a]">
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3" aria-hidden>
                       <path d="m3.5 8 3 3 6-6" strokeLinecap="round" strokeLinejoin="round" />
@@ -153,10 +167,23 @@ export default async function CadastroPage() {
                 </div>
               ))}
             </div>
+
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-900">Pedido #0248</p>
+                  <p className="mt-1 text-xs font-semibold text-zinc-900">2 itens para retirada</p>
+                </div>
+                <span className="shrink-0 rounded-full border border-amber-200 bg-white px-2 py-1 text-[10px] font-semibold text-amber-900">
+                  Aguardando aceite
+                </span>
+              </div>
+            </div>
           </div>
         </aside>
 
-        <div className="mx-auto w-full max-w-xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+        <div className="mx-auto flex w-full max-w-xl self-center px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+          <div className="w-full">
           <div className="mb-4 flex justify-center lg:hidden">
             <Image
               src={BRANDING.logoPath}
@@ -175,6 +202,7 @@ export default async function CadastroPage() {
               Entrar
             </Link>
           </p>
+          </div>
         </div>
         </section>
       </main>

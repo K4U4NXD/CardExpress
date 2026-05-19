@@ -5,6 +5,7 @@ import { Sora, Space_Grotesk } from "next/font/google";
 import { Reveal } from "@/components/layout/reveal";
 import { LandingStickyNav } from "@/components/layout/landing-sticky-nav";
 import { LandingBenefitsSection } from "@/components/layout/landing-benefits-section";
+import { MarketingFooter } from "@/components/layout/marketing-footer";
 import { WhatsappFloatingButton } from "@/components/layout/whatsapp-floating-button";
 import { DemoProductVisual, type DemoProductKind } from "@/components/layout/demo-product-visual";
 import { BRANDING } from "@/lib/branding";
@@ -134,9 +135,6 @@ const customerBenefits = [
   },
 ] as const;
 
-const navActionClass =
-  "rounded-xl px-3 py-2 text-sm font-medium text-zinc-300 transition duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/30";
-
 type ProductFlowIconName = "menu" | "cart" | "panel" | "pickup";
 
 function ProductFlowIcon({ name }: { name: ProductFlowIconName }) {
@@ -203,19 +201,20 @@ function LandingHeroMockup() {
   ] as const;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-amber-200/20 bg-white/[0.07] p-3 shadow-[0_34px_100px_-48px_rgba(0,0,0,0.95)] sm:p-4">
+    // As contenções min-w-0/minmax evitam que cards internos empurrem o hero além da largura em mobiles estreitos.
+    <div className="relative w-full min-w-0 overflow-hidden rounded-3xl border border-amber-200/20 bg-white/[0.07] p-3 shadow-[0_34px_100px_-48px_rgba(0,0,0,0.95)] sm:p-4">
       <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/70 to-transparent" />
-      <div className="grid items-start gap-3 lg:grid-cols-[1.14fr_0.86fr]">
-        <div className="grid gap-3">
-        <div className="rounded-2xl border border-amber-100 bg-[#fffaf2] p-3 text-zinc-900">
-          <div className="flex items-start justify-between gap-2">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] items-start gap-3 lg:grid-cols-[minmax(0,1.14fr)_minmax(0,0.86fr)]">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3">
+        <div className="w-full min-w-0 max-w-full rounded-2xl border border-amber-100 bg-[#fffaf2] p-3 text-zinc-900">
+          <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="flex min-w-0 items-center gap-3">
               <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#eadfd2] bg-white p-1">
                 <Image src="/demo/sabor-no-ponto-logo.png" alt="Logo da loja Sabor no Ponto" fill sizes="40px" quality={95} unoptimized className="object-contain" />
               </div>
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9f1239]">Cardápio público</p>
-                <p className="mt-0.5 whitespace-nowrap text-[15px] font-semibold leading-tight">Sabor no Ponto</p>
+                <p className="mt-0.5 break-words text-[15px] font-semibold leading-tight">Sabor no Ponto</p>
                 <p className="mt-1 text-xs text-zinc-500">Pedidos com retirada no balcão</p>
               </div>
             </div>
@@ -226,7 +225,7 @@ function LandingHeroMockup() {
 
           <div className="mt-3 space-y-2">
             {menuItems.map((product) => (
-              <div key={product.name} className="rounded-xl border border-[#eadfd2] bg-white p-2.5">
+              <div key={product.name} className="w-full min-w-0 rounded-xl border border-[#eadfd2] bg-white p-2.5">
                 <div className="flex items-center gap-3">
                   <DemoProductVisual kind={product.kind as DemoProductKind} size="lg" />
                   <div className="min-w-0 flex-1">
@@ -249,18 +248,18 @@ function LandingHeroMockup() {
           </div>
 
           <div className="mt-3 rounded-2xl border border-[#70102a]/30 bg-[#3d0719] p-3 text-white">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-xs font-semibold">3 itens</p>
                 <p className="text-sm font-black">R$ 71,80</p>
                 <p className="mt-1 text-[10px] leading-tight text-white/70">2x Burger artesanal + 1x Pastel especial</p>
               </div>
-              <span className="shrink-0 whitespace-nowrap rounded-xl bg-[#c58a1a] px-3 py-2 text-xs font-black text-white">Ir para checkout</span>
+              <span className="w-full rounded-xl bg-[#c58a1a] px-3 py-2 text-center text-xs font-black text-white sm:w-auto sm:shrink-0 sm:whitespace-nowrap">Ir para checkout</span>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-amber-300/20 bg-zinc-950 p-4 text-white">
+        <div className="w-full min-w-0 max-w-full rounded-2xl border border-amber-300/20 bg-zinc-950 p-4 text-white">
           <div className="grid items-center gap-4 sm:grid-cols-[1fr_auto]">
             <div className="min-w-0">
               <div className="flex items-center justify-between gap-3">
@@ -285,8 +284,8 @@ function LandingHeroMockup() {
         </div>
         </div>
 
-        <div className="grid gap-3">
-          <div className="rounded-2xl border border-[#eadfd2] bg-[#fffaf2] p-4 text-zinc-900">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3">
+          <div className="w-full min-w-0 max-w-full rounded-2xl border border-[#eadfd2] bg-[#fffaf2] p-4 text-zinc-900">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9f1239]">Dashboard</p>
@@ -325,7 +324,7 @@ function LandingHeroMockup() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#eadfd2] bg-white p-4 text-zinc-900">
+          <div className="w-full min-w-0 max-w-full rounded-2xl border border-[#eadfd2] bg-white p-4 text-zinc-900">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9f1239]">Checkout</p>
@@ -385,7 +384,7 @@ export default async function HomePage() {
 
       <section
         id="inicio"
-        className="relative isolate scroll-mt-52 overflow-hidden bg-[#171717] px-4 pt-32 text-white sm:scroll-mt-44 sm:px-6 sm:pt-36 md:scroll-mt-36 lg:pt-32"
+        className="relative isolate scroll-mt-52 overflow-hidden bg-[#171717] px-4 pt-24 text-white sm:scroll-mt-44 sm:px-6 sm:pt-36 md:scroll-mt-36 lg:pt-32"
       >
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(180deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[length:82px_82px]" />
         <div className="absolute -left-24 top-16 -z-10 h-72 w-72 rounded-full bg-[#9f1239]/35 blur-3xl" />
@@ -394,38 +393,38 @@ export default async function HomePage() {
         <div className="absolute inset-x-0 bottom-0 -z-10 h-3 bg-gradient-to-r from-[#9f1239] via-[#c58a1a] to-[#70102a]" />
         <div className="absolute inset-x-0 bottom-0 z-0 h-14 bg-[radial-gradient(120%_70%_at_50%_110%,#fffaf2_42%,transparent_43%)]" />
 
-        <div className="mx-auto grid max-w-7xl gap-8 pb-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-12 lg:pb-14">
-          <Reveal>
-            <div className="max-w-3xl">
+        <div className="mx-auto grid max-w-7xl min-w-0 gap-6 pb-9 sm:gap-8 sm:pb-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-12 lg:pb-14">
+          <Reveal className="min-w-0">
+            <div className="w-full min-w-0 max-w-3xl">
               <Image
                 src={BRANDING.logoPath}
                 alt={BRANDING.productName}
                 width={268}
                 height={66}
                 priority
-                className="h-auto w-auto max-w-[190px] rounded-xl bg-white/95 px-3 py-2 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.85)] sm:max-w-[268px]"
+                className="h-auto w-auto max-w-[156px] rounded-xl bg-white/95 px-3 py-2 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.85)] sm:max-w-[268px]"
               />
-              <p className="mt-5 inline-flex rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-100">
+              <p className="mt-4 flex max-w-full justify-center rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-1 text-center text-[10px] font-semibold uppercase leading-5 tracking-wide text-amber-100 sm:mt-5 sm:inline-flex sm:text-xs">
                 Seu cardápio digital. Seus pedidos no ritmo certo.
               </p>
               <h1
-                className={`${displayFont.className} mt-4 text-[2.35rem] font-semibold leading-[1.04] text-white sm:text-[3.65rem] lg:text-[4.05rem] xl:text-[4.35rem]`}
+                className={`${displayFont.className} mt-3 text-[2.05rem] font-semibold leading-[1.06] text-white sm:mt-4 sm:text-[3.65rem] sm:leading-[1.04] lg:text-[4.05rem] xl:text-[4.35rem]`}
               >
                 Cardápio, pedidos e retirada no compasso da sua operação.
               </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-200 sm:text-lg sm:leading-8">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-200 sm:mt-4 sm:text-lg sm:leading-8">
                 O CardExpress ajuda lanchonetes, cafeterias e pontos de venda rápida a transformar o cardápio em um
                 fluxo claro de pedido, preparo, status público e retirada.
               </p>
-              <p className="mt-2.5 max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base">{paymentNarrative.hero}</p>
+              <p className="mt-2 max-w-2xl text-xs leading-5 text-zinc-400 sm:mt-2.5 sm:text-base sm:leading-6">{paymentNarrative.hero}</p>
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Link href={primaryCtaHref} prefetch className="cx-btn-primary min-h-11 px-5 py-2.5 text-sm font-semibold sm:min-h-12 sm:px-6 sm:py-3 sm:text-base">
+              <div className="mt-5 flex w-full min-w-0 flex-col gap-3 sm:mt-6 sm:flex-row sm:flex-wrap">
+                <Link href={primaryCtaHref} prefetch className="cx-btn-primary min-h-11 w-full px-5 py-2.5 text-center text-sm font-semibold sm:min-h-12 sm:w-auto sm:px-6 sm:py-3 sm:text-base">
                   {primaryCtaLabel}
                 </Link>
                 <Link
                   href="/demonstracao"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-amber-300/30 bg-amber-300/10 px-5 py-2.5 text-sm font-semibold text-amber-50 transition hover:bg-amber-300/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/35 sm:min-h-12 sm:px-6 sm:py-3 sm:text-base"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-amber-300/30 bg-amber-300/10 px-5 py-2.5 text-center text-sm font-semibold text-amber-50 transition hover:bg-amber-300/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/35 sm:min-h-12 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
                 >
                   Visualizar demonstração
                 </Link>
@@ -436,11 +435,12 @@ export default async function HomePage() {
                 </p>
               ) : null}
 
-              <div className="mt-6 flex flex-wrap gap-2">
+              {/* Chips em grid no mobile reduzem risco de overflow sem esconder conteúdo. */}
+              <div className="mt-5 grid w-full min-w-0 grid-cols-2 gap-2 sm:mt-6 sm:flex sm:flex-wrap">
                 {heroBadges.map((badge) => (
                   <span
                     key={badge}
-                    className="rounded-full border border-amber-200/20 bg-white/[0.07] px-3 py-1 text-xs font-medium text-zinc-200"
+                    className="max-w-full rounded-full border border-amber-200/20 bg-white/[0.07] px-2.5 py-1 text-center text-[11px] font-medium leading-5 text-zinc-200 sm:px-3 sm:text-xs"
                   >
                     {badge}
                   </span>
@@ -449,7 +449,7 @@ export default async function HomePage() {
             </div>
           </Reveal>
 
-          <Reveal delayMs={120}>
+          <Reveal className="min-w-0" delayMs={120}>
             <LandingHeroMockup />
           </Reveal>
         </div>
@@ -617,51 +617,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-white/10 bg-[#171717] text-zinc-200">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-start lg:gap-12">
-          <div className="max-w-md">
-            <Image
-              src={BRANDING.logoPath}
-              alt={BRANDING.productName}
-              width={180}
-              height={44}
-              className="h-auto w-auto max-w-[180px] rounded-lg bg-white px-2 py-1"
-            />
-            <p className="mt-2 text-sm text-zinc-400">
-              Cardápio digital, checkout estruturado e painel de pedidos para retirada no balcão.
-            </p>
-          </div>
-
-          <nav className="grid gap-2 text-sm sm:grid-cols-2 lg:min-w-[320px]">
-            <a href="#produto" className={navActionClass}>
-              Produto
-            </a>
-            <a href="#como-funciona" className={navActionClass}>
-              Como funciona
-            </a>
-            <a href="#diferenciais" className={navActionClass}>
-              Diferenciais
-            </a>
-            <Link href="/demonstracao" className={navActionClass}>
-              Demonstração
-            </Link>
-            <Link href={isAuthenticated ? "/dashboard" : "/login"} className={navActionClass}>
-              {isAuthenticated ? "Painel" : "Login"}
-            </Link>
-            {!isAuthenticated ? (
-              <Link href={primaryCtaHref} className={navActionClass}>
-                Cadastro
-              </Link>
-            ) : null}
-          </nav>
-        </div>
-
-        <div className="border-t border-white/10 bg-[#171717]">
-          <div className="mx-auto max-w-7xl px-4 py-4 text-center text-xs text-zinc-500 sm:px-6">
-            <p>© 2026 CardExpress. Todos os direitos reservados.</p>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter isAuthenticated={isAuthenticated} primaryCtaHref={primaryCtaHref} />
     </main>
   );
 }

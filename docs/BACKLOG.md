@@ -19,7 +19,7 @@ Estado validado na última rodada:
 - `npm run build` passou;
 - testes manuais passaram;
 - E2E local passou com 16/16 cenários;
-- E2E contra Vercel passou com 16/16 cenários.
+- E2E contra Vercel já foi validado em rodada de homologação, respeitando a estabilidade do Supabase Free/Nano.
 
 ## 2. Stack atual
 
@@ -57,8 +57,14 @@ Estado validado na última rodada:
 ### Área pública
 
 - Landing page institucional;
+- landing refinada visualmente;
+- topo mobile da landing corrigido;
+- overflow/corte horizontal mobile da landing corrigido;
+- rodapé institucional reutilizável com `projetocardexpress@gmail.com`;
+- página `/demonstracao` com rodapé institucional compartilhado;
 - cardápio público por slug;
-- busca e filtro de produtos;
+- busca e filtro de produtos com sticky desktop ajustado;
+- sticky mobile minimalista para busca/filtros;
 - carrinho local por loja;
 - checkout público em modo demo;
 - criação de sessão de checkout;
@@ -79,6 +85,7 @@ Estado validado na última rodada:
 - redefinição de senha;
 - campos de senha com botão de mostrar/ocultar;
 - mensagens de erro amigáveis em português;
+- página de cadastro com mini demonstração visual refinada;
 - recovery não provisiona loja;
 - loja só é provisionada após confirmação de e-mail;
 - regra atual: uma conta autenticada representa uma loja.
@@ -88,6 +95,8 @@ Estado validado na última rodada:
 - Dashboard protegido;
 - home do dashboard com resumo operacional;
 - métricas operacionais do dia/período disponível;
+- relatório semanal implementado;
+- vendas por período operacional/turno implementadas;
 - sidebar/navegação do painel;
 - responsividade mobile;
 - categorias;
@@ -97,6 +106,8 @@ Estado validado na última rodada:
 - upload de logo;
 - upload de imagem de produto;
 - ações em massa em categorias e produtos;
+- barra compacta sticky de seleção no mobile;
+- scroll automático para ações expandidas ao tocar em "Ações" no mobile;
 - modos operacionais:
   - loja offline;
   - aberta manualmente;
@@ -268,7 +279,7 @@ Estado validado na última rodada:
 - `.env.e2e.example` criado;
 - suíte smoke com 16 cenários no estado atual;
 - validação local com 16/16;
-- validação contra Vercel com 16/16;
+- validação contra Vercel já realizada em rodada de homologação;
 - helpers de criação de categorias/produtos robustecidos para não depender exclusivamente de query params transitórios;
 - login E2E preservado pela UI real, sem fallback manual de autenticação.
 
@@ -287,6 +298,7 @@ Estado validado na última rodada:
 - o projeto será voltado ao Brasil;
 - o gateway preferencial futuro é Mercado Pago;
 - “lucro” não entra agora; a métrica correta é vendas/faturamento;
+- relatório semanal e vendas por período operacional/turno já fazem parte do MVP atual;
 - produto sem estoque permanece visível no cardápio, porém bloqueado;
 - upload de imagem de produto já existe e deve preservar a regra de imagem pública segura;
 - produto sem histórico pode ser excluído fisicamente;
@@ -306,6 +318,13 @@ Estado validado na última rodada:
 - cardápio público sem botão de voltar para o início;
 - notificações e alertas operacionais principais;
 - melhoria de responsividade e UX;
+- refinamento visual da landing e da página `/demonstracao`;
+- correção do topo/overflow mobile da landing;
+- rodapé institucional reutilizável com e-mail oficial;
+- mini demonstração refinada no cadastro;
+- sticky desktop e mobile no cardápio público;
+- barra compacta sticky de seleção em produtos/categorias mobile;
+- scroll automático ao abrir ações em massa;
 - realtime nas rotas principais;
 - checkout com recovery;
 - painel público e modo TV;
@@ -316,12 +335,15 @@ Estado validado na última rodada:
 - exclusão/arquivamento seguro de produto conforme histórico;
 - ações em massa em categorias e produtos;
 - deploy de homologação na Vercel;
-- E2E local e remoto validado.
+- relatório semanal;
+- vendas por período operacional/turno;
+- estabilização da suíte E2E;
+- E2E local validado e E2E remoto já validado em rodada de homologação.
 
 ### Atendidas parcialmente
 
-- Landing page institucional existe, mas ainda pode ser aprimorada para conversão comercial;
-- dashboard já possui métricas operacionais, mas ainda pode evoluir para relatórios mais completos;
+- Landing page institucional já foi refinada, mas ainda pode evoluir para conversão comercial;
+- dashboard já possui métricas operacionais, relatório semanal e vendas por período operacional, mas ainda pode evoluir para relatórios avançados;
 - visual geral já melhorou, mas ainda pode receber polimento adicional;
 - documentação está consolidada, mas deve continuar sendo ajustada conforme novas entregas.
 
@@ -330,13 +352,10 @@ Estado validado na última rodada:
 - Mercado Pago/pagamento real;
 - webhook e idempotência de pagamento;
 - remoção futura do botão “Simular pagamento aprovado”;
-- relatórios avançados;
-- relatório semanal consolidado, caso vire página/central própria;
-- vendas por período operacional/turno;
+- relatórios avançados além do relatório semanal e das vendas por período operacional já implementadas;
 - Conta/Segurança;
 - login com e-mail ou usuário;
 - 2FA;
-- múltiplas lojas por conta;
 - edição controlada de slug;
 - linha SaaS comercial;
 - assinatura mensal/anual;
@@ -393,36 +412,31 @@ Evitar que README, backlog e deploy guiem decisões com informações antigas.
 
 ## 5.2 Fase 2 — evolução operacional e analítica
 
-### 4. Relatórios diário e semanal
+### 4. Relatórios avançados
 
 #### Objetivo
-Expandir a visão operacional sem abrir escopo analítico excessivo.
+Expandir a visão operacional além do relatório semanal e das vendas por período operacional já implementadas.
 
 #### Escopo recomendado
 
 - manter visão diária;
-- adicionar semanal;
-- sem mensal nesta etapa;
+- manter relatório semanal;
+- avaliar mensal ou comparativos somente se houver necessidade real;
 - sem menos vendidos nesta etapa;
 - usar vendas/faturamento, não lucro.
 
 #### Decisão pendente
 
-Definir se semanal será:
+Definir quais visões avançadas realmente ajudam a operação antes de criar telas novas.
 
-- semana corrente; ou
-- últimos 7 dias.
-
-Recomendação atual: semana corrente, por ser mais natural para operação e apresentação.
-
-### 5. Vendas por período operacional
+### 5. Evoluções do período operacional
 
 #### Objetivo
-Trocar parte da visão “do dia” por uma visão por turno/período aberto-fechado.
+Evoluir a visão por turno/período aberto-fechado sem quebrar o painel atual.
 
 #### Observação
 
-Não chamar de lucro. Chamar de:
+O MVP já apresenta vendas por período operacional/turno. Evoluções futuras devem continuar evitando o termo lucro e usar:
 
 - vendas do turno;
 - faturamento do turno;
@@ -481,6 +495,8 @@ Ordem recomendada:
 ## 5.4 Fase 4 — linha SaaS comercial do CardExpress
 
 Essa é uma frente sensível e não deve ser misturada com melhorias menores de UX ou documentação.
+
+Na fase atual, o CardExpress trabalha com uma conta autenticada vinculada a uma única loja. Múltiplas lojas por conta não fazem parte do escopo atual do produto nem da próxima fase recomendada.
 
 ### 9. Landing comercial aprimorada
 
@@ -640,29 +656,26 @@ Esses fluxos não devem ser desenhados como se fossem a mesma coisa.
 
 1. manter documentação alinhada;
 2. corrigir pequenos problemas visuais/textuais encontrados em homologação;
-3. escolher uma próxima entrega pequena: polimento de UX ou relatório semanal simples.
+3. escolher uma próxima entrega pequena de UX ou relatório avançado de baixo risco.
 
 ## Depois
 
-4. relatório semanal consolidado;
-5. vendas por período operacional;
-6. Conta/Segurança.
+4. Conta/Segurança;
+5. login com e-mail ou usuário;
+6. 2FA.
 
 ## Depois disso
 
-7. login com e-mail ou usuário;
-8. 2FA;
-9. múltiplas lojas por conta, se virar requisito real;
-10. edição controlada de slug, se virar requisito real.
+7. edição controlada de slug, se virar requisito real;
+8. desenho técnico da linha SaaS;
+9. Mercado Pago;
+10. assinatura.
 
 ## Só então
 
-11. desenho técnico da linha SaaS;
-12. Mercado Pago;
-13. assinatura;
-14. código de registro;
-15. onboarding comercial;
-16. política de suspensão/retenção/exclusão.
+11. código de registro;
+12. onboarding comercial;
+13. política de suspensão/retenção/exclusão.
 
 ---
 
@@ -677,14 +690,12 @@ Esses fluxos não devem ser desenhados como se fossem a mesma coisa.
 - regras de suspensão por inadimplência;
 - política LGPD;
 - login com username se exigir alteração de modelo;
-- múltiplas lojas por conta;
 - edição de slug;
-- vendas por período operacional se exigir nova entidade de turno/sessão.
+- evoluções de período operacional se exigirem nova entidade de turno/sessão.
 
 ### Cuidado moderado
 
-- relatórios semanal;
-- relatórios por período;
+- relatórios avançados além do semanal/período operacional já existentes;
 - Conta/Segurança;
 - mudanças em upload/storage;
 - exclusão lógica de entidades com histórico.
@@ -709,7 +720,7 @@ Estado atual:
 
 - 16 cenários E2E;
 - 16/16 local;
-- 16/16 contra Vercel;
+- validação contra Vercel já realizada em rodada de homologação;
 - helpers de criação de itens no dashboard robustecidos para evitar flakiness com query params transitórios.
 
 ## O que manter como prática
@@ -748,7 +759,6 @@ Nesses casos, falhas podem ser infraestrutura e não regressão do código.
 - login com usuário;
 - 2FA;
 - relatórios avançados;
-- múltiplas lojas;
 - edição de slug.
 
 ---
@@ -767,7 +777,7 @@ Nesses casos, falhas podem ser infraestrutura e não regressão do código.
 - com exclusão/arquivamento seguro de produto;
 - com realtime nas rotas principais;
 - com deploy de homologação na Vercel;
-- com smoke E2E local e remoto validado;
+- com smoke E2E local validado e smoke remoto já validado em rodada de homologação;
 - com documentação alinhada ao estado atual.
 
 ### O que falta de verdade
@@ -775,7 +785,6 @@ Nesses casos, falhas podem ser infraestrutura e não regressão do código.
 - pagamento real com Mercado Pago;
 - webhook e idempotência;
 - relatórios mais completos;
-- vendas por período operacional;
 - Conta/Segurança e segurança avançada;
 - linha SaaS comercial;
 - assinatura mensal/anual;
@@ -791,5 +800,5 @@ A sequência mais segura é:
 
 1. manter documentação e homologação estáveis;
 2. corrigir polimentos pequenos percebidos em uso real;
-3. implementar relatório semanal simples ou outro incremento operacional de baixo risco;
+3. escolher incremento operacional de baixo risco além do relatório semanal já entregue;
 4. só depois abrir frentes sensíveis de conta, pagamento e SaaS.

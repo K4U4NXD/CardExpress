@@ -60,6 +60,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
   const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [isBulkPending, startBulkTransition] = useTransition();
+  const bulkActionsRef = useRef<HTMLDivElement | null>(null);
   const bulkDeleteCancelButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -346,6 +347,25 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
     setCategoryEditRequest({ id: selectedCategoryId, token: Date.now() });
   };
 
+  const toggleMobileBulkActions = () => {
+    setMobileActionsOpen((open) => {
+      const nextOpen = !open;
+
+      if (nextOpen && window.innerWidth < 768) {
+        // Ao abrir no mobile, levamos a viewport até os botões expandidos sem torná-los sticky.
+        window.requestAnimationFrame(() => {
+          const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          bulkActionsRef.current?.scrollIntoView({
+            behavior: prefersReducedMotion ? "auto" : "smooth",
+            block: "start",
+          });
+        });
+      }
+
+      return nextOpen;
+    });
+  };
+
   return (
     <>
       <PageHeader
@@ -425,13 +445,14 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
             </div>
 
             {showBulkToolbar ? (
-              <div
-                data-testid="category-bulk-toolbar"
-                className="cx-scroll-panel-toolbar"
-              >
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-zinc-800">
+              <>
+                {/* Só a barra compacta fica sticky no mobile; as ações completas continuam no fluxo normal. */}
+                <div
+                  data-testid="category-bulk-toolbar"
+                  className="sticky top-36 z-30 mx-2 mt-2 rounded-2xl border border-amber-200/70 bg-[#fffaf2]/95 px-3 py-2 shadow-[0_18px_44px_-34px_rgba(24,24,27,0.75)] backdrop-blur md:hidden"
+                >
+                  <div className="flex min-w-0 items-center justify-between gap-3">
+                    <p className="min-w-0 text-xs font-semibold text-zinc-800">
                       {selectedCount} {selectedCount === 1 ? "categoria selecionada" : "categorias selecionadas"}
                     </p>
                     <div className="flex shrink-0 items-center gap-2">
@@ -444,7 +465,7 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
                       </button>
                       <button
                         type="button"
-                        onClick={() => setMobileActionsOpen((open) => !open)}
+                        onClick={toggleMobileBulkActions}
                         className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900 md:hidden"
                         aria-expanded={mobileActionsOpen}
                       >
@@ -452,7 +473,29 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
                       </button>
                     </div>
                   </div>
-                  <div className={`${mobileActionsOpen ? "grid" : "hidden"} grid-cols-2 gap-1.5 md:flex md:flex-wrap md:justify-end md:gap-2`}>
+                </div>
+
+                <div
+                  data-testid="category-bulk-actions-panel"
+                  className={`${mobileActionsOpen ? "block" : "hidden"} cx-scroll-panel-toolbar md:block`}
+                >
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div className="hidden items-center justify-between gap-3 md:flex">
+                    <p className="text-sm font-semibold text-zinc-800">
+                      {selectedCount} {selectedCount === 1 ? "categoria selecionada" : "categorias selecionadas"}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={clearBulkSelection}
+                      className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900"
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                  <div
+                    ref={bulkActionsRef}
+                    className={`${mobileActionsOpen ? "grid" : "hidden"} scroll-mt-36 grid-cols-2 gap-1.5 md:flex md:scroll-mt-0 md:flex-wrap md:justify-end md:gap-2`}
+                  >
                   <button
                     type="button"
                     onClick={openSelectedCategoryEditor}
@@ -492,7 +535,8 @@ export function DashboardCategoriesView({ storeId, categories }: DashboardCatego
                   </button>
                   </div>
                 </div>
-              </div>
+                </div>
+              </>
             ) : null}
 
             {bulkFeedback ? (

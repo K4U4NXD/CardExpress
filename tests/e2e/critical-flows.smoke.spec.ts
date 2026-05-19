@@ -243,7 +243,8 @@ test.describe.serial("CardExpress critical smoke", () => {
       await simulatePaymentAndWaitForOrderPage(publicPage, storeSlug);
 
       await expect(publicPage.getByRole("heading", { name: /pedido/i })).toBeVisible();
-      await expect(publicPage.getByText(/Aguardando aceite/i)).toBeVisible();
+      // Texto exato evita conflito com a mensagem descritiva que também menciona "aguardando aceite".
+      await expect(publicPage.getByText("Aguardando aceite", { exact: true })).toBeVisible();
       await expect(publicPage).toHaveURL(/\?token=/);
     } finally {
       await publicContext.close();
@@ -781,7 +782,12 @@ test.describe.serial("CardExpress critical smoke", () => {
       await expect(stableMultiRow.getByTestId(`product-additional-category-${additionalCategoryId}`)).toBeChecked({
         timeout: 15_000,
       });
+      // O produto já nasce com a categoria adicional; alterar a descrição garante um submit real.
+      await stableMultiRow
+        .locator('textarea[name="description"]')
+        .fill(`Produto validado em multiplas categorias no smoke E2E ${Date.now()}`);
       const saveProductButton = stableMultiRow.getByRole("button", { name: "Salvar" });
+      await expect(saveProductButton).toBeEnabled({ timeout: 10_000 });
       await saveProductButton.evaluate((button) => button.scrollIntoView({ block: "center", inline: "nearest" }));
       const updateProductResult = merchantPage.waitForURL(
         (url) => url.pathname === "/dashboard/produtos" && url.searchParams.get("aviso") === "atualizado",
@@ -995,6 +1001,8 @@ test.describe.serial("CardExpress critical smoke", () => {
       });
       await merchantPage.getByTestId("product-bulk-delete").click();
       await merchantPage.getByTestId("product-bulk-delete-confirm").click();
+      // A action exibe feedback antes do refresh terminar; aguardamos a seleção reabilitar.
+      await expect(merchantPage.getByTestId("product-select-all")).toBeEnabled({ timeout: 30_000 });
       await expect(dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name)).toHaveCount(0, {
         timeout: 20_000,
       });
@@ -1013,6 +1021,8 @@ test.describe.serial("CardExpress critical smoke", () => {
         actionTestId: "category-bulk-delete",
       });
       await merchantPage.getByTestId("category-bulk-delete-confirm").click();
+      // Mesmo critério dos produtos: só validamos remoção depois que o estado pendente encerra.
+      await expect(merchantPage.getByTestId("category-select-all")).toBeEnabled({ timeout: 30_000 });
       await expect(dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)).toHaveCount(0, {
         timeout: 20_000,
       });

@@ -650,9 +650,16 @@ export async function createCheckoutSession(page: Page, input: CheckoutInput) {
     const diagnostics = await collectCheckoutDiagnostics(page);
     const message = result.type === "error" ? result.message : null;
     const isStatementTimeout = /statement timeout/i.test(message ?? "");
+    const isGenericCheckoutStartFailure = /não foi possível iniciar o checkout agora/i.test(message ?? "");
 
     if (isStatementTimeout && !statementTimeoutRetryUsed) {
       statementTimeoutRetryUsed = true;
+      await page.waitForTimeout(1_000);
+      continue;
+    }
+
+    if (isGenericCheckoutStartFailure && attempt === 1) {
+      // A UI usa essa mensagem para falhas desconhecidas da RPC; uma nova tentativa separa flake de bug persistente.
       await page.waitForTimeout(1_000);
       continue;
     }

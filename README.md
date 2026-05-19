@@ -15,12 +15,13 @@ Estado validado na última rodada de testes:
 - `npm run build` validado;
 - testes manuais locais validados;
 - suíte E2E local validada com 16/16 cenários;
-- suíte E2E contra Vercel validada com 16/16 cenários;
 - deploy de homologação ativo na Vercel em `https://cardexpress.vercel.app`.
 
 O checkout ainda não possui pagamento real. A etapa de Mercado Pago não foi implementada; hoje a aprovação é simulada para validar o fluxo operacional de ponta a ponta. Para produção real, a simulação deve ser substituída por uma integração de pagamento confiável, com confirmação via provedor, webhook, idempotência e remoção do botão de simulação.
 
-SaaS, billing, domínio próprio, Conta/Segurança, 2FA, múltiplas lojas, edição controlada de slug e políticas avançadas de LGPD ficam para etapas futuras. A Vercel é usada como ambiente gratuito de homologação, não como produção real com pagamento.
+SaaS, billing, domínio próprio, Conta/Segurança, 2FA, edição controlada de slug e políticas avançadas de LGPD ficam para etapas futuras. A Vercel é usada como ambiente gratuito de homologação, não como produção real com pagamento.
+
+Na fase atual, o CardExpress trabalha com uma conta autenticada vinculada a uma única loja. Múltiplas lojas por conta não fazem parte do escopo atual do produto.
 
 ## Stack
 
@@ -41,8 +42,12 @@ SaaS, billing, domínio próprio, Conta/Segurança, 2FA, múltiplas lojas, ediç
 ### Área pública
 
 - landing page institucional;
+- landing refinada visualmente, com topo mobile corrigido e sem corte horizontal em telas estreitas;
+- rodapé institucional reutilizável com contato oficial `projetocardexpress@gmail.com`;
+- página `/demonstracao` com o mesmo rodapé institucional da landing;
 - cardápio público por `slug`;
-- busca e filtro de produtos;
+- busca e filtro de produtos com bloco sticky no desktop e no mobile;
+- sticky mobile minimalista de busca/filtros para preservar área útil do cardápio;
 - carrinho local por loja;
 - checkout público em modo demo;
 - criação de sessão de checkout;
@@ -57,6 +62,7 @@ SaaS, billing, domínio próprio, Conta/Segurança, 2FA, múltiplas lojas, ediç
 ### Autenticação
 
 - cadastro do comerciante;
+- página de cadastro com mini demonstração visual refinada da loja pronta;
 - confirmação de e-mail;
 - login;
 - logout;
@@ -73,6 +79,8 @@ SaaS, billing, domínio próprio, Conta/Segurança, 2FA, múltiplas lojas, ediç
 - dashboard protegido;
 - resumo operacional;
 - indicadores por período;
+- relatório semanal já disponível;
+- vendas por período operacional/turno já disponíveis;
 - categorias;
 - produtos;
 - pedidos;
@@ -80,6 +88,8 @@ SaaS, billing, domínio próprio, Conta/Segurança, 2FA, múltiplas lojas, ediç
 - upload de logo;
 - upload de imagem de produto;
 - ações em massa em categorias e produtos;
+- barra compacta sticky de seleção no mobile para "Limpar" e "Ações";
+- rolagem automática até as ações expandidas ao tocar em "Ações" no mobile;
 - modos operacionais da loja:
   - loja offline;
   - aberta manualmente;
@@ -150,7 +160,7 @@ Rotas e áreas com atualização em tempo real ou mecanismo equivalente de refre
 - suíte E2E smoke com 16 cenários no estado atual;
 - testes preparados para loja de homologação/teste;
 - validação local com 16/16 cenários;
-- validação contra Vercel com 16/16 cenários;
+- validação contra Vercel já realizada em rodada de homologação, sujeita à estabilidade do Supabase Free/Nano;
 - helpers de criação de categorias/produtos mais robustos contra Vercel, sem depender exclusivamente de query params transitórios.
 
 Não rode a suíte E2E quando o Supabase estiver instável ou limitado por uso de recursos, pois falhas podem refletir infraestrutura e não regressão do código. O login E2E deve continuar usando a UI real, sem fallback manual de autenticação.
@@ -318,6 +328,8 @@ Pontos importantes:
 - adicionar as URLs locais e `vercel.app` em Auth Redirect URLs no Supabase;
 - manter o checkout em modo demo até Mercado Pago ser implementado;
 - validar `npm run lint` e `npm run build` antes do deploy;
+- validar `git diff --check` antes do deploy;
+- rodar `npm run test:e2e` quando o Supabase estiver estável;
 - usar o ambiente como homologação, não como produção real de pagamentos;
 - não interpretar falhas 500/504 do Supabase Free/Nano como regressão automaticamente.
 
@@ -384,6 +396,8 @@ Scripts auxiliares de diagnóstico podem existir para investigação local. Eles
 - exclusão física de produtos sem histórico;
 - arquivamento de produtos com histórico;
 - pedidos;
+- relatório semanal;
+- vendas por período operacional/turno;
 - configurações da loja;
 - checkout demo;
 - simulação de pagamento aprovado;
@@ -393,7 +407,14 @@ Scripts auxiliares de diagnóstico podem existir para investigação local. Eles
 - realtime;
 - storage;
 - deploy/homologação na Vercel;
-- suíte E2E smoke local e remota validada com 16/16 cenários.
+- refinamento visual da landing e da demonstração;
+- correção de responsividade/overflow mobile na landing;
+- rodapé institucional reutilizável com contato oficial;
+- cadastro com mini demonstração refinada;
+- cardápio público com busca/filtros sticky em desktop e mobile;
+- produtos/categorias com barra compacta sticky de seleção no mobile;
+- estabilização da suíte E2E smoke;
+- suíte E2E smoke local validada com 16/16 cenários.
 
 ### Pendente/Futuro
 
@@ -401,13 +422,10 @@ Scripts auxiliares de diagnóstico podem existir para investigação local. Eles
 - pagamento real;
 - webhook e idempotência de pagamento;
 - remoção da simulação de pagamento;
-- relatórios avançados;
-- relatório semanal consolidado, se ainda não for criado como página própria;
-- vendas por período operacional/turno;
+- relatórios avançados além do relatório semanal e das vendas por período operacional já existentes;
 - Conta/Segurança;
 - login por usuário ou e-mail;
 - 2FA;
-- múltiplas lojas por conta;
 - edição controlada de slug;
 - SaaS/billing;
 - assinatura mensal/anual;
@@ -426,7 +444,7 @@ Scripts auxiliares de diagnóstico podem existir para investigação local. Eles
 - valide lint e build antes de abrir pull request ou publicar homologação;
 - registre mudanças de banco em migrations;
 - mantenha o login E2E pela UI real, sem fallback manual de autenticação;
-- trate Mercado Pago, SaaS/billing, LGPD e múltiplas lojas como frentes separadas e sensíveis.
+- trate Mercado Pago, SaaS/billing e LGPD como frentes separadas e sensíveis.
 
 ## Licença
 

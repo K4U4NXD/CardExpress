@@ -10,6 +10,12 @@ URL atual de homologação:
 https://cardexpress.vercel.app
 ```
 
+Contato oficial do projeto:
+
+```text
+projetocardexpress@gmail.com
+```
+
 ## Escopo desta etapa
 
 - Deploy gratuito na Vercel usando a URL `vercel.app`.
@@ -196,6 +202,7 @@ Antes de publicar ou considerar o estado pronto para homologação, rode:
 
 ```bash
 npm run lint
+npx tsc --noEmit
 npm run build
 git diff --check
 ```
@@ -207,6 +214,8 @@ npm run test:e2e
 ```
 
 Não rode E2E quando o Supabase estiver retornando 500/504, com painel lento ou com aviso de recursos esgotados.
+
+Na última validação local desta documentação, a suíte E2E passou completa com 16/16 cenários.
 
 ## 7. E2E em homologação
 
@@ -261,6 +270,7 @@ Sintomas possíveis:
 - aviso de recursos esgotados no painel;
 - aviso de Disk IO Budget;
 - Auth retornando 500/504;
+- Auth com timeout em login ou callback;
 - logs como `context canceled` ou request timeout;
 - dashboard do Supabase lento;
 - Vercel com timeout de middleware ou função;

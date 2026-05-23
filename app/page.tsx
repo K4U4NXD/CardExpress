@@ -204,8 +204,8 @@ function LandingHeroMockup() {
     // As contenções min-w-0/minmax evitam que cards internos empurrem o hero além da largura em mobiles estreitos.
     <div className="relative w-full min-w-0 overflow-hidden rounded-3xl border border-amber-200/20 bg-white/[0.07] p-2.5 shadow-[0_34px_100px_-48px_rgba(0,0,0,0.95)] sm:p-4">
       <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/70 to-transparent" />
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] items-start gap-2.5 sm:gap-3 lg:grid-cols-[minmax(0,1.14fr)_minmax(0,0.86fr)]">
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2.5 sm:gap-3">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] items-start gap-2.5 sm:gap-3 lg:grid-cols-[minmax(0,1.14fr)_minmax(0,0.86fr)] lg:items-stretch">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2.5 sm:gap-3 lg:h-full lg:grid-rows-[auto_minmax(0,1fr)]">
         <div className="w-full min-w-0 max-w-full rounded-2xl border border-amber-100 bg-[#fffaf2] p-2.5 text-zinc-900 sm:p-3">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="flex min-w-0 items-center gap-3">
@@ -326,22 +326,28 @@ function LandingHeroMockup() {
             </div>
           </div>
 
-          <div className="w-full min-w-0 max-w-full rounded-2xl border border-[#eadfd2] bg-white p-3 text-zinc-900 sm:p-4">
+          <div className="flex w-full min-w-0 max-w-full flex-col rounded-2xl border border-[#eadfd2] bg-white p-3 text-zinc-900 sm:p-4 lg:h-full">
             <div className="flex items-center justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9f1239]">Checkout</p>
                 <p className="mt-1 text-sm font-semibold">Resumo do pedido</p>
+                <p className="mt-1 text-[11px] font-medium text-zinc-500">
+                  Estabelecimento: <span className="font-semibold text-zinc-800">Sabor no Ponto</span>
+                </p>
               </div>
             </div>
-            <div className="mt-3 space-y-2 text-xs">
-              <div className="flex items-center justify-between rounded-lg bg-[#fffaf2] px-2.5 py-2">
-                <span>2x Burger artesanal</span>
+            <div className="mt-3 flex-1 space-y-2 text-xs">
+              <div className="flex items-center justify-between gap-3 rounded-lg bg-[#fffaf2] px-2.5 py-2">
+                <span className="min-w-0">2x Burger artesanal</span>
                 <strong className="text-[#9f1239]">R$ 57,80</strong>
               </div>
-              <div className="flex items-center justify-between rounded-lg bg-[#fffaf2] px-2.5 py-2">
-                <span>1x Pastel especial</span>
+              <div className="flex items-center justify-between gap-3 rounded-lg bg-[#fffaf2] px-2.5 py-2">
+                <span className="min-w-0">1x Pastel especial</span>
                 <strong className="text-[#9f1239]">R$ 14,00</strong>
               </div>
+              <p className="rounded-lg border border-[#eadfd2] bg-[#fffaf2]/70 px-2.5 py-2 text-[11px] leading-snug text-zinc-600">
+                <span className="font-semibold text-zinc-700">Observação:</span> cliente retira no balcão.
+              </p>
             </div>
             <div className="mt-3 flex items-center justify-between border-t border-[#eadfd2] pt-3">
               <span className="text-xs font-semibold text-zinc-500">Total</span>

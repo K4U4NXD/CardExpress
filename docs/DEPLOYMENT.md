@@ -284,6 +284,18 @@ Se isso acontecer:
 4. Só rode E2E quando o Supabase estabilizar.
 5. Se a limitação se repetir com frequência, considerar upgrade de compute futuramente, não upgrade de versão do Postgres como primeira ação.
 
+### Performance de homologação
+
+Após a redução de prefetch excessivo no dashboard, a navegação na Vercel melhorou, mas ainda pode apresentar latência média aproximada de 3s entre páginas do dashboard e cerca de 5s em algumas ações operacionais, como aceitar pedido.
+
+Essa latência residual não deve ser tratada como bug urgente enquanto o ambiente continuar em Vercel Free/Hobby + Supabase Free/Nano. A performance final de produção deve ser planejada em frente separada, com:
+
+- medição em infraestrutura mais estável;
+- revisão de revalidações e refresh após ações operacionais;
+- otimização em lote da exclusão/arquivamento em massa de produtos;
+- avaliação de queries, índices e RPCs somente com evidência de gargalo real;
+- consideração de upgrade de infraestrutura quando o projeto sair da homologação gratuita.
+
 ## 9. Gitignore e segredos
 
 O repositório deve manter fora do versionamento:

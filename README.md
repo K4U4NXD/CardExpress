@@ -331,7 +331,8 @@ Pontos importantes:
 - validar `git diff --check` antes do deploy;
 - rodar `npm run test:e2e` quando o Supabase estiver estável;
 - usar o ambiente como homologação, não como produção real de pagamentos;
-- não interpretar falhas 500/504 do Supabase Free/Nano como regressão automaticamente.
+- não interpretar falhas 500/504 do Supabase Free/Nano como regressão automaticamente;
+- tratar a latência restante do dashboard e de ações operacionais como pendência futura de performance/infraestrutura para produção real, não como bug urgente da homologação gratuita.
 
 ## Fluxo Demo de Checkout
 
@@ -433,6 +434,7 @@ Scripts auxiliares de diagnóstico podem existir para investigação local. Eles
 - LGPD, exclusão de conta e política de retenção;
 - domínio próprio;
 - produção real com infraestrutura mais estável.
+- otimização de performance para produção real em infraestrutura mais estável;
 
 ## Cuidados de Desenvolvimento
 

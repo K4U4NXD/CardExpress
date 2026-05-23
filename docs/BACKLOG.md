@@ -304,7 +304,9 @@ Estado validado na última rodada:
 - produto sem histórico pode ser excluído fisicamente;
 - produto com histórico deve ser arquivado, mesmo que a UI use o termo “Excluir”;
 - Vercel é homologação gratuita, não produção real;
-- Supabase Free/Nano pode limitar recursos; falhas 500/504 não devem ser tratadas automaticamente como regressão de código.
+- Supabase Free/Nano pode limitar recursos; falhas 500/504 não devem ser tratadas automaticamente como regressão de código;
+- após a redução de prefetch excessivo no dashboard, a navegação na Vercel melhorou, mas a latência residual de homologação (aprox. 3s entre páginas do dashboard e até 5s em algumas ações operacionais) não será tratada como bug urgente enquanto o ambiente continuar em Vercel Free/Hobby + Supabase Free/Nano;
+- performance final de produção deve ser tratada em frente futura separada, com medição em infraestrutura mais estável antes de mexer em banco, RPCs ou regras operacionais.
 
 ---
 
@@ -363,7 +365,7 @@ Estado validado na última rodada:
 - onboarding comercial com dados ampliados;
 - política formal de retenção/suspensão/exclusão alinhada à LGPD;
 - domínio próprio;
-- produção real com infraestrutura mais estável.
+- produção real com infraestrutura mais estável e performance final validada.
 
 ---
 
@@ -407,6 +409,25 @@ Evitar que README, backlog e deploy guiem decisões com informações antigas.
 - revisar feedbacks de ações em massa;
 - revisar experiência mobile em páginas densas;
 - melhorar clareza de estados de estoque e disponibilidade.
+
+### Performance futura de produção
+
+#### Objetivo
+Tratar a latência restante como frente futura de performance/infraestrutura, sem abrir otimização urgente durante a homologação gratuita.
+
+#### Contexto
+
+- o ambiente atual continua sendo homologação, não produção real;
+- Vercel Free/Hobby + Supabase Free/Nano podem apresentar latência maior, especialmente quando o Supabase está limitado ou instável;
+- a redução de prefetch excessivo no dashboard diminuiu carga antecipada desnecessária, mas ainda há latência média aproximada de 3s entre páginas do dashboard e cerca de 5s em algumas ações operacionais.
+
+#### Pendências futuras
+
+- medir latência em infraestrutura mais estável antes de classificar gargalo como bug de código;
+- revisar revalidações e `router.refresh()` após ações operacionais;
+- otimizar exclusão/arquivamento em massa de produtos em lote, preservando histórico;
+- avaliar queries, índices e RPCs apenas com evidência de gargalo real;
+- considerar upgrade de infraestrutura quando o projeto sair da homologação gratuita.
 
 ---
 

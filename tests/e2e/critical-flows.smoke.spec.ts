@@ -156,6 +156,50 @@ async function expectCheckoutCreationBlocked(page: Page, marker: string, message
   await expect(page.getByText(messagePattern).first()).toBeVisible({ timeout: 10_000 });
 }
 
+async function clickOrderActionAndWaitForServerAction(page: Page, row: Parameters<typeof clickOrderAction>[0], actionKey: Parameters<typeof clickOrderAction>[1]) {
+  const responsePromise = page.waitForResponse((response) => {
+    const request = response.request();
+    const responseUrl = new URL(response.url());
+
+    return request.method() === "POST" && responseUrl.pathname === "/dashboard/pedidos";
+  });
+
+  const [response] = await Promise.all([responsePromise, clickOrderAction(row, actionKey)]);
+
+  expect(response.status()).toBeLessThan(400);
+}
+
+async function openDashboardMobileMenu(page: Page) {
+  const menuButton = page.getByRole("button", { name: "Menu", exact: true });
+  const mobileNav = page.getByRole("dialog", { name: "Menu do dashboard" });
+
+  await expect(menuButton).toBeVisible({ timeout: 15_000 });
+  await expect(menuButton).toBeEnabled();
+  await expect(menuButton).toHaveAttribute("aria-controls", "dashboard-mobile-nav");
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (await mobileNav.isVisible().catch(() => false)) {
+      await expect(menuButton).toHaveAttribute("aria-expanded", "true");
+      return mobileNav;
+    }
+
+    await menuButton.click();
+
+    try {
+      await expect(mobileNav).toBeVisible({ timeout: 4_000 });
+      await expect(menuButton).toHaveAttribute("aria-expanded", "true");
+      return mobileNav;
+    } catch {
+      await expect(menuButton).toBeVisible();
+      await expect(menuButton).toBeEnabled();
+    }
+  }
+
+  await expect(mobileNav).toBeVisible({ timeout: 12_000 });
+  await expect(menuButton).toHaveAttribute("aria-expanded", "true");
+  return mobileNav;
+}
+
 test.describe("CardExpress auth recovery", () => {
   test("login exibe link de recuperacao e navega para o formulario", async ({ page }) => {
     await page.goto("/login", { waitUntil: "domcontentloaded" });
@@ -293,10 +337,7 @@ test.describe.serial("CardExpress critical smoke", () => {
       await panelPage.goto(`/${storeSlug}/painel`, { waitUntil: "domcontentloaded" });
       await expect(panelPage.getByRole("heading", { name: /Painel de retirada/i })).toBeVisible();
 
-      await Promise.all([
-        merchantPage.waitForURL(/\/dashboard\/pedidos(?:\?.*)?$/, { timeout: 20_000 }),
-        clickOrderAction(row, "accept"),
-      ]);
+      await clickOrderActionAndWaitForServerAction(merchantPage, row, "accept");
       await merchantPage.goto("/dashboard/pedidos?escopo=todos", { waitUntil: "domcontentloaded" });
 
       row = await waitForOrderRowStatus(merchantPage, marker, "Em preparo", {
@@ -306,10 +347,7 @@ test.describe.serial("CardExpress critical smoke", () => {
         fallbackToAllScope: true,
       });
 
-      await Promise.all([
-        merchantPage.waitForURL(/\/dashboard\/pedidos(?:\?.*)?$/, { timeout: 20_000 }),
-        clickOrderAction(row, "ready"),
-      ]);
+      await clickOrderActionAndWaitForServerAction(merchantPage, row, "ready");
       await merchantPage.goto("/dashboard/pedidos?escopo=todos", { waitUntil: "domcontentloaded" });
 
       row = await waitForOrderRowStatus(merchantPage, marker, "Pronto para retirada", {
@@ -322,10 +360,7 @@ test.describe.serial("CardExpress critical smoke", () => {
         timeout: 20_000,
       });
 
-      await Promise.all([
-        merchantPage.waitForURL(/\/dashboard\/pedidos(?:\?.*)?$/, { timeout: 20_000 }),
-        clickOrderAction(row, "finalize"),
-      ]);
+      await clickOrderActionAndWaitForServerAction(merchantPage, row, "finalize");
 
       await expect(merchantPage.getByTestId(`order-row-${publicOrderId}`)).toHaveCount(0, {
         timeout: 15_000,
@@ -728,11 +763,10 @@ test.describe.serial("CardExpress critical smoke", () => {
     try {
       await merchantPage.goto("/dashboard", { waitUntil: "domcontentloaded" });
 
+      expect(merchantPage.viewportSize()).toEqual({ width: 390, height: 844 });
       await expect(merchantPage.getByText("CARDEXPRESS", { exact: true })).toBeVisible();
-      await merchantPage.getByRole("button", { name: "Menu" }).click();
 
-      const mobileNav = merchantPage.getByRole("dialog", { name: "Menu do dashboard" });
-      await expect(mobileNav).toBeVisible();
+      const mobileNav = await openDashboardMobileMenu(merchantPage);
       await expect(mobileNav.getByRole("link", { name: "Pedidos" })).toBeVisible();
 
       await mobileNav.getByRole("link", { name: "Produtos" }).click();

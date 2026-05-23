@@ -101,7 +101,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                 <Link
                   key={item.href}
                   href={item.href}
-                  prefetch
+                  prefetch={false}
                   onClick={() => setPendingHref(item.href)}
                   aria-current={active ? "page" : undefined}
                   aria-busy={pending ? "true" : undefined}
@@ -130,6 +130,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={false}
                     target="_blank"
                     rel="noreferrer noopener"
                     className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 transition duration-300 hover:bg-[#fff7ed] hover:text-[#70102a]"
@@ -220,7 +221,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                     <Link
                       key={item.href}
                       href={item.href}
-                      prefetch
+                      prefetch={false}
                       onClick={() => setPendingHref(item.href)}
                       aria-current={active ? "page" : undefined}
                       aria-busy={pending ? "true" : undefined}
@@ -245,6 +246,7 @@ export function DashboardShell({ children, storeId, storeSlug }: DashboardShellP
                       <Link
                         key={item.href}
                         href={item.href}
+                        prefetch={false}
                         target="_blank"
                         rel="noreferrer noopener"
                         className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-[#fff7ed]"

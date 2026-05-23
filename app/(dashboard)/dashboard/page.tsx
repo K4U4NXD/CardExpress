@@ -612,6 +612,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                       </div>
                       <Link
                         href="/dashboard/produtos"
+                        prefetch={false}
                         className="text-xs font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
                       >
                         Gerenciar produtos
@@ -673,6 +674,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                     <h2 className="text-sm font-semibold text-zinc-900">Últimos pedidos</h2>
                     <Link
                       href="/dashboard/pedidos?escopo=todos"
+                      prefetch={false}
                       className="text-xs font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
                     >
                       Ver todos
@@ -687,7 +689,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
                         <li key={order.id} className="rounded-xl border border-[#eadfd2] bg-[#fffaf2] px-3 py-2 transition hover:border-amber-300 hover:bg-white">
                           <Link
                             href={`/dashboard/pedidos?escopo=todos&pedido=${encodeURIComponent(order.id)}`}
-                            prefetch
+                            prefetch={false}
                             className="flex h-full flex-col gap-2"
                           >
                             <div className="min-w-0">

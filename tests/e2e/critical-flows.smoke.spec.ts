@@ -928,16 +928,22 @@ test.describe.serial("CardExpress critical smoke", () => {
       await expect(productRowA).toBeVisible({ timeout: 15_000 });
       await expect(productRowB).toBeVisible({ timeout: 15_000 });
 
-      await productRowA.locator('[data-testid^="product-select-"]').check();
-      await expect(merchantPage.getByTestId("product-bulk-toolbar")).toContainText("1 produto selecionado");
+      await selectDashboardRowForBulkAction(merchantPage, productRowA, {
+        checkboxSelector: '[data-testid^="product-select-"]',
+        toolbarTestId: "product-bulk-toolbar",
+        expectedToolbarText: "1 produto selecionado",
+      });
       await merchantPage.getByTestId("open-create-product").click();
       await expect(merchantPage.getByTestId("product-bulk-toolbar")).toHaveCount(0);
       await expect(merchantPage.getByTestId("product-select-all")).toBeDisabled();
       await merchantPage.getByTestId("open-create-product").click();
       await expect(merchantPage.getByTestId("product-select-all")).toBeEnabled();
 
-      await productRowA.locator('[data-testid^="product-select-"]').check();
-      await expect(merchantPage.getByTestId("product-bulk-toolbar")).toContainText("1 produto selecionado");
+      await selectDashboardRowForBulkAction(merchantPage, productRowA, {
+        checkboxSelector: '[data-testid^="product-select-"]',
+        toolbarTestId: "product-bulk-toolbar",
+        expectedToolbarText: "1 produto selecionado",
+      });
       await expect(merchantPage.getByTestId("product-bulk-edit")).toBeEnabled();
       await merchantPage.getByTestId("product-bulk-edit").click();
       await expect(merchantPage.getByTestId("product-bulk-toolbar")).toHaveCount(0);
@@ -945,9 +951,16 @@ test.describe.serial("CardExpress critical smoke", () => {
       await merchantPage.getByRole("button", { name: "Cancelar" }).last().click();
       await expect(merchantPage.getByTestId("product-select-all")).toBeEnabled();
 
-      await productRowA.locator('[data-testid^="product-select-"]').check();
-      await productRowB.locator('[data-testid^="product-select-"]').check();
-      await expect(merchantPage.getByTestId("product-bulk-toolbar")).toContainText("2 produtos selecionados");
+      await selectDashboardRowForBulkAction(merchantPage, productRowA, {
+        checkboxSelector: '[data-testid^="product-select-"]',
+        toolbarTestId: "product-bulk-toolbar",
+        expectedToolbarText: "1 produto selecionado",
+      });
+      await selectDashboardRowForBulkAction(merchantPage, productRowB, {
+        checkboxSelector: '[data-testid^="product-select-"]',
+        toolbarTestId: "product-bulk-toolbar",
+        expectedToolbarText: "2 produtos selecionados",
+      });
       await expect(merchantPage.getByTestId("product-bulk-edit")).toBeDisabled();
 
       await merchantPage.getByTestId("product-bulk-deactivate").click();
@@ -959,12 +972,24 @@ test.describe.serial("CardExpress critical smoke", () => {
         timeout: 15_000,
       });
 
-      await dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name)
-        .locator('[data-testid^="product-select-"]')
-        .check();
-      await dashboardProductRowByName(merchantPage, seedData.products.bulkSecondary.name)
-        .locator('[data-testid^="product-select-"]')
-        .check();
+      await selectDashboardRowForBulkAction(
+        merchantPage,
+        dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name),
+        {
+          checkboxSelector: '[data-testid^="product-select-"]',
+          toolbarTestId: "product-bulk-toolbar",
+          expectedToolbarText: "1 produto selecionado",
+        },
+      );
+      await selectDashboardRowForBulkAction(
+        merchantPage,
+        dashboardProductRowByName(merchantPage, seedData.products.bulkSecondary.name),
+        {
+          checkboxSelector: '[data-testid^="product-select-"]',
+          toolbarTestId: "product-bulk-toolbar",
+          expectedToolbarText: "2 produtos selecionados",
+        },
+      );
       await merchantPage.getByTestId("product-bulk-activate").click();
       await expect(merchantPage.getByText("2 produtos ativados.").first()).toBeVisible({ timeout: 15_000 });
       await expect(dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name)).toContainText("Ativo", {
@@ -974,9 +999,15 @@ test.describe.serial("CardExpress critical smoke", () => {
         timeout: 15_000,
       });
 
-      await dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name)
-        .locator('[data-testid^="product-select-"]')
-        .check();
+      await selectDashboardRowForBulkAction(
+        merchantPage,
+        dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name),
+        {
+          checkboxSelector: '[data-testid^="product-select-"]',
+          toolbarTestId: "product-bulk-toolbar",
+          expectedToolbarText: "1 produto selecionado",
+        },
+      );
       await merchantPage.getByTestId("product-bulk-delete").click();
       await expect(merchantPage.getByRole("dialog", { name: /Excluir produtos selecionados/i })).toBeVisible();
       await expect(merchantPage.getByTestId("product-bulk-delete-confirm")).toBeVisible();
@@ -989,8 +1020,11 @@ test.describe.serial("CardExpress critical smoke", () => {
 
       const categoryRow = dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName);
       await expect(categoryRow).toBeVisible({ timeout: 15_000 });
-      await categoryRow.locator('[data-testid^="category-select-"]').check();
-      await expect(merchantPage.getByTestId("category-bulk-toolbar")).toContainText("1 categoria selecionada");
+      await selectDashboardRowForBulkAction(merchantPage, categoryRow, {
+        checkboxSelector: '[data-testid^="category-select-"]',
+        toolbarTestId: "category-bulk-toolbar",
+        expectedToolbarText: "1 categoria selecionada",
+      });
       await expect(merchantPage.getByTestId("category-bulk-edit")).toBeEnabled();
 
       await merchantPage.getByTestId("category-bulk-delete").click();
@@ -999,24 +1033,40 @@ test.describe.serial("CardExpress critical smoke", () => {
       await merchantPage.getByRole("button", { name: "Cancelar" }).click();
       await expect(merchantPage.getByRole("dialog", { name: /Excluir categorias selecionadas/i })).toHaveCount(0);
 
-      await categoryRow.locator('[data-testid^="category-select-"]').check();
+      await selectDashboardRowForBulkAction(merchantPage, categoryRow, {
+        checkboxSelector: '[data-testid^="category-select-"]',
+        toolbarTestId: "category-bulk-toolbar",
+        expectedToolbarText: "1 categoria selecionada",
+      });
       await merchantPage.getByTestId("category-bulk-delete").click();
       await merchantPage.getByTestId("category-bulk-delete-confirm").click();
       await expect(merchantPage.getByText(/Nenhuma categoria foi alterada|mantida/i).first()).toBeVisible({ timeout: 15_000 });
       await expect(dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)).toBeVisible({ timeout: 15_000 });
 
-      await dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)
-        .locator('[data-testid^="category-select-"]')
-        .check();
+      await selectDashboardRowForBulkAction(
+        merchantPage,
+        dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName),
+        {
+          checkboxSelector: '[data-testid^="category-select-"]',
+          toolbarTestId: "category-bulk-toolbar",
+          expectedToolbarText: "1 categoria selecionada",
+        },
+      );
       await merchantPage.getByTestId("category-bulk-deactivate").click();
       await expect(merchantPage.getByText("1 categoria desativada.").first()).toBeVisible({ timeout: 15_000 });
       await expect(dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)).toContainText("Inativa", {
         timeout: 15_000,
       });
 
-      await dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)
-        .locator('[data-testid^="category-select-"]')
-        .check();
+      await selectDashboardRowForBulkAction(
+        merchantPage,
+        dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName),
+        {
+          checkboxSelector: '[data-testid^="category-select-"]',
+          toolbarTestId: "category-bulk-toolbar",
+          expectedToolbarText: "1 categoria selecionada",
+        },
+      );
       await merchantPage.getByTestId("category-bulk-activate").click();
       await expect(merchantPage.getByText("1 categoria ativada.").first()).toBeVisible({ timeout: 15_000 });
       await expect(dashboardCategoryRowByName(merchantPage, seedData.bulkCategoryName)).toContainText("Ativa", {
@@ -1024,15 +1074,24 @@ test.describe.serial("CardExpress critical smoke", () => {
       });
 
       await merchantPage.goto("/dashboard/produtos", { waitUntil: "domcontentloaded" });
-      await dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name)
-        .locator('[data-testid^="product-select-"]')
-        .click();
-      await dashboardProductRowByName(merchantPage, seedData.products.bulkSecondary.name)
-        .locator('[data-testid^="product-select-"]')
-        .click();
-      await expect(merchantPage.getByTestId("product-bulk-toolbar")).toContainText("2 produtos selecionados", {
-        timeout: 15_000,
-      });
+      await selectDashboardRowForBulkAction(
+        merchantPage,
+        dashboardProductRowByName(merchantPage, seedData.products.bulkPrimary.name),
+        {
+          checkboxSelector: '[data-testid^="product-select-"]',
+          toolbarTestId: "product-bulk-toolbar",
+          expectedToolbarText: "1 produto selecionado",
+        },
+      );
+      await selectDashboardRowForBulkAction(
+        merchantPage,
+        dashboardProductRowByName(merchantPage, seedData.products.bulkSecondary.name),
+        {
+          checkboxSelector: '[data-testid^="product-select-"]',
+          toolbarTestId: "product-bulk-toolbar",
+          expectedToolbarText: "2 produtos selecionados",
+        },
+      );
       await merchantPage.getByTestId("product-bulk-delete").click();
       await merchantPage.getByTestId("product-bulk-delete-confirm").click();
       // A action exibe feedback antes do refresh terminar; aguardamos a seleção reabilitar.
